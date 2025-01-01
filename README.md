@@ -25,7 +25,7 @@ BugOutIndex is available under a dual-license model:
 
 2. **Commercial License**:
    - For proprietary or commercial use cases (e.g., integrating BugOutIndex into closed-source systems or SaaS platforms), a commercial license is required.
-   - To inquire about a commercial license, please contact: [adam.w.montville@gmail.com].
+   - Read [COMMERCIAL_LICENSE](./COMMERCIAL_LICENSE.md) for more detail or contact [adam.w.montville@gmail.com] to inquire.
 
 By contributing to this project, you agree to license your contributions under both the AGPL-3.0 and the commercial license.
 

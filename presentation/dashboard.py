@@ -63,17 +63,17 @@ metric_ranges = {
 
 # Weights for scoring
 weights = {
-    "inflation_rate": 0.1,
+    "inflation_rate": 0.12,
     "crime_rate": 0.1,
-    "air_quality_index": 0.1,
+    "air_quality_index": 0.07,
     "unemployment_rate": 0.1,
-    "debt_to_gdp_ratio": 0.1,
-    "homelessness_rate": 0.1,
-    "trust_in_government": 0.1,
-    "grid_outages": 0.1,
-    "food_price_index": 0.1,
-    "healthcare_capacity": 0.1,
-    "natural_disaster_frequency": 0.1
+    "debt_to_gdp_ratio": 0.08,
+    "homelessness_rate": 0.08,
+    "trust_in_government": 0.07,
+    "grid_outages": 0.08,
+    "food_price_index": 0.07,
+    "healthcare_capacity": 0.05,
+    "natural_disaster_frequency": 0.08
 }
 
 # Calculate overall score

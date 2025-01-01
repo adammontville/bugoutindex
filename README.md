@@ -1,7 +1,8 @@
+[![AGPL License](https://img.shields.io/badge/license-AGPL%20v3-blue)](./LICENSE)
+[![Commercial License](https://img.shields.io/badge/license-Commercial-orange)](./COMMERCIAL_LICENSE.md)
 # BugOutIndex
 
 ## License
-
 BugOutIndex is available under a dual-license model:
 
 1. **GNU Affero General Public License v3.0 (AGPL-3.0)**:

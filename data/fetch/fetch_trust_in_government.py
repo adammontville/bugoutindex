@@ -12,12 +12,8 @@
 Module Description:
 <Add a description of this module here>
 """
-import unittest
-from processing.normalize import normalize_metric
-
-class TestScoringMethods(unittest.TestCase):
-    def test_new_metrics_normalization():
-        assert normalize_metric(5, 0, 20) == 75.0  # Unemployment Rate
-        assert normalize_metric(150, 50, 150) == 0.0  # Food Price Index
-        assert normalize_metric(50, 0, 100) == 50.0  # Trust in Government
-
+def fetch():
+    """Fetch the latest Trust in Government data."""
+    print("Fetching Trust in Government...")
+    # Simulate fetching data
+    return {"status": "success", "fetched_at": "2025-01-01T00:00:00Z", "data": {"trust": 45.0}}

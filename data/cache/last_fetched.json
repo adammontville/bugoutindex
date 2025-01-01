@@ -2,5 +2,13 @@
     "_comment": "This data file is licensed under the AGPL-3.0 or a commercial license. See LICENSE.md for details.",
     "inflation_rate": null,
     "crime_rate": null,
-    "air_quality_index": null
+    "air_quality_index": null,
+    "unemployment_rate": null,
+    "debt_to_gdp_ratio": null,
+    "homelessness_rate": null,
+    "trust_in_government": null,
+    "grid_outages": null,
+    "food_price_index": null,
+    "healthcare_capacity": null,
+    "natural_disaster_frequency": null
 }

@@ -16,4 +16,4 @@ def fetch():
     """Fetch the latest Food Price Index data."""
     print("Fetching Food Price Index...")
     # Simulate fetching data
-    return {"status": "success", "fetched_at": "2025-01-01T00:00:00Z", "data": {"index": 112.5}}
+    return {"status": "success", "fetched_at": "2025-01-01T00:00:00Z", "data": {"index": 2.5}}

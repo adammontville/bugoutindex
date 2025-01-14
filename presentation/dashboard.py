@@ -49,14 +49,14 @@ for metric in metric_names:
 # Ranges for normalization
 metric_ranges = {
     "inflation_rate": (0, 10),  # Example range
-    "crime_rate": (0, 1000),  # Example range
+    "crime_rate": (500, 2000),  # Example range
     "air_quality_index": (0, 500),  # Example range
     "unemployment_rate": (0, 20),  # Example range
     "debt_to_gdp_ratio": (0, 200),  # Example range
     "homelessness_rate": (0, 5),  # Example range (percent of population)
     "trust_in_government": (0, 100),  # Percentage
     "grid_outages": (0, 100),  # Hours per year
-    "food_price_index": (50, 150),  # Index values
+    "food_price_index": (1, 6),  # Index values
     "healthcare_capacity": (0, 100),  # Percentage
     "natural_disaster_frequency": (0, 50)  # Number per year
 }

@@ -53,7 +53,7 @@ metric_ranges = {
     "air_quality_index": (0, 500),  # Example range
     "unemployment_rate": (0, 20),  # Example range
     "debt_to_gdp_ratio": (0, 200),  # Example range
-    "homelessness_rate": (0, 5),  # Example range (percent of population)
+    "homelessness_rate": (0, 1),  # Example range (percent of population)
     "trust_in_government": (0, 100),  # Percentage
     "grid_outages": (0, 100),  # Hours per year
     "food_price_index": (1, 6),  # Index values

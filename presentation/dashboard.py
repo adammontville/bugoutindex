@@ -55,13 +55,13 @@ metric_ranges = {
 
 # Weights for scoring
 weights = {
-    "inflation_rate": 0.12,
-    "crime_rate": 0.1,
+    "inflation_rate": 0.15,
+    "crime_rate": 0.12,
     "unemployment_rate": 0.1,
-    "debt_to_gdp_ratio": 0.08,
-    "homelessness_rate": 0.08,
-    "trust_in_government": 0.07,
-    "food_price_index": 0.07,
+    "debt_to_gdp_ratio": 0.07,
+    "homelessness_rate": 0.09,
+    "trust_in_government": 0.08,
+    "food_price_index": 0.09,
 }
 
 # Calculate overall score

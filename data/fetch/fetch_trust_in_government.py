@@ -16,4 +16,4 @@ def fetch():
     """Fetch the latest Trust in Government data."""
     print("Fetching Trust in Government...")
     # Simulate fetching data
-    return {"status": "success", "fetched_at": "2025-01-01T00:00:00Z", "data": {"trust": 45.0}}
+    return {"status": "success", "fetched_at": "2025-01-01T00:00:00Z", "data": {"trust": 22.0}}

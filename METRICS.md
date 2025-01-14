@@ -103,13 +103,12 @@ BugOutIndex = Σ (Category Score × Category Weight)
 
 ## **Interpreting the BugOutIndex**
 
-| **Score Range** | **Interpretation**          |
-|------------------|-----------------------------|
-| **90–100**       | High Stability (Low Risk)  |
-| **70–89**        | Moderate Stability (Warning Signs) |
-| **50–69**        | Low Stability (Heightened Risk)    |
-| **<50**          | Critical Instability (Collapse Likely) |
-
+| **Score Range**  | **Interpretation**                              | **Suggested Actions**                                |
+|------------------|------------------------------------------------|-----------------------------------------------------|
+| **90.00–100.00** | **High Stability (Low Risk)**                  | Focus on long-term planning and gradual improvements. |
+| **70.00–89.99**  | **Moderate Stability (Warning Signs)**         | Monitor trends closely; prepare contingency plans.   |
+| **50.00–69.99**  | **Low Stability (Heightened Risk)**            | Initiate preparedness measures; consider evacuation triggers. |
+| **<50**          | **Critical Instability (Collapse Likely)**     | Activate bug-out plans; immediate action recommended. |
 ---
 
 ## **Version History**

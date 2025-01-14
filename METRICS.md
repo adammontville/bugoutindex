@@ -21,7 +21,7 @@ The BugOutIndex incorporates metrics across four major categories to evaluate so
 - **Debt-to-GDP Ratio**: Indicates the government’s ability to manage debt relative to its economic output.
 
 ### **2. Social Health Metrics**
-- **Crime Rate**: Represents reported crimes per 100,000 people.
+- **Viloent Crime Rate**: Represents reported violent crimes per 100,000 people.
 - **Homelessness Rate**: Measures the percentage of the population experiencing homelessness.
 - **Trust in Government**: Reflects public confidence in government institutions (based on surveys or sentiment analysis).
 

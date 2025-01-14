@@ -21,15 +21,11 @@ from processing.scoring_v1 import calculate_category_score
 metric_names = [
     "inflation_rate",
     "crime_rate",
-    "air_quality_index",
     "unemployment_rate",
     "debt_to_gdp_ratio",
     "homelessness_rate",
     "trust_in_government",
-    "grid_outages",
     "food_price_index",
-    "healthcare_capacity",
-    "natural_disaster_frequency"
 ]
 
 # Fetch the data dynamically
@@ -50,30 +46,22 @@ for metric in metric_names:
 metric_ranges = {
     "inflation_rate": (0, 10),  # Example range
     "crime_rate": (500, 2000),  # Example range
-    "air_quality_index": (0, 500),  # Example range
     "unemployment_rate": (0, 20),  # Example range
     "debt_to_gdp_ratio": (0, 200),  # Example range
     "homelessness_rate": (0, 1),  # Example range (percent of population)
     "trust_in_government": (0, 100),  # Percentage
-    "grid_outages": (0, 100),  # Hours per year
     "food_price_index": (1, 6),  # Index values
-    "healthcare_capacity": (0, 100),  # Percentage
-    "natural_disaster_frequency": (0, 50)  # Number per year
 }
 
 # Weights for scoring
 weights = {
     "inflation_rate": 0.12,
     "crime_rate": 0.1,
-    "air_quality_index": 0.07,
     "unemployment_rate": 0.1,
     "debt_to_gdp_ratio": 0.08,
     "homelessness_rate": 0.08,
     "trust_in_government": 0.07,
-    "grid_outages": 0.08,
     "food_price_index": 0.07,
-    "healthcare_capacity": 0.05,
-    "natural_disaster_frequency": 0.08
 }
 
 # Calculate overall score

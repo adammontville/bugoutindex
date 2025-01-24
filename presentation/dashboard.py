@@ -76,3 +76,4 @@ st.write(f"Overall Stability Score: {overall_score:.2f}")
 st.write("### Metric Details")
 for metric, value in metrics.items():
     st.write(f"{metric}: {value}")
+st.write("\nThis product uses the FRED® API but is not endorsed or certified by the Federal Reserve Bank of St. Louis.")

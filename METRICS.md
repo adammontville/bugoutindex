@@ -35,17 +35,14 @@ Each metric is scored on a normalized scale of **0–100**, where:
 ### **Normalization Process**
 For each metric, raw data is normalized using predefined thresholds:
 
-\[
-\text{Normalized Score} = \left(1 - \frac{\text{Raw Value} - \text{Min}}{\text{Max} - \text{Min}}\right) \times 100
-\]
+Normalized Score = (1 - ((Raw Value - Min) / (Max - Min))) * 100
 
 - **Example** (Inflation Rate):
   - Thresholds: 0%–10%.
   - Raw Value: 4%.
   - Normalized Score:
-    \[
-    \left(1 - \frac{4 - 0}{10 - 0}\right) \times 100 = 60
-    \]
+
+(1 - ((4 - 0) / (10 - 0))) * 100 = 60
 
 ---
 
@@ -69,16 +66,12 @@ Each metric is normalized to a 0–100 scale based on its thresholds.
 ### **Step 2: Metric Weighting**
 Each normalized metric score is multiplied by its weight to calculate its contribution to the overall score:
 
-\[
-\text{Metric Weighted Score} = \text{Normalized Score} \times \text{Metric Weight}
-\]
+Metric Weighted Score = Normalized Score * Metric Weight
 
 ### **Step 3: Overall Index Calculation**
 The overall BugOutIndex score is the sum of all weighted metric scores:
 
-\[
-\text{BugOutIndex} = \sum (\text{Metric Weighted Score})
-\]
+BugOutIndex = Σ (Metric Weighted Score)
 
 ---
 

@@ -13,26 +13,16 @@ The BugOutIndex is a societal stability scoring system designed to help individu
 
 ## **Metrics Overview**
 
-The BugOutIndex incorporates metrics across four major categories to evaluate societal stability:
+The BugOutIndex incorporates the following metrics to evaluate societal stability:
 
-### **1. Economic Metrics**
+### **Economic Metrics**
 - **Inflation Rate**: Measures the annual percentage increase in consumer prices.
 - **Unemployment Rate**: Tracks the percentage of people in the labor force who are unemployed.
 - **Debt-to-GDP Ratio**: Indicates the government’s ability to manage debt relative to its economic output.
 
-### **2. Social Health Metrics**
-- **Viloent Crime Rate**: Represents reported violent crimes per 100,000 people.
+### **Social Health Metrics**
+- **Crime Rate**: Represents reported violent crimes per 100,000 people.
 - **Homelessness Rate**: Measures the percentage of the population experiencing homelessness.
-- **Trust in Government**: Reflects public confidence in government institutions (based on surveys or sentiment analysis).
-
-### **3. Infrastructure Metrics**
-- **Grid Outages**: Hours of power outages per year, reflecting energy reliability.
-- **Food Price Index**: Tracks the average price of staple foods relative to a baseline.
-- **Healthcare Capacity**: Measures hospital occupancy rates and access to critical care.
-
-### **4. Environmental Metrics**
-- **Natural Disaster Frequency**: Number of significant natural disasters per year.
-- **Air Quality Index (AQI)**: Measures air pollution levels, with higher values indicating worse air quality.
 
 ---
 
@@ -44,43 +34,30 @@ Each metric is scored on a normalized scale of **0–100**, where:
 
 ### **Normalization Process**
 For each metric, raw data is normalized using predefined thresholds:
-Normalized Score = (1 - ((Raw Value - Min) / (Max - Min))) × 100
+
+\[
+\text{Normalized Score} = \left(1 - \frac{\text{Raw Value} - \text{Min}}{\text{Max} - \text{Min}}\right) \times 100
+\]
 
 - **Example** (Inflation Rate):
   - Thresholds: 0%–10%.
   - Raw Value: 4%.
   - Normalized Score:
-(1 - ((4 - 0) / (10 - 0))) × 100 = 60
+    \[
+    \left(1 - \frac{4 - 0}{10 - 0}\right) \times 100 = 60
+    \]
 
 ---
 
-## **Weighting**
+## **Weights and Normalization Ranges**
 
-Each metric contributes to its category score, and each category is weighted to calculate the overall BugOutIndex. The weights are as follows:
-
-### **Category Weights**
-| **Category**         | **Weight (%)** |
-|-----------------------|----------------|
-| **Economics**         | 30             |
-| **Social Health**     | 25             |
-| **Infrastructure**    | 20             |
-| **Environment**       | 15             |
-| **Global Context**    | 10             |
-
-### **Metric Weights Within Categories**
-| **Metric**             | **Category**      | **Weight (%)** |
-|-------------------------|-------------------|----------------|
-| Inflation Rate          | Economics         | 12             |
-| Unemployment Rate       | Economics         | 10             |
-| Debt-to-GDP Ratio       | Economics         | 8              |
-| Crime Rate              | Social Health     | 10             |
-| Homelessness Rate       | Social Health     | 8              |
-| Trust in Government     | Social Health     | 7              |
-| Grid Outages            | Infrastructure    | 8              |
-| Food Price Index        | Infrastructure    | 7              |
-| Healthcare Capacity     | Infrastructure    | 5              |
-| Natural Disaster Frequency | Environment    | 8              |
-| Air Quality Index       | Environment       | 7              |
+| **Metric**           | **Weight** | **Normalization Range**       |
+|-----------------------|------------|--------------------------------|
+| **Inflation Rate**    | 0.15       | 0%–10%                        |
+| **Crime Rate**        | 0.12       | 500–2000 incidents per 100,000 |
+| **Unemployment Rate** | 0.10       | 0%–20%                        |
+| **Debt-to-GDP Ratio** | 0.07       | 0%–200%                       |
+| **Homelessness Rate** | 0.09       | 0%–1%                         |
 
 ---
 
@@ -89,15 +66,19 @@ Each metric contributes to its category score, and each category is weighted to 
 ### **Step 1: Metric Normalization**
 Each metric is normalized to a 0–100 scale based on its thresholds.
 
-### **Step 2: Category Scores**
-For each category, the weighted average of metric scores is calculated:
+### **Step 2: Metric Weighting**
+Each normalized metric score is multiplied by its weight to calculate its contribution to the overall score:
 
-Category Score = Σ (Metric Score × Metric Weight)
+\[
+\text{Metric Weighted Score} = \text{Normalized Score} \times \text{Metric Weight}
+\]
 
 ### **Step 3: Overall Index Calculation**
-The overall BugOutIndex score is calculated as the weighted average of category scores:
+The overall BugOutIndex score is the sum of all weighted metric scores:
 
-BugOutIndex = Σ (Category Score × Category Weight)
+\[
+\text{BugOutIndex} = \sum (\text{Metric Weighted Score})
+\]
 
 ---
 
@@ -108,7 +89,8 @@ BugOutIndex = Σ (Category Score × Category Weight)
 | **90.00–100.00** | **High Stability (Low Risk)**                  | Focus on long-term planning and gradual improvements. |
 | **70.00–89.99**  | **Moderate Stability (Warning Signs)**         | Monitor trends closely; prepare contingency plans.   |
 | **50.00–69.99**  | **Low Stability (Heightened Risk)**            | Initiate preparedness measures; consider evacuation triggers. |
-| **<50**          | **Critical Instability (Collapse Likely)**     | Activate bug-out plans; immediate action recommended. |
+| **<50.00**       | **Critical Instability (Collapse Likely)**     | Activate bug-out plans; immediate action recommended. |
+
 ---
 
 ## **Version History**
@@ -121,10 +103,25 @@ BugOutIndex = Σ (Category Score × Category Weight)
 
 ## **Versioning and Licensing**
 
-The BugOutIndex uses a versioning system to ensure transparency as the methodology evolves. Historical scores can be recalculated using past versions. 
+The BugOutIndex uses a versioning system to ensure transparency as the methodology evolves. Historical scores can be recalculated using past versions.
 
 BugOutIndex is dual-licensed:
 - **AGPL-3.0** for open-source use.
-- A **commercial license** for proprietary use. Contact [adam.w.montville@gmail.com] for details.
+- A **commercial license** for proprietary use. Contact [adam.w.montville@gmail.com](mailto:adam.w.montville@gmail.com) for details.
 
 For more information, see the [LICENSE](./LICENSE.md) file.
+
+## **Future Metrics in Development**
+
+The BugOutIndex team is actively exploring additional metrics to expand the scoring system. These metrics are currently in the "incubating" phase and are not part of the core scoring methodology.
+
+You can find detailed documentation for these incubating metrics in the **[incubating folder](./incubating/)**.
+
+### Incubating Metrics
+- [Food Price Index](./incubating/food_price_index.md)
+- [Air Quality Index](./incubating/air_quality_index.md)
+- [Healthcare Capacity](./incubating/healthcare_capacity.md)
+- [Epidemic Spread Index](./incubating/Epidemic_Spread_Index.md)
+- [Grid Outages](./incubating/grid_outages.md)
+- [Natural Disaster Frequency](./incubating/natural_disaster_frequency.md)
+- [Trust in Government](./incubating/Government_Authoritarianism_Index.md)

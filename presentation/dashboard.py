@@ -25,7 +25,6 @@ metric_names = [
     "debt_to_gdp_ratio",
     "homelessness_rate",
     "trust_in_government",
-    "food_price_index",
 ]
 
 # Fetch the data dynamically
@@ -50,7 +49,6 @@ metric_ranges = {
     "debt_to_gdp_ratio": (0, 200),  # Example range
     "homelessness_rate": (0, 1),  # Example range (percent of population)
     "trust_in_government": (0, 100),  # Percentage
-    "food_price_index": (1, 6),  # Index values
 }
 
 # Weights for scoring
@@ -61,7 +59,6 @@ weights = {
     "debt_to_gdp_ratio": 0.07,
     "homelessness_rate": 0.09,
     "trust_in_government": 0.08,
-    "food_price_index": 0.09,
 }
 
 # Calculate overall score

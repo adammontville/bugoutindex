@@ -55,6 +55,7 @@ Normalized Score = (1 - ((Raw Value - Min) / (Max - Min))) * 100
 | **Unemployment Rate** | 0.10       | 0%–20%                        |
 | **Debt-to-GDP Ratio** | 0.07       | 0%–200%                       |
 | **Homelessness Rate** | 0.09       | 0%–1%                         |
+| **Trust in Government Score** | 0.09 | 0%-100% |
 
 ---
 

@@ -66,11 +66,12 @@ overall_score = calculate_category_score(metrics, metric_ranges, weights)
 
 # Streamlit dashboard
 st.title("BugOutIndex Dashboard")
-st.write("### Metrics")
-st.json(metrics)
-st.write("### Normalized and Scored Metrics")
+#st.write("### Metrics")
+#st.json(metrics)
+#st.write("### Normalized and Scored Metrics")
 st.write(f"Overall Stability Score: {overall_score:.2f}")
 st.write("### Metric Details")
 for metric, value in metrics.items():
-    st.write(f"{metric}: {value}")
+    st.write(f"{metric}: {next(iter(value.values()))}")
+
 st.write("\nThis product uses the FRED® API but is not endorsed or certified by the Federal Reserve Bank of St. Louis.")

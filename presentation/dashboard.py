@@ -34,7 +34,6 @@ for metric in metric_names:
         module = importlib.import_module(f"data.fetch.fetch_{metric}")
         fetched_data = module.fetch()
         test = fetched_data["data"].get(metric.split("_")[0], 0)
-        #metrics[metric] = fetched_data["data"].get(metric.split("_")[0], 0)
         metrics[metric] = fetched_data["data"]
     except ModuleNotFoundError:
         st.warning(f"Fetch module for {metric} not implemented.")
@@ -66,9 +65,6 @@ overall_score = calculate_category_score(metrics, metric_ranges, weights)
 
 # Streamlit dashboard
 st.title("BugOutIndex Dashboard")
-#st.write("### Metrics")
-#st.json(metrics)
-#st.write("### Normalized and Scored Metrics")
 st.write(f"Overall Stability Score: {overall_score:.2f}")
 st.write("### Metric Details")
 for metric, value in metrics.items():

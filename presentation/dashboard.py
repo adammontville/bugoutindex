@@ -7,67 +7,60 @@
 # GNU Affero General Public License v3.0 as published by the Free Software Foundation.
 #
 # For proprietary or commercial use, please contact: your-email@example.com
-
-"""
-Module Description:
-Streamlit dashboard for the BugOutIndex system. Displays dynamically fetched,
-normalized, and scored metrics.
-"""
+import pandas as pd
 import streamlit as st
-import importlib
-from processing.scoring_v1 import calculate_category_score
+import ast
 
-# Define the metrics to fetch
-metric_names = [
-    "inflation_rate",
-    "crime_rate",
-    "unemployment_rate",
-    "debt_to_gdp_ratio",
-    "homelessness_rate",
-    "trust_in_government",
-]
+# File path to historical data
+CSV_FILE_PATH = "data/historical_bugout_index.csv"
 
-# Fetch the data dynamically
-metrics = {}
-for metric in metric_names:
+
+# Function to load the latest BugOut Index score
+@st.cache_data
+def load_latest_bugout_index():
     try:
-        module = importlib.import_module(f"data.fetch.fetch_{metric}")
-        fetched_data = module.fetch()
-        test = fetched_data["data"].get(metric.split("_")[0], 0)
-        metrics[metric] = fetched_data["data"]
-    except ModuleNotFoundError:
-        st.warning(f"Fetch module for {metric} not implemented.")
-    except Exception as e:
-        st.error(f"Error fetching {metric}: {str(e)}")
+        df = pd.read_csv(CSV_FILE_PATH, parse_dates=["date"])
+        if df.empty:
+            return None
+        latest_entry = df.sort_values(by="date", ascending=False).iloc[0]  # Get the latest row
+        return latest_entry
+    except FileNotFoundError:
+        return None
 
-# Ranges for normalization
-metric_ranges = {
-    "inflation_rate": (0, 10),  # Example range
-    "crime_rate": (500, 2000),  # Example range
-    "unemployment_rate": (0, 20),  # Example range
-    "debt_to_gdp_ratio": (0, 200),  # Example range
-    "homelessness_rate": (0, 1),  # Example range (percent of population)
-    "trust_in_government": (0, 100),
-}
 
-# Weights for scoring
-weights = {
-    "inflation_rate": 0.15,
-    "crime_rate": 0.12,
-    "unemployment_rate": 0.1,
-    "debt_to_gdp_ratio": 0.07,
-    "homelessness_rate": 0.09,
-    "trust_in_government": 0.09,
-}
+# Load latest data
+latest_data = load_latest_bugout_index()
 
-# Calculate overall score
-overall_score = calculate_category_score(metrics, metric_ranges, weights)
+# Streamlit UI
+st.title("BugOut Index Dashboard")
 
-# Streamlit dashboard
-st.title("BugOutIndex Dashboard")
-st.write(f"Overall Stability Score: {overall_score:.2f}")
-st.write("### Metric Details")
-for metric, value in metrics.items():
-    st.write(f"{metric}: {next(iter(value.values()))}")
+if latest_data is not None:
+    #st.header(f"📅 Date: {latest_data['date'].strftime('%Y-%m-%d')}")
+    st.subheader(f"BugOut Index as of {latest_data['date'].strftime('%Y-%m-%d')}: "
+                 f"**{latest_data['bugout_index']:.2f}**")
+
+    st.write("### Breakdown of Latest Metrics:")
+
+    # Display each metric
+    for column in latest_data.index:
+        if column not in ["date", "bugout_index"]:
+            try:
+                # Convert string to dictionary if it's stored as a string representation
+                value = latest_data[column]
+                if isinstance(value, str) and value.startswith("{") and value.endswith("}"):
+                    value = ast.literal_eval(value)  # Convert to real dictionary
+
+                # Extract numerical value from dictionary or convert directly
+                if isinstance(value, dict):
+                    value = float(list(value.values())[0])  # Extract the first numeric value
+                else:
+                    value = float(value)  # Convert to float if it's already numeric
+
+                st.write(f"**{column.replace('_', ' ').title()}**: {value:.2f}")
+            except (ValueError, SyntaxError):
+                st.write(f"**{column.replace('_', ' ').title()}**: {latest_data[column]}")  # Fallback
+
+else:
+    st.error("No historical data found. Run the index calculation first.")
 
 st.write("\nThis product uses the FRED® API but is not endorsed or certified by the Federal Reserve Bank of St. Louis.")

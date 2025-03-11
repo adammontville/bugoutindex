@@ -1,0 +1,2 @@
+date,bugout_index,inflation_rate,crime_rate,unemployment_rate,debt_to_gdp_ratio,homelessness_rate,trust_in_government
+2025-03-10,62.46664029153761,{'rate': 2.999412512831117},{'incident_rate': 1061.4},{'rate': 4.1},{'ratio': 121.86755},{'rate': 0.235},{'trust': 65.0}

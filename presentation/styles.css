@@ -1,0 +1,35 @@
+body {
+        background-color: #1e1e1e;
+        color: #f0f0f0;
+    }
+    .stAlert {
+        font-weight: bold;
+        border-radius: 5px;
+    }
+    .stable {
+        background-color: #4caf50;
+        color: white;
+        padding: 10px;
+        border-radius: 5px;
+        font-size: 20px;
+        text-align: center;
+    }
+    .moderate {
+        background-color: #ff9800;
+        color: white;
+        padding: 10px;
+        border-radius: 5px;
+        font-size: 30px;
+        text-align: center;
+        font-weight: bold;
+    }
+    .critical {
+        background-color: #ff3b30;
+        color: white;
+        padding: 10px;
+        border-radius: 5px;
+        font-size: 40px;
+        text-align: center;
+        font-weight: bolder;
+    }
+}

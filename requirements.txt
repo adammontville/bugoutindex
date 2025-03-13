@@ -2,3 +2,4 @@ streamlit
 pytest
 requests
 python-dotenv
+pandas

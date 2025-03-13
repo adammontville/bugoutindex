@@ -10,9 +10,16 @@
 import pandas as pd
 import streamlit as st
 import ast
+import base64
 
 # File path to historical data
 CSV_FILE_PATH = "data/historical_bugout_index.csv"
+CSS_FILE_PATH = "presentation/styles.css"
+
+
+def get_base64_image(image_path):
+    with open(image_path, "rb") as img_file:
+        return base64.b64encode(img_file.read()).decode()
 
 
 # Function to load the latest BugOut Index score
@@ -28,17 +35,46 @@ def load_latest_bugout_index():
         return None
 
 
-# Load latest data
+def get_stability_class(score):
+    if score >= 90:
+        return "stable"
+    elif 50 <= score < 90:
+        return "moderate"
+    else:
+        return "critical"
+
+
+# Function to load CSS from an external file
+def load_css(css_file):
+    with open(css_file, "r") as f:
+        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+
+
+# Set up the style and grab latest data
+load_css(CSS_FILE_PATH)
 latest_data = load_latest_bugout_index()
 
-# Streamlit UI
-st.title("BugOut Index Dashboard")
+# Show logo
+image_base64 = get_base64_image("static/BugOutIndex200x200.png")
+
+st.markdown(
+    f"""
+    <div style="display: flex; justify-content: center;">
+        <img src="data:image/png;base64,{image_base64}" width="200">
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+
+# Display the title
+st.markdown("<h1 style='text-align: center;'>BugOut Index Dashboard</h1>", unsafe_allow_html=True)
 
 if latest_data is not None:
-    #st.header(f"📅 Date: {latest_data['date'].strftime('%Y-%m-%d')}")
-    st.subheader(f"BugOut Index as of {latest_data['date'].strftime('%Y-%m-%d')}: "
-                 f"**{latest_data['bugout_index']:.2f}**")
+    stability_class = get_stability_class(latest_data["bugout_index"])
 
+    # Display BOI with color indicator
+    st.markdown(f'<div class="{stability_class}">BugOut Index Score: {latest_data["bugout_index"]:.2f}</div>',
+                unsafe_allow_html=True)
     st.write("### Breakdown of Latest Metrics:")
 
     # Display each metric
@@ -63,4 +99,5 @@ if latest_data is not None:
 else:
     st.error("No historical data found. Run the index calculation first.")
 
-st.write("\nThis product uses the FRED® API but is not endorsed or certified by the Federal Reserve Bank of St. Louis.")
+st.write("\n\n*This product uses the FRED® API but is not endorsed or certified by the Federal Reserve Bank of St."
+         " Louis.*")

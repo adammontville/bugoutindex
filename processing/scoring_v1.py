@@ -14,6 +14,19 @@ Module Description:
 """
 from processing.normalize import normalize_metric
 
+# def calculate_category_score(metrics, metric_ranges, weights):
+#     """Calculate the weighted score for a category."""
+#     total_score = 0
+#     total_weight = 0
+#     for metric, value in metrics.items():
+#         # Extract the numeric value for scoring
+#         if isinstance(value, dict):
+#             value = list(value.values())[0]  # Extract the first numeric value
+#         min_value, max_value = metric_ranges[metric]
+#         weight = weights[metric]
+#         total_score += normalize_metric(value, min_value, max_value) * weight
+#         total_weight += weight
+#     return total_score / total_weight if total_weight > 0 else 0
 def calculate_category_score(metrics, metric_ranges, weights):
     """Calculate the weighted score for a category."""
     total_score = 0
@@ -24,7 +37,10 @@ def calculate_category_score(metrics, metric_ranges, weights):
             value = list(value.values())[0]  # Extract the first numeric value
         min_value, max_value = metric_ranges[metric]
         weight = weights[metric]
-        total_score += normalize_metric(value, min_value, max_value) * weight
+
+        # Invert normalization for trust_in_government (higher trust = higher BOI)
+        inverse = metric == "trust_in_government"
+
+        total_score += normalize_metric(value, min_value, max_value, inverse) * weight
         total_weight += weight
     return total_score / total_weight if total_weight > 0 else 0
-

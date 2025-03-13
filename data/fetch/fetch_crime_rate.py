@@ -7,34 +7,40 @@
 # GNU Affero General Public License v3.0 as published by the Free Software Foundation.
 #
 # For proprietary or commercial use, please contact: your-email@example.com
+import pandas as pd
 
 """
 Fetcher for violent crime incident rate.
 """
-
 def fetch():
     """
-    Fetch the latest violent crime incident rate.
-
-    For now, this fetcher uses hardcoded 2023 data.
+    Fetch the latest violent crime incident rate (Real-Time Crime Index)
     """
-    print("Fetching violent crime incident rate (hardcoded for 2023)...")
+    # Load the locally downloaded dataset
+    file_path = "data/final_sample.csv"  # Adjust the path as needed
+    df = pd.read_csv(file_path)
 
-    # Hardcoded data for 2023
-    incidents = 3523845  # Total violent crime incidents
-    population = 332000000  # Approximate U.S. population in 2023
+    # Keep only the most recent month (latest data available)
+    latest_date = df["Date"].max()
+    df_latest = df[df["Date"] == latest_date]
 
-    # Calculate incident rate
-    incident_rate = (incidents / population) * 100000
+    # Compute crime rate per 100,000 people
+    df_latest["Total Crime"] = df_latest["Violent Crime_mvs_12mo"] + df_latest["Property Crime_mvs_12mo"]
+    df_latest["Crime Rate"] = (df_latest["Total Crime"] / df_latest["FBI.Population.Covered"]) * 100000
 
-    # Return the normalized data structure
+    # Aggregate to get national average
+    national_crime_rate = df_latest["Crime Rate"].mean()
+
+    print(f"National Crime Rate: {national_crime_rate:.2f} per 100,000 people")
+
     return {
         "status": "success",
         "fetched_at": "2025-01-01T00:00:00Z",  # Example fetch timestamp
         "data": {
-            "incident_rate": round(incident_rate, 2)  # Rounded to two decimal places
+            "incident_rate": round(national_crime_rate, 2)  # Rounded to two decimal places
         }
     }
+
 
 if __name__ == "__main__":
     # Debugging fetcher output

@@ -16,6 +16,7 @@ Module Description:
 
 def fetch():
     """Fetch the latest Homelessness Rate data."""
-    print("Fetching Homelessness Rate...")
-    # Simulate fetching data
-    return {"status": "success", "fetched_at": "2025-01-01T00:00:00Z", "data": {"rate": 0.235}}
+
+    # Fetch data hard-coded based on the most recent HUD data
+    # See the data directory for the raw data.
+    return {"status": "success", "fetched_at": "2025-01-01T00:00:00Z", "data": {"rate": 0.23}}

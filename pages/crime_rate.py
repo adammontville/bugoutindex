@@ -2,7 +2,7 @@ import streamlit as st
 import base64
 
 CSS_FILE_PATH = "presentation/styles.css"
-MARKDOWN_FILE_PATH = "static/markdown/overview.md"
+MARKDOWN_FILE_PATH = "static/markdown/crime_rate.md"
 
 
 # Function to load CSS from an external file

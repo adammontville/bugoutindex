@@ -2,3 +2,4 @@ date,bugout_index,inflation_rate,crime_rate,unemployment_rate,debt_to_gdp_ratio,
 2025-03-10,62.46664029153761,{'rate': 2.999412512831117},{'incident_rate': 1061.4},{'rate': 4.1},{'ratio': 121.86755},{'rate': 0.235},{'trust': 65.0}
 2025-03-11,62.46664029153761,{'rate': 2.999412512831117},{'incident_rate': 1061.4},{'rate': 4.1},{'ratio': 121.86755},{'rate': 0.235},{'trust': 65.0}
 2025-03-12,59.042306758491414,{'rate': 2.8142703731568783},{'incident_rate': np.float64(2723.0)},{'rate': 4.1},{'ratio': 121.86755},{'rate': 0.235},{'trust': 65.0}
+2025-03-13,59.98585514558819,{'rate': 2.8142703731568783},{'incident_rate': np.float64(2723.0)},{'rate': 4.1},{'ratio': 121.86755},{'rate': 0.23},{'trust_in_government': 41.0}

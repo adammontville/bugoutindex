@@ -55,7 +55,7 @@ load_css(CSS_FILE_PATH)
 latest_data = load_latest_bugout_index()
 
 # Show logo
-image_base64 = get_base64_image("static/BugOutIndex200x200.png")
+image_base64 = get_base64_image("static/media/BugOutIndex200x200.png")
 
 st.markdown(
     f"""

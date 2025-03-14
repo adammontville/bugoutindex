@@ -77,7 +77,7 @@ Normalized Score = (1 - (Unemployment Rate - 0) / (20 - 0)) * 100
 ---
 
 ## **7. Weighting**
-- **Unemployment Rate Weight in BOI:** **0.10 (10%)**
+- **Unemployment Rate Weight in BOI:** **0.12 (12%)**
 - **Justification for Weighting:**
   - Unemployment is a **key driver of economic instability**.
   - It **correlates with other factors**, such as crime, homelessness, and social unrest.

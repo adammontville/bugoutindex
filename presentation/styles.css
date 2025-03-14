@@ -32,4 +32,10 @@ body {
         text-align: center;
         font-weight: bolder;
     }
+    .footnote {
+    font-size: 0.8em; /* Adjust for smaller font */
+    color: #666; /* Slightly muted color */
+    text-align: center; /* Optional: Center-align */
+    margin-top: 10px;
+}
 }

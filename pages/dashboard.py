@@ -96,8 +96,21 @@ if latest_data is not None:
             except (ValueError, SyntaxError):
                 st.write(f"**{column.replace('_', ' ').title()}**: {latest_data[column]}")  # Fallback
 
+    st.markdown(
+        """
+        ### Stability Matrix
+        | **Score Range** | **Interpretation** |
+        |---------------|--------------------|
+        | **90–100** | High Stability (Low Risk) |
+        | **75–89** | Moderate Stability (Warning Signs) |
+        | **40–74** | Low Stability (Heightened Risk) |
+        | **<40** | Critical Instability (Collapse Likely) |
+        """
+    )
 else:
     st.error("No historical data found. Run the index calculation first.")
 
-st.write("\n\n*This product uses the FRED® API but is not endorsed or certified by the Federal Reserve Bank of St."
-         " Louis.*")
+st.markdown(
+    "\n\n<div class='footnote'>*This product uses the FRED® API but is not endorsed or certified by the Federal Reserve Bank of St. Louis.*</div>",
+    unsafe_allow_html=True
+)

@@ -31,13 +31,11 @@ def fetch():
     # Aggregate to get national average
     national_crime_rate = df_latest["Crime Rate"].mean()
 
-    print(f"National Crime Rate: {national_crime_rate:.2f} per 100,000 people")
-
     return {
         "status": "success",
         "fetched_at": "2025-01-01T00:00:00Z",  # Example fetch timestamp
         "data": {
-            "incident_rate": round(national_crime_rate, 2)  # Rounded to two decimal places
+            "incident_rate": float(round(national_crime_rate, 2))
         }
     }
 

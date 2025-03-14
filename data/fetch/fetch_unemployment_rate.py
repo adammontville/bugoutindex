@@ -57,7 +57,7 @@ def fetch():
         return {
             "status": "success",
             "fetched_at": observation_date,
-            "data": {"rate": unemployment_rate}
+            "data": {"unemployment_rate": unemployment_rate}
         }
     except requests.RequestException as e:
         return {"status": "error", "message": f"Request error: {str(e)}"}

@@ -60,7 +60,7 @@ def fetch():
         return {
             "status": "success",
             "fetched_at": observation_date,
-            "data": {"ratio": debt_to_gdp_ratio}
+            "data": {"debt_to_gdp_ratio": debt_to_gdp_ratio}
         }
     except requests.RequestException as e:
         return {"status": "error", "message": f"Request error: {str(e)}"}

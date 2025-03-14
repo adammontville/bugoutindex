@@ -63,7 +63,7 @@ def fetch():
         return {
             "status": "success",
             "fetched_at": current_date,
-            "data": {"rate": inflation_rate}
+            "data": {"inflation_rate": inflation_rate}
         }
 
     except requests.RequestException as e:

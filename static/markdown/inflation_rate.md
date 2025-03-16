@@ -59,17 +59,17 @@ To integrate the **Inflation Rate** into the **BugOut Index**, it must be normal
 
 - **Normalization Range:**  
 ```angular2html
-Min = 0% (Low/Stable Inflation)
-Max = 10% (High Inflation Crisis)
+Min = -10% (Low/Stable Inflation)
+Max = 15% (High Inflation Crisis)
 ```
 
 - **Formula:**  
 ```angular2html
-Normalized Score = (1 - (Inflation Rate - 0) / (10 - 0)) * 100
+Normalized Score = (1 - (Inflation Rate - (-10)) / (15 - (-10))) * 100
 ```
 
-- An **inflation rate of 0%** results in a **BOI contribution of 100 (full stability)**.
-- An **inflation rate of 10% or higher** results in a **BOI contribution of 0 (critical instability)**.
+- An **inflation rate of -10%** results in a **BOI contribution of 100 (full stability)**.
+- An **inflation rate of 15% or higher** results in a **BOI contribution of 0 (critical instability)**.
 
 ---
 

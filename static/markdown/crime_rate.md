@@ -56,17 +56,17 @@ To integrate the **Crime Rate** into the **BugOut Index**, it must be normalized
 - **Normalization Range:**  
 
 ```angular2html
-Min = 1000 (low crime)
-Max = 4000 (high crime)
+Min = 500 (low crime)
+Max = 8000 (high crime)
 ```
 
 - **Formula:**  
 ```angular2html
-Normalized Score = (1 - (Crime Rate - 1000) / (4000 - 1000)) * 100
+Normalized Score = (1 - (Crime Rate - 500) / (8000 - 500)) * 100
 ```
 
-- A **crime rate of 1000 per 100k** results in a **BOI contribution of 100 (full stability)**.
-- A **crime rate of 4000 per 100k** results in a **BOI contribution of 0 (critical instability)**.
+- A **crime rate of 500 per 100k** results in a **BOI contribution of 100 (full stability)**.
+- A **crime rate of 8000 per 100k** results in a **BOI contribution of 0 (critical instability)**.
 
 ---
 

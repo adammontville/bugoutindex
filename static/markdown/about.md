@@ -7,11 +7,11 @@ The **BugOut Index (BOI)** is a measure of **societal stability**, combining key
 
 ## **Score Interpretation**
 | **Score Range** | **Interpretation** |
-|---------------|--------------------|
-| **90–100** | High Stability (Low Risk) |
-| **75–89** | Moderate Stability (Warning Signs) |
-| **40–74** | Low Stability (Heightened Risk) |
-| **<40** | Critical Instability (Collapse Likely) |
+|-----------------|--------------------|
+| **70–100**      | High Stability (Low Risk) |
+| **55–69**       | Moderate Stability (Warning Signs) |
+| **40–54**       | Low Stability (Heightened Risk) |
+| **<40**         | Critical Instability (Collapse Likely) |
 
 A **higher BOI score** indicates **greater societal stability**, while a **lower score** signals **growing risks or breakdowns in critical systems**.
 
@@ -74,22 +74,22 @@ If you have feedback or suggestions, feel free to reach out!
 
 The BugOut Index (BOI) is designed to provide a meaningful, data-driven assessment of societal stability, allowing for clear interpretation of risks based on multiple key indicators. To ensure the BOI serves as a **practical guide for decision-making**, we have established four risk categories:  
 
-- **High Stability (75–100)**  
-- **Moderate Stability (60–74)**  
-- **Low Stability (40–59)**  
+- **High Stability (70–100)**  
+- **Moderate Stability (55–69)**  
+- **Low Stability (40–54)**  
 - **Critical Instability (<40)**  
 
 These thresholds are designed to reflect **gradual shifts in societal conditions**, avoiding premature alarm while ensuring that warning signs are recognized early enough for action.  
 
-In setting these ranges, we considered a variety of factors, including **historical trends in economic and social stability, the distribution of past BOI scores, and the relative weight of different contributing metrics**. A threshold for **High Stability** at **75 and above** ensures that only societies with strong economic indicators, low crime, and high trust in governance achieve this rating. **Moderate Stability (60–74)** reflects societies where risks are emerging—there may be rising inflation, declining institutional trust, or early signs of crime trends worsening, but the overall framework remains intact.  
+In setting these ranges, we considered a variety of factors, including **historical trends in economic and social stability, the distribution of past BOI scores, and the relative weight of different contributing metrics**. A threshold for **High Stability** at **70 and above** ensures that only societies with strong economic indicators, low crime, and high trust in governance achieve this rating. **Moderate Stability (55–69)** reflects societies where risks are emerging—there may be rising inflation, declining institutional trust, or early signs of crime trends worsening, but the overall framework remains intact.  
 
-As risks escalate, the BOI enters **Low Stability (40–59),** a range that captures societies experiencing **sustained economic hardship, public unrest, rising crime, and institutional failure at multiple levels**. This is the critical transition period where nations, states, or regions may begin seeing **systemic instability**. Below this, **Critical Instability (<40)** represents conditions that **strongly indicate imminent collapse or severe societal distress**—for example, when crime and unemployment reach historic highs, inflation devalues the currency at extreme rates, and trust in government erodes to the point of mass noncompliance or rebellion.  
+As risks escalate, the BOI enters **Low Stability (40–54),** a range that captures societies experiencing **sustained economic hardship, public unrest, rising crime, and institutional failure at multiple levels**. This is the critical transition period where nations, states, or regions may begin seeing **systemic instability**. Below this, **Critical Instability (<40)** represents conditions that **strongly indicate imminent collapse or severe societal distress**—for example, when crime and unemployment reach historic highs, inflation devalues the currency at extreme rates, and trust in government erodes to the point of mass noncompliance or rebellion.  
 
 Each of these thresholds is shaped by the **relative importance of different metrics** within the BOI.  
 
 - **Inflation (15%) and crime rates (12%)** are among the most heavily weighted, as these factors have direct, widespread effects on economic security and personal safety.  
-- **Unemployment (10%), homelessness (9%), and debt-to-GDP ratio (7%)** each contribute to a broader economic picture.  
-- **Trust in government (9%)** serves as a measure of institutional stability—a key indicator of whether a society has the capacity to self-correct before reaching a crisis.  
+- **Unemployment (12%), homelessness (9%), and debt-to-GDP ratio (12%)** each contribute to a broader economic picture.  
+- **Trust in government (12%)** serves as a measure of institutional stability—a key indicator of whether a society has the capacity to self-correct before reaching a crisis.  
 
 These weights ensure that while no single factor dominates the BOI, trends in multiple areas must converge before a society shifts into a new risk category.  
 

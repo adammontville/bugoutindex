@@ -60,17 +60,17 @@ To integrate the **Homelessness Rate** into the **BugOut Index**, it must be nor
 
 ```angular2html
 Min = 0% (No homelessness)
-Max = 1% (Severe homelessness crisis)
+Max = 0.5% (Severe homelessness crisis)
 ```
 
 - **Formula:**  
 
 ```angular2html
-Normalized Score = (1 - (Homelessness Rate - 0) / (1 - 0)) * 100
+Normalized Score = (1 - (Homelessness Rate - 0) / (0.5 - 0)) * 100
 ```
 
 - A **homelessness rate of 0%** results in a **BOI contribution of 100 (full stability)**.
-- A **homelessness rate of 1% or higher** results in a **BOI contribution of 0 (critical instability)**.
+- A **homelessness rate of 0.5% or higher** results in a **BOI contribution of 0 (critical instability)**.
 
 ---
 

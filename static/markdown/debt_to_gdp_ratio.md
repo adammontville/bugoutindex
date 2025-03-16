@@ -75,7 +75,7 @@ Normalized Score = (1 - (Debt-to-GDP - 0) / (200 - 0)) * 100
 ---
 
 ## **7. Weighting**
-- **Debt-to-GDP Ratio Weight in BOI:** **0.09 (9%)**
+- **Debt-to-GDP Ratio Weight in BOI:** **0.12 (12%)**
 - **Justification for Weighting:**
   - While important, the **Debt-to-GDP ratio does not create immediate instability**, unlike crime or inflation.
   - However, sustained high debt levels **increase long-term economic risk** (e.g., recession, inflation, currency devaluation).

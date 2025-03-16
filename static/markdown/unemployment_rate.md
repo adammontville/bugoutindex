@@ -63,16 +63,16 @@ To integrate the **Unemployment Rate** into the **BugOut Index**, it must be nor
 
 ```angular2html
 Min = 0% (Full Employment)
-Max = 20% (Severe Unemployment Crisis)
+Max = 25% (Severe Unemployment Crisis)
 ```
 
 - **Formula:**  
 ```angular2html
-Normalized Score = (1 - (Unemployment Rate - 0) / (20 - 0)) * 100
+Normalized Score = (1 - (Unemployment Rate - 0) / (25 - 0)) * 100
 ```
 
 - An **unemployment rate of 0%** results in a **BOI contribution of 100 (full stability)**.
-- An **unemployment rate of 20% or higher** results in a **BOI contribution of 0 (critical instability)**.
+- An **unemployment rate of 25% or higher** results in a **BOI contribution of 0 (critical instability)**.
 
 ---
 

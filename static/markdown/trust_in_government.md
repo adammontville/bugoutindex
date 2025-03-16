@@ -80,7 +80,7 @@ Normalized Score = (1 - (Distrust Score - 0) / (80 - 0)) * 100
 ---
 
 ## **7. Weighting**
-- **Trust in Government Weight in BOI:** **0.09 (9%)**
+- **Trust in Government Weight in BOI:** **0.12 (12%)**
 - **Justification for Weighting:**
   - Trust in government **is a strong predictor of political and social stability**.
   - **Moderate weight ensures trust trends impact BOI scores**, but do not dominate over economic or crime-related factors.

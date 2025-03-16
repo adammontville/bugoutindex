@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import ast  # Converts string representations of dictionaries into actual dictionaries
-import base64
+from presentation.display_logo import display_logo
 from processing.scoring_v1 import calculate_category_score
 
 CSS_FILE_PATH = "presentation/styles.css"
@@ -43,25 +43,8 @@ def load_css(css_file):
         st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
 
-def get_base64_image(image_path):
-    with open(image_path, "rb") as img_file:
-        return base64.b64encode(img_file.read()).decode()
-
-
 load_css(CSS_FILE_PATH)
-
-# Show logo
-image_base64 = get_base64_image("static/media/BugOutIndex200x200.png")
-
-st.markdown(
-    f"""
-    <div style="display: flex; justify-content: center;">
-        <img src="data:image/png;base64,{image_base64}" width="200">
-    </div>
-    """,
-    unsafe_allow_html=True
-)
-
+display_logo()
 
 def extract_numeric(value):
     """Extracts the numeric value from a string or dictionary-like entry."""

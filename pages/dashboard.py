@@ -10,17 +10,12 @@
 import pandas as pd
 import streamlit as st
 import ast
-import base64
+from presentation.display_logo import display_logo
 
 
 # File path to historical data
 CSV_FILE_PATH = "data/historical_bugout_index.csv"
 CSS_FILE_PATH = "presentation/styles.css"
-
-
-def get_base64_image(image_path):
-    with open(image_path, "rb") as img_file:
-        return base64.b64encode(img_file.read()).decode()
 
 
 # Function to load the latest BugOut Index score
@@ -57,17 +52,7 @@ def load_css(css_file):
 load_css(CSS_FILE_PATH)
 latest_data = load_latest_bugout_index()
 
-# Show logo
-image_base64 = get_base64_image("static/media/BugOutIndex200x200.png")
-
-st.markdown(
-    f"""
-    <div style="display: flex; justify-content: center;">
-        <img src="data:image/png;base64,{image_base64}" width="200">
-    </div>
-    """,
-    unsafe_allow_html=True
-)
+display_logo()
 
 # Display the title
 st.markdown("<h1 style='text-align: center;'>BugOut Index Dashboard</h1>", unsafe_allow_html=True)

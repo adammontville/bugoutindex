@@ -27,6 +27,17 @@ weights = {
 }
 
 
+def get_stability_class(score):
+    if score >= 70:
+        return "stable"
+    elif 55 <= score < 70:
+        return "moderate"
+    elif 40 <= score < 55:
+        return "severe"
+    else:
+        return "critical"
+
+
 # Function to load CSS from an external file
 def load_css(css_file):
     with open(css_file, "r") as f:
@@ -125,8 +136,11 @@ with col2:
 # Calculate the BugOut Index dynamically
 boi_score = calculate_category_score(user_inputs, metric_ranges, weights)
 
-# Display the updated score
-st.metric(label="Current BugOut Index Score", value=round(boi_score, 2))
+stability_class = get_stability_class(boi_score)
+
+# Display BOI with color indicator
+st.markdown(f'<div class="{stability_class}">Simulated BugOut Index Score: {boi_score:.2f}</div>',
+            unsafe_allow_html=True)
 
 st.write("Use the sliders above to adjust the metrics and see how the BugOut Index changes dynamically.")
 

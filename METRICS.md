@@ -80,10 +80,10 @@ BugOutIndex = Σ (Metric Weighted Score)
 
 | **Score Range**  | **Interpretation**                              | **Suggested Actions**                                |
 |------------------|------------------------------------------------|-----------------------------------------------------|
-| **90.00–100.00** | **High Stability (Low Risk)**                  | Focus on long-term planning and gradual improvements. |
-| **70.00–89.99**  | **Moderate Stability (Warning Signs)**         | Monitor trends closely; prepare contingency plans.   |
-| **50.00–69.99**  | **Low Stability (Heightened Risk)**            | Initiate preparedness measures; consider evacuation triggers. |
-| **<50.00**       | **Critical Instability (Collapse Likely)**     | Activate bug-out plans; immediate action recommended. |
+| **70.00–100.00** | **High Stability (Low Risk)**                  | Focus on long-term planning and gradual improvements. |
+| **55.00–69.99**  | **Moderate Stability (Warning Signs)**         | Monitor trends closely; prepare contingency plans.   |
+| **40.00–54.99**  | **Low Stability (Heightened Risk)**            | Initiate preparedness measures; consider evacuation triggers. |
+| **<40.00**       | **Critical Instability (Collapse Likely)**     | Activate bug-out plans; immediate action recommended. |
 
 ---
 

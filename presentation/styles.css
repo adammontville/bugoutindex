@@ -15,9 +15,18 @@ body {
         text-align: center;
     }
     .moderate {
-        background-color: #ff9800;
-        color: white;
+        background-color: #ffff00;
+        color: black;
         padding: 10px;
+        border-radius: 5px;
+        font-size: 30px;
+        text-align: center;
+        font-weight: bold;
+    }
+    .severe {
+        background-color: #ff9800;
+        colore: white;
+        padding: 10px
         border-radius: 5px;
         font-size: 30px;
         text-align: center;

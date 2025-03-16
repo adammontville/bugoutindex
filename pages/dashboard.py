@@ -37,10 +37,12 @@ def load_latest_bugout_index():
 
 
 def get_stability_class(score):
-    if score >= 90:
+    if score >= 70:
         return "stable"
-    elif 50 <= score < 90:
+    elif 55 <= score < 70:
         return "moderate"
+    elif 40 <= score < 55:
+        return "severe"
     else:
         return "critical"
 
@@ -102,9 +104,9 @@ if latest_data is not None:
         ### Stability Matrix
         | **Score Range** | **Interpretation** |
         |---------------|--------------------|
-        | **90–100** | High Stability (Low Risk) |
-        | **75–89** | Moderate Stability (Warning Signs) |
-        | **40–74** | Low Stability (Heightened Risk) |
+        | **70-100** | High Stability (Low Risk) |
+        | **55–69** | Moderate Stability (Warning Signs) |
+        | **40–54** | Low Stability (Heightened Risk) |
         | **<40** | Critical Instability (Collapse Likely) |
         """
     )

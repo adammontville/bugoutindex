@@ -6,13 +6,12 @@ from processing.scoring_v1 import calculate_category_score
 
 CSS_FILE_PATH = "presentation/styles.css"
 
-# Define metric ranges (same as used in normalization)
 metric_ranges = {
-    "inflation_rate": (0, 10),
-    "incident_rate": (1000, 4000),
-    "unemployment_rate": (0, 20),
+    "inflation_rate": (-10, 15),
+    "incident_rate": (500, 8000),
+    "unemployment_rate": (0, 25),
     "debt_to_gdp_ratio": (0, 200),
-    "homelessness_rate": (0, 1),
+    "homelessness_rate": (0, 0.5),
     "trust_in_government": (0, 80),
 }
 
@@ -21,9 +20,9 @@ weights = {
     "inflation_rate": 0.15,
     "incident_rate": 0.12,
     "unemployment_rate": 0.12,
-    "debt_to_gdp_ratio": 0.09,
+    "debt_to_gdp_ratio": 0.12,
     "homelessness_rate": 0.09,
-    "trust_in_government": 0.09,
+    "trust_in_government": 0.12,
 }
 
 

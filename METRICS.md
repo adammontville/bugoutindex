@@ -48,14 +48,14 @@ Normalized Score = (1 - ((Raw Value - Min) / (Max - Min))) * 100
 
 ## **Weights and Normalization Ranges**
 
-| **Metric**           | **Weight** | **Normalization Range**         |
-|-----------------------|------------|---------------------------------|
-| **Inflation Rate**    | 0.15       | 0%–10%                          |
-| **Crime Rate**        | 0.12       | 1000–4000 incidents per 100,000 |
-| **Unemployment Rate** | 0.12       | 0%–20%                          |
-| **Debt-to-GDP Ratio** | 0.09       | 0%–200%                         |
-| **Homelessness Rate** | 0.09       | 0%–1%                           |
-| **Trust in Government Score** | 0.09       | 0%-80%                          |
+| **Metric**           | **Weight** | **Normalization Range**        |
+|-----------------------|------------|--------------------------------|
+| **Inflation Rate**    | 0.15       | -15%–10%                       |
+| **Crime Rate**        | 0.12       | 500–8000 incidents per 100,000 |
+| **Unemployment Rate** | 0.12       | 0%–25%                         |
+| **Debt-to-GDP Ratio** | 0.12       | 0%–200%                        |
+| **Homelessness Rate** | 0.09       | 0%–0.5%                        |
+| **Trust in Government Score** | 0.12       | 0%-80%                         |
 
 ---
 

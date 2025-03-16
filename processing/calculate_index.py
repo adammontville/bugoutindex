@@ -42,7 +42,7 @@ for metric in metric_names:
 # Ranges for normalization
 metric_ranges = {
     "inflation_rate": (0, 10),  # Example range
-    "crime_rate": (1000, 4000),  # Example range
+    "incident_rate": (1000, 4000),  # Example range
     "unemployment_rate": (0, 20),  # Example range
     "debt_to_gdp_ratio": (0, 200),  # Example range
     "homelessness_rate": (0, 1),  # Example range (percent of population)

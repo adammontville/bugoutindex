@@ -12,6 +12,7 @@ import streamlit as st
 import ast
 import base64
 
+
 # File path to historical data
 CSV_FILE_PATH = "data/historical_bugout_index.csv"
 CSS_FILE_PATH = "presentation/styles.css"

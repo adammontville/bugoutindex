@@ -30,7 +30,8 @@ st.markdown("""
 pages = {
     "🪲 BugOut Index": [
         st.Page("pages/dashboard.py", title="Dashboard", icon="📟"),
-        st.Page("pages/about.py", title="About the BOI", icon="ℹ️")
+        st.Page("pages/about.py", title="About the BOI", icon="ℹ️"),
+        st.Page("pages/boi_simulator.py", title="Index Simulator", icon="🎛️")
      ],
     "📓 Metrics Documentation": [
         st.Page("pages/inflation_rate.py", title="Inflation Rate", icon="💰"),

@@ -91,7 +91,7 @@ BugOutIndex = Σ (Metric Weighted Score)
 
 | **Version** | **Date**       | **Changes**                                           |
 |-------------|----------------|-----------------------------------------------------|
-| 1.0.0       | January 1, 2025 | Initial release with core metrics and methodology. |
+| 1.0.0       | March 16, 2025 | Initial release with core metrics and methodology. |
 
 ---
 

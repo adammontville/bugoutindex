@@ -19,7 +19,7 @@ echo "Pushing deployment branch to GitHub..."
 git push origin deployment
 
 # Step 5: SSH into Raspberry Pi and pull the latest deployment (once SSH is configured)
-echo "Attempting to update deployment on Raspberry Pi..."
-ssh pi@your-pi-ip "cd ~/bugoutindex && git pull origin deployment && sudo systemctl restart bugoutindex"
-
-echo "Deployment completed successfully!"
+#echo "Attempting to update deployment on Raspberry Pi..."
+#ssh pi@your-pi-ip "cd ~/bugoutindex && git pull origin deployment && sudo systemctl restart bugoutindex"
+#
+#echo "Deployment completed successfully!"

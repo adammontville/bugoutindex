@@ -9,6 +9,11 @@
 # For proprietary or commercial use, please contact: your-email@example.com
 import streamlit as st
 
+st.set_page_config(
+    page_title="BugOut Index",
+    page_icon="static/media/favicon.ico"
+)
+
 # Inject custom CSS for navigation
 st.markdown("""
     <style>

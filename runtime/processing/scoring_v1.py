@@ -12,7 +12,7 @@
 Module Description:
 <Add a description of this module here>
 """
-from processing.normalize import normalize_metric
+from runtime.processing.normalize import normalize_metric
 
 
 def calculate_category_score(metrics, metric_ranges, weights):

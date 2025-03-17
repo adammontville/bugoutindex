@@ -1,8 +1,8 @@
 import streamlit as st
 import pandas as pd
 import ast  # Converts string representations of dictionaries into actual dictionaries
-from presentation.display_logo import display_logo
-from processing.scoring_v1 import calculate_category_score
+from runtime.presentation.display_logo import display_logo
+from runtime.processing.scoring_v1 import calculate_category_score
 
 CSS_FILE_PATH = "presentation/styles.css"
 

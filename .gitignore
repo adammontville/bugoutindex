@@ -71,7 +71,7 @@ instance/
 .scrapy
 
 # Sphinx pages
-pages/_build/
+runtime/pages/_build/
 
 # PyBuilder
 .pybuilder/

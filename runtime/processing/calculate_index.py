@@ -13,8 +13,8 @@ Module Description:
 Manages the top-level score calculation.
 """
 import importlib
-from processing.log_history import log_bugout_index
-from processing.scoring_v1 import calculate_category_score
+from runtime.processing.log_history import log_bugout_index
+from runtime.processing.scoring_v1 import calculate_category_score
 
 # Define the metrics to fetch
 metric_names = [

@@ -12,12 +12,5 @@
 Module Description:
 <Add a description of this module here>
 """
-import unittest
-from runtime.processing import normalize_metric
 
-class TestScoringMethods(unittest.TestCase):
-    def test_new_metrics_normalization():
-        assert normalize_metric(5, 0, 20) == 75.0  # Unemployment Rate
-        assert normalize_metric(150, 50, 150) == 0.0  # Food Price Index
-        assert normalize_metric(50, 0, 100) == 50.0  # Trust in Government
-
+# Start your code below

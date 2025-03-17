@@ -22,4 +22,9 @@ git push origin deployment
 #echo "Attempting to update deployment on Raspberry Pi..."
 #ssh pi@your-pi-ip "cd ~/bugoutindex && git pull origin deployment && sudo systemctl restart bugoutindex"
 #
-#echo "Deployment completed successfully!"
+
+# Step 6: Switch back to main
+echo "Switching back to main"
+git checkout main
+
+echo "Deployment completed successfully!"

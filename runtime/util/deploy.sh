@@ -11,12 +11,12 @@ git pull origin main
 
 # Step 3: Merge main into deployment
 echo "Merging main into deployment..."
-git checkout deploy
+git checkout deployment
 git merge main --no-ff -m "Merging latest changes from main into deployment"
 
 # Step 4: Push the updated deployment branch to GitHub
 echo "Pushing deployment branch to GitHub..."
-git push origin deploy
+git push origin deployment
 
 # Step 5: SSH into Raspberry Pi and pull the latest deployment (once SSH is configured)
 #echo "Attempting to update deployment on Raspberry Pi..."

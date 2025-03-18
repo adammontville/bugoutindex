@@ -101,7 +101,8 @@ with col1:
             min_value=float(metric_ranges[metric][0]),
             max_value=float(metric_ranges[metric][1]),
             value=latest_values[metric],
-            step=(metric_ranges[metric][1] - metric_ranges[metric][0]) / 100
+            step=(metric_ranges[metric][1] - metric_ranges[metric][0]) / 100,
+            key=metric,
         )
 
 with col2:
@@ -111,7 +112,8 @@ with col2:
             min_value=float(metric_ranges[metric][0]),
             max_value=float(metric_ranges[metric][1]),
             value=latest_values[metric],
-            step=(metric_ranges[metric][1] - metric_ranges[metric][0]) / 100
+            step=(metric_ranges[metric][1] - metric_ranges[metric][0]) / 100,
+            key=metric,
         )
 
 

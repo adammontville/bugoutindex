@@ -55,17 +55,18 @@ latest_data = load_latest_bugout_index()
 display_logo()
 
 # Display the title
-st.markdown("<h1 style='text-align: center;'>BugOut Index Dashboard</h1>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align: center;'>BugOut Index</h1>", unsafe_allow_html=True)
 
 if latest_data is not None:
     stability_class = get_stability_class(latest_data["bugout_index"])
 
     # Display BOI with color indicator
-    st.markdown(f'<div class="{stability_class}">BugOut Index Score: {latest_data["bugout_index"]:.2f}</div>',
+    st.markdown(f'<div class="{stability_class}">{latest_data["bugout_index"]:.2f}</div>',
                 unsafe_allow_html=True)
-    st.write("### Breakdown of Latest Metrics:")
 
-    # Display each metric
+    current_metrics = {}
+
+    # Get metrics
     for column in latest_data.index:
         if column not in ["date", "bugout_index"]:
             try:
@@ -80,21 +81,36 @@ if latest_data is not None:
                 else:
                     value = float(value)  # Convert to float if it's already numeric
 
-                st.write(f"**{column.replace('_', ' ').title()}**: {value:.2f}")
+                current_metrics[column] = f"{value:.2f}"
+
+                #st.write(f"**{column.replace('_', ' ').title()}**: {value:.2f}")
             except (ValueError, SyntaxError):
                 st.write(f"**{column.replace('_', ' ').title()}**: {latest_data[column]}")  # Fallback
 
-    st.markdown(
-        """
-        ### Stability Matrix
-        | **Score Range** | **Interpretation** |
-        |---------------|--------------------|
-        | **70-100** | High Stability (Low Risk) |
-        | **55–69** | Moderate Stability (Warning Signs) |
-        | **40–54** | Low Stability (Heightened Risk) |
-        | **<40** | Critical Instability (Collapse Likely) |
-        """
-    )
+    col1, col2 = st.columns(2)
+
+    with col1:
+
+        st.write("#### Current Metrics")
+        markdown_table = "| Metric | Value |\n| --- | --- |\n"  # Header and separator
+
+        for key, value in current_metrics.items():
+            markdown_table += f"| {key.replace('_', ' ').title()} | {value} |\n"
+
+        st.markdown(markdown_table)
+
+    with col2:
+        st.markdown(
+            """
+            #### Stability Matrix
+            | **Score Range** | **Interpretation** |
+            |---------------|--------------------|
+            | **70-100** | High Stability (Low Risk) |
+            | **55–69** | Moderate Stability (Warning Signs) |
+            | **40–54** | Low Stability (Heightened Risk) |
+            | **<40** | Critical Instability (Collapse Likely) |
+            """
+        )
 else:
     st.error("No historical data found. Run the index calculation first.")
 

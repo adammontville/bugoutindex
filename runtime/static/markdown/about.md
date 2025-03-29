@@ -1,5 +1,3 @@
-# **About the BugOut Index**
-
 ## **What is the BugOut Index?**
 The **BugOut Index (BOI)** is a measure of **societal stability**, combining key economic, crime, and governance indicators into a **single numerical score**. This index is designed to provide **a real-time assessment of risk levels**, helping individuals, policymakers, and analysts understand **shifts in stability** over time.
 

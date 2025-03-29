@@ -18,6 +18,8 @@ def load_markdown(file_path):
 
 display_logo()
 
+st.markdown("<h1 style='text-align: center;'>Debt-to-GDP Ratio</h1>", unsafe_allow_html=True)
+
 # Load the Markdown file
 markdown_content = load_markdown(MARKDOWN_FILE_PATH)
 

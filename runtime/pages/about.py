@@ -21,6 +21,8 @@ load_css(CSS_FILE_PATH)
 
 display_logo()
 
+st.markdown("<h1 style='text-align: center;'>About the BugOut Index</h1>", unsafe_allow_html=True)
+
 # Load the Markdown file
 markdown_content = load_markdown(MARKDOWN_FILE_PATH)
 

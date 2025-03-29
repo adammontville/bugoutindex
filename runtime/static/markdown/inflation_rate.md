@@ -1,5 +1,3 @@
-# Inflation Rate
-
 ## **1. Description**
 The **Inflation Rate** measures the rate at which the general price level of goods and services is rising, reducing purchasing power over time. It is a critical economic indicator that reflects the **cost of living, monetary stability, and economic confidence**. Persistent high inflation can lead to **reduced consumer spending, economic instability, and social unrest**, making it an essential factor in the BugOut Index.
 

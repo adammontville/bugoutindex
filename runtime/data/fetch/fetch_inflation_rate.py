@@ -19,12 +19,13 @@ Module Description:
 #     return {"status": "success", "fetched_at": "2025-01-01T00:00:00Z", "data": {"rate": 2.5}}
 import os
 import requests
+import streamlit as st
 from dotenv import load_dotenv
 
 load_dotenv()
 
 FRED_API_BASE_URL = "https://api.stlouisfed.org/fred/series/observations"
-FRED_API_KEY = os.getenv("FRED_API_KEY").strip()
+FRED_API_KEY = st.secrets["FRED_API_KEY"]
 SERIES_ID = "CPIAUCSL"
 
 def fetch():

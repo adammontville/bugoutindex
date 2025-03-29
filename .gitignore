@@ -1,5 +1,5 @@
 .DS_Store
-
+runtime/.streamlit/
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -174,3 +174,4 @@ cython_debug/
 .idea/
 
 .DS_Store
+/runtime/.streamlit/secrets.toml

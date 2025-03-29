@@ -8,7 +8,6 @@
 #
 # For proprietary or commercial use, please contact: your-email@example.com
 import streamlit as st
-import os
 
 st.set_page_config(
     page_title="BugOut Index",
@@ -23,9 +22,11 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Set toolbar mode based on environment
-env = os.getenv("STREAMLIT_ENV", "dev")  # Default to "dev"
+env = st.secrets["STREAMLIT_ENV"]
 toolbar_mode = "viewer" if env == "prod" else "auto"
 st.set_option("client.toolbarMode", toolbar_mode)
+
+print(st.secrets["STREAMLIT_ENV"])
 
 # Inject custom CSS for navigation
 st.markdown("""

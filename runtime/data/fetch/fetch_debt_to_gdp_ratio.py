@@ -17,8 +17,8 @@ Module Description:
 #     print("Fetching Debt-to-GDP Ratio...")
 #     # Simulate fetching data
 #     return {"status": "success", "fetched_at": "2025-01-01T00:00:00Z", "data": {"ratio": 120.5}}
-import os
 import requests
+import streamlit as st
 from dotenv import load_dotenv
 
 # Load environment variables from .env if available
@@ -26,7 +26,7 @@ load_dotenv()
 
 # Constants
 FRED_API_BASE_URL = "https://api.stlouisfed.org/fred/series/observations"
-FRED_API_KEY = os.getenv("FRED_API_KEY").strip()
+FRED_API_KEY = st.secrets["FRED_API_KEY"]
 SERIES_ID = "GFDEGDQ188S"  # Federal Debt as Percent of GDP
 
 def fetch():

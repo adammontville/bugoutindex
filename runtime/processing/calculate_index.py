@@ -30,7 +30,7 @@ metric_names = [
 metrics = {}
 for metric in metric_names:
     try:
-        module = importlib.import_module(f"data.fetch.fetch_{metric}")
+        module = importlib.import_module(f"runtime.data.fetch.fetch_{metric}")
         fetched_data = module.fetch()
         test = fetched_data["data"].get(metric.split("_")[0], 0)
         metrics[metric] = fetched_data["data"]

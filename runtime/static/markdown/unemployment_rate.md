@@ -1,5 +1,3 @@
-# Unemployment Rate
-
 ## **1. Description**
 The **Unemployment Rate** measures the percentage of the labor force that is actively seeking but unable to find work. It is a key economic indicator that reflects the **health of the job market, economic stability, and overall financial well-being of a population**. 
 

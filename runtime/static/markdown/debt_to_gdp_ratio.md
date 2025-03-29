@@ -1,5 +1,3 @@
-# Debt-to-GDP Ratio
-
 ## **1. Description**
 The **Debt-to-GDP Ratio** measures a country's total government debt as a percentage of its **Gross Domestic Product (GDP)**. It indicates the **government’s ability to manage its debt relative to economic output** and is a key measure of **fiscal stability and economic sustainability**.
 

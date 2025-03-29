@@ -1,5 +1,3 @@
-# Homelessness Rate
-
 ## **1. Description**
 The **Homelessness Rate** measures the percentage of the population experiencing homelessness at a given time. It serves as a critical indicator of **economic distress, housing affordability, and social stability**. Rising homelessness rates suggest **worsening economic conditions, lack of affordable housing, and potential failures in social safety nets**, making this metric a key component of the BugOut Index.
 

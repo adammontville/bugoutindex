@@ -8,11 +8,24 @@
 #
 # For proprietary or commercial use, please contact: your-email@example.com
 import streamlit as st
+import os
 
 st.set_page_config(
     page_title="BugOut Index",
     page_icon="static/media/favicon.ico"
 )
+
+# CSS for hamburger menu and Deploy button
+st.markdown("""
+    <style>
+    #MainMenu {visibility: hidden;}  /* Hamburger menu */
+    </style>
+""", unsafe_allow_html=True)
+
+# Set toolbar mode based on environment
+env = os.getenv("STREAMLIT_ENV", "dev")  # Default to "dev"
+toolbar_mode = "viewer" if env == "prod" else "auto"
+st.set_option("client.toolbarMode", toolbar_mode)
 
 # Inject custom CSS for navigation
 st.markdown("""

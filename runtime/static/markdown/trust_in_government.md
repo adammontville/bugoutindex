@@ -1,5 +1,3 @@
-# Trust in Government
-
 ## **1. Description**
 The **Trust in Government** metric measures public confidence in key government institutions. It reflects how much people believe their government is competent, transparent, and acting in their best interests. **Higher trust in government typically indicates greater stability**, while **declining trust can signal unrest, governance failures, or weakening institutional legitimacy**.
 

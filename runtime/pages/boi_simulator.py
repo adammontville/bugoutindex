@@ -86,8 +86,8 @@ def load_latest_values():
 # Load latest values from CSV
 latest_values = load_latest_values()
 
-# Page title
-st.title("BugOut Index Simulator")
+# Display the title
+st.markdown("<h1 style='text-align: center;'>BugOut Index Simulator</h1>", unsafe_allow_html=True)
 
 # Organize sliders into columns for better layout
 col1, col2 = st.columns(2)
@@ -101,7 +101,8 @@ with col1:
             min_value=float(metric_ranges[metric][0]),
             max_value=float(metric_ranges[metric][1]),
             value=latest_values[metric],
-            step=(metric_ranges[metric][1] - metric_ranges[metric][0]) / 100
+            step=(metric_ranges[metric][1] - metric_ranges[metric][0]) / 100,
+            key=metric,
         )
 
 with col2:
@@ -111,7 +112,8 @@ with col2:
             min_value=float(metric_ranges[metric][0]),
             max_value=float(metric_ranges[metric][1]),
             value=latest_values[metric],
-            step=(metric_ranges[metric][1] - metric_ranges[metric][0]) / 100
+            step=(metric_ranges[metric][1] - metric_ranges[metric][0]) / 100,
+            key=metric,
         )
 
 

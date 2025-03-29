@@ -87,6 +87,7 @@ if latest_data is not None:
             except (ValueError, SyntaxError):
                 st.write(f"**{column.replace('_', ' ').title()}**: {latest_data[column]}")  # Fallback
 
+    st.markdown("---")
     col1, col2 = st.columns(2)
 
     with col1:
@@ -103,7 +104,7 @@ if latest_data is not None:
         st.markdown(
             """
             #### Stability Matrix
-            | **Score Range** | **Interpretation** |
+            | **Range** | **Interpretation** |
             |---------------|--------------------|
             | **70-100** | High Stability (Low Risk) |
             | **55–69** | Moderate Stability (Warning Signs) |
@@ -114,6 +115,7 @@ if latest_data is not None:
 else:
     st.error("No historical data found. Run the index calculation first.")
 
+st.markdown("---")
 st.markdown(
     "\n\n<div class='footnote'>*This product uses the FRED® API but is not endorsed or certified by the Federal Reserve Bank of St. Louis.*</div>",
     unsafe_allow_html=True

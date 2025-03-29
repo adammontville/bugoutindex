@@ -86,8 +86,8 @@ def load_latest_values():
 # Load latest values from CSV
 latest_values = load_latest_values()
 
-# Page title
-st.title("BugOut Index Simulator")
+# Display the title
+st.markdown("<h1 style='text-align: center;'>BugOut Index Simulator</h1>", unsafe_allow_html=True)
 
 # Organize sliders into columns for better layout
 col1, col2 = st.columns(2)

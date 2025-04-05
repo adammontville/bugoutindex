@@ -1,5 +1,5 @@
 import streamlit as st
-from runtime.presentation.display_logo import display_logo
+from presentation.display_logo import display_logo
 
 CSS_FILE_PATH = "presentation/styles.css"
 MARKDOWN_FILE_PATH = "static/markdown/unemployment_rate.md"

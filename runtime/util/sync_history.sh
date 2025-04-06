@@ -1,15 +1,20 @@
 #!/bin/bash
 
-# Navigate to the repository root
+# Switch to deployment branch and ensure it's up-to-date
+echo "Updating local deployment branch from origin..."
+git checkout deployment
+git pull origin deployment
+
+# Switch back to main and update it
 echo "Switching to main branch and updating..."
 git checkout main
 git pull origin main
 
-# Pull only the historical_bugout_index.csv file from deployment
+# Now pull only the historical_bugout_index.csv file from up-to-date local deployment branch
 echo "Fetching latest historical data from deployment..."
 git checkout deployment -- data/historical_bugout_index.csv
 
-# Stage the file explicitly
+# Explicitly stage the updated file
 git add data/historical_bugout_index.csv
 
 # Commit and push changes

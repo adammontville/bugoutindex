@@ -12,10 +12,10 @@ git pull origin main
 
 # Now pull only the historical_bugout_index.csv file from up-to-date local deployment branch
 echo "Fetching latest historical data from deployment..."
-git checkout deployment -- data/historical_bugout_index.csv
+git checkout deployment -- runtime/data/historical_bugout_index.csv
 
 # Explicitly stage the updated file
-git add data/historical_bugout_index.csv
+git add runtime/data/historical_bugout_index.csv
 
 # Commit and push changes
 echo "Committing and pushing changes to main..."

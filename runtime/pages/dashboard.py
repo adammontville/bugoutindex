@@ -64,6 +64,9 @@ if latest_data is not None:
     st.markdown(f'<div class="{stability_class}">{latest_data["bugout_index"]:.2f}</div>',
                 unsafe_allow_html=True)
 
+    freshness = latest_data["date"].strftime("%Y-%m-%d")
+    st.write(f"Last updated: {freshness}")
+
     current_metrics = {}
 
     # Get metrics

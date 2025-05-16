@@ -59,3 +59,4 @@ date,bugout_index,inflation_rate,incident_rate,unemployment_rate,debt_to_gdp_rat
 2025-05-12,57.892823946643304,{'inflation_rate': 2.4055852640280357},{'incident_rate': 2723.0},{'unemployment_rate': 4.2},{'debt_to_gdp_ratio': 121.85026},{'homelessness_rate': 0.23},{'trust_in_government': 41.0}
 2025-05-13,57.95268956854174,{'inflation_rate': 2.3337465177498933},{'incident_rate': 2723.0},{'unemployment_rate': 4.2},{'debt_to_gdp_ratio': 121.85026},{'homelessness_rate': 0.23},{'trust_in_government': 41.0}
 2025-05-14,57.95268956854174,{'inflation_rate': 2.3337465177498933},{'incident_rate': 2723.0},{'unemployment_rate': 4.2},{'debt_to_gdp_ratio': 121.85026},{'homelessness_rate': 0.23},{'trust_in_government': 41.0}
+2025-05-15,57.95268956854174,{'inflation_rate': 2.3337465177498933},{'incident_rate': 2723.0},{'unemployment_rate': 4.2},{'debt_to_gdp_ratio': 121.85026},{'homelessness_rate': 0.23},{'trust_in_government': 41.0}

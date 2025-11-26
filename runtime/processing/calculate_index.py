@@ -13,8 +13,9 @@ Module Description:
 Manages the top-level score calculation.
 """
 import importlib
-from processing.log_history import log_bugout_index
-from processing.scoring_v1 import calculate_category_score
+import csv
+import os
+from datetime import datetime
 
 # Define the metrics to fetch
 metric_names = [
@@ -25,6 +26,47 @@ metric_names = [
     "homelessness_rate",
     "trust_in_government",
 ]
+
+def normalize_metric(raw_value, min_value, max_value, inverse=False):
+    """Normalize a raw value to a 0-100 scale. Inverts if needed."""
+    if max_value == min_value:
+        return 0  # Avoid division by zero
+    norm_score = (1 - ((raw_value - min_value) / (max_value - min_value))) * 100
+    return 100 - norm_score if inverse else norm_score  # Invert for stability metrics
+
+def calculate_category_score(metrics, metric_ranges, weights):
+    """Calculate the weighted score for a category."""
+    total_score = 0
+    total_weight = 0
+    for metric, value in metrics.items():
+        # Extract the numeric value for scoring
+        if isinstance(value, dict):
+            value = list(value.values())[0]  # Extract the first numeric value
+        min_value, max_value = metric_ranges[metric]
+        weight = weights[metric]
+
+        # Invert normalization for trust_in_government (higher trust = higher BOI)
+        inverse = metric == "trust_in_government"
+
+        total_score += normalize_metric(value, min_value, max_value, inverse) * weight
+        total_weight += weight
+    return total_score / total_weight if total_weight > 0 else 0
+
+
+def log_bugout_index(bugout_index, metrics, file_path="data/historical_bugout_index.csv"):
+    """Append BugOut Index score to historical CSV file."""
+    headers = ["date", "bugout_index"] + list(metrics.keys())
+
+    # Check if the file exists
+    file_exists = os.path.isfile(file_path)
+
+    with open(file_path, "a", newline="") as file:
+        writer = csv.writer(file)
+        if not file_exists:
+            writer.writerow(headers)  # Write headers if file is new
+        writer.writerow([datetime.today().strftime("%Y-%m-%d"), bugout_index] + list(metrics.values()))
+
+    print(f"Logged BugOut Index: {bugout_index} on {datetime.today().strftime('%Y-%m-%d')}")
 
 # Fetch the data dynamically
 metrics = {}

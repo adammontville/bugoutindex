@@ -14,8 +14,8 @@ from presentation.display_logo import display_logo
 
 
 # File path to historical data
-CSV_FILE_PATH = "data/historical_bugout_index.csv"
-CSS_FILE_PATH = "presentation/styles.css"
+CSV_FILE_PATH = "./data/historical_bugout_index.csv"
+CSS_FILE_PATH = "./presentation/styles.css"
 
 
 # Function to load the latest BugOut Index score
@@ -28,6 +28,7 @@ def load_latest_bugout_index():
         latest_entry = df.sort_values(by="date", ascending=False).iloc[0]  # Get the latest row
         return latest_entry
     except FileNotFoundError:
+        print("HERE")
         return None
 
 

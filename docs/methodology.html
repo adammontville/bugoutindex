@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BugOut Index — Methodology</title>
+  <meta name="description" content="The BugOut Index — a weekly, data-driven measure of U.S. societal stability combining economic, crime, and governance indicators into a single 0–100 score.">
+  <link rel="stylesheet" href="./assets/style.css">
+</head>
+<body>
+  <div class="wrap">
+    <header class="site">
+      <h1><a href="./index.html" style="text-decoration:none">🪲 BugOut Index</a></h1>
+      <nav>
+        <a href="./index.html">Current</a>
+        <a href="./history.html">History</a>
+        <a href="./methodology.html">Methodology</a>
+        <a href="https://github.com/adammontville/bugoutindex">Source</a>
+      </nav>
+    </header>
+
+<h2 style="margin-top:0">Methodology — v1.0.0</h2>
+<p style="max-width:70ch;color:var(--muted)">
+  The BugOut Index aggregates six normalized metrics into a single weighted score on a 0–100 scale,
+  where higher values indicate greater societal stability. This page describes how the current
+  week's number was produced.
+</p>
+
+<div class="section-title"><h3>1. Inputs and weights</h3></div>
+<table class="hx">
+  <thead>
+    <tr><th>Metric</th><th>Raw value</th><th>Unit</th><th>Normalization range</th><th>Normalized</th><th>Weight</th><th>Source</th></tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td>Inflation Rate</td>
+        <td>3.29</td>
+        <td>%</td>
+        <td>
+−10 to 15        </td>
+        <td>46.86</td>
+        <td>15.0%</td>
+        <td><a href="https://fred.stlouisfed.org/series/CPIAUCSL">FRED (CPIAUCSL)</a></td>
+      </tr>
+      <tr>
+        <td>Violent + Property Crime</td>
+        <td>2,723.00</td>
+        <td>per 100k</td>
+        <td>
+500 to 8,000        </td>
+        <td>70.36</td>
+        <td>12.0%</td>
+        <td><a href="https://github.com/jacobkap/real_time_crime_index">Real-Time Crime Index</a></td>
+      </tr>
+      <tr>
+        <td>Unemployment Rate</td>
+        <td>4.30</td>
+        <td>%</td>
+        <td>
+0 to 25        </td>
+        <td>82.8</td>
+        <td>12.0%</td>
+        <td><a href="https://fred.stlouisfed.org/series/UNRATE">FRED (UNRATE)</a></td>
+      </tr>
+      <tr>
+        <td>Debt-to-GDP Ratio</td>
+        <td>122.57</td>
+        <td>%</td>
+        <td>
+0 to 200        </td>
+        <td>38.72</td>
+        <td>12.0%</td>
+        <td><a href="https://fred.stlouisfed.org/series/GFDEGDQ188S">FRED (GFDEGDQ188S)</a></td>
+      </tr>
+      <tr>
+        <td>Homelessness Rate</td>
+        <td>0.23</td>
+        <td>% of pop.</td>
+        <td>
+0 to 0.5        </td>
+        <td>54.0</td>
+        <td>9.0%</td>
+        <td><a href="https://www.huduser.gov/portal/sites/default/files/pdf/2024-AHAR-Part-1.pdf">HUD AHAR</a></td>
+      </tr>
+      <tr>
+        <td>Trust in Government</td>
+        <td>41.00</td>
+        <td>% confidence</td>
+        <td>
+0 to 80 (inverted)        </td>
+        <td>51.25</td>
+        <td>12.0%</td>
+        <td><a href="https://www.edelman.com/trust">Edelman Trust Barometer</a></td>
+      </tr>
+  </tbody>
+</table>
+
+<div class="section-title"><h3>2. Normalization</h3></div>
+<p>Each metric is normalized to 0–100 using predefined thresholds:</p>
+<pre class="json">normalized = (1 − (raw − min) / (max − min)) × 100</pre>
+<p>Trust in Government is inverted (higher trust → higher stability) by applying <code>100 − normalized</code> after the above transform.</p>
+
+<div class="section-title"><h3>3. Aggregation</h3></div>
+<p>The index is the weight-normalized sum of the per-metric scores:</p>
+<pre class="json">BOI = Σ (normalized_i × weight_i) / Σ weight_i</pre>
+
+<div class="section-title"><h3>4. Risk bands</h3></div>
+<table class="hx">
+  <thead><tr><th>Range</th><th>Band</th><th>Interpretation</th></tr></thead>
+  <tbody>
+    <tr><td>70 – 100</td><td>High Stability</td><td>Low risk — focus on long-term planning.</td></tr>
+    <tr><td>55 – 69.99</td><td>Moderate Stability</td><td>Warning signs — monitor trends; prepare contingencies.</td></tr>
+    <tr><td>40 – 54.99</td><td>Low Stability</td><td>Heightened risk — initiate preparedness measures.</td></tr>
+    <tr><td>Below 40</td><td>Critical Instability</td><td>Collapse likely — activate bug-out plans.</td></tr>
+  </tbody>
+</table>
+
+<div class="section-title"><h3>5. Limitations and caveats</h3></div>
+<ul style="max-width:70ch;color:var(--muted);line-height:1.7">
+  <li><strong>Freshness mismatch.</strong> Inflation, unemployment, and debt-to-GDP update monthly or quarterly; the Edelman trust score updates annually; homelessness is annual (HUD PIT). The BOI is recomputed weekly but will only move when underlying data publishes.</li>
+  <li><strong>National scope.</strong> Crime and homelessness figures are national averages or approximations; local conditions vary substantially.</li>
+  <li><strong>Not a forecast.</strong> The BOI describes current observed conditions relative to chosen thresholds, not future outcomes.</li>
+  <li><strong>Threshold sensitivity.</strong> Because the index is built on fixed normalization ranges, slow drift inside a range will not move the score — the thresholds are calibrated to reflect historically extreme conditions at the endpoints.</li>
+</ul>
+
+<div class="section-title"><h3>6. Reproducibility</h3></div>
+<p>Every weekly run commits the raw inputs, the computed normalized scores, and the final index to this repository. The code that produced this page is open source; you can recompute any historical week by checking out that commit and re-running <code>runtime/publish/weekly_run.py</code>.</p>
+
+    <footer>
+      <div>
+        Methodology v1.0.0 ·
+        Published 2026-04-21 ·
+        Generated 2026-04-21T12:23:36+00:00
+      </div>
+      <div>
+        <a href="./data/latest.json">Raw JSON</a> ·
+        <a href="https://github.com/adammontville/bugoutindex">GitHub</a> ·
+        Dual-licensed (AGPL-3.0 / Commercial)
+      </div>
+    </footer>
+  </div>
+</body>
+</html>

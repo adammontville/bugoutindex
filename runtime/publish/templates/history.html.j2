@@ -1,0 +1,78 @@
+{% extends "_base.html.j2" %}
+{% block title %}BugOut Index — History{% endblock %}
+{% block body %}
+
+<h2 style="margin-top:0">Weekly history</h2>
+<p style="color:var(--muted);max-width:70ch">
+  Trailing {{ boi_history|length }} week(s) of recorded observations. The full CSV is in
+  <code>runtime/data/</code> of the repository.
+</p>
+
+<div class="section-title"><h3>BugOut Index &amp; core metrics</h3></div>
+<div style="overflow-x:auto">
+<table class="hx">
+  <thead>
+    <tr>
+      <th>Date</th>
+      <th>BOI</th>
+      {% for key, meta in metric_labels.items() %}
+        <th>{{ meta.label }}</th>
+      {% endfor %}
+    </tr>
+  </thead>
+  <tbody>
+    {% for row in boi_history|reverse %}
+      <tr>
+        <td>{{ row.date }}</td>
+        <td><strong>{{ row.bugout_index }}</strong></td>
+        {% for key, meta in metric_labels.items() %}
+          <td>{{ row[key] or '—' }}</td>
+        {% endfor %}
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+
+<div class="section-title"><h3>Markets</h3></div>
+<div style="overflow-x:auto">
+<table class="hx">
+  <thead><tr><th>Date</th><th>Gold (USD/oz)</th><th>Silver (USD/oz)</th><th>DXY</th></tr></thead>
+  <tbody>
+    {% for row in markets_history|reverse %}
+      <tr>
+        <td>{{ row.date }}</td>
+        <td>{{ row.gold_usd_per_oz or '—' }}</td>
+        <td>{{ row.silver_usd_per_oz or '—' }}</td>
+        <td>{{ row.dxy or '—' }}</td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+
+<div class="section-title"><h3>Short-term pulse</h3></div>
+<div style="overflow-x:auto">
+<table class="hx">
+  <thead>
+    <tr>
+      <th>Date</th>
+      {% for key, tup in pulse_labels.items() %}
+        <th>{{ tup[0] }}</th>
+      {% endfor %}
+    </tr>
+  </thead>
+  <tbody>
+    {% for row in pulse_history|reverse %}
+      <tr>
+        <td>{{ row.date }}</td>
+        {% for key, tup in pulse_labels.items() %}
+          <td>{{ row[key] or '—' }}</td>
+        {% endfor %}
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+
+{% endblock %}

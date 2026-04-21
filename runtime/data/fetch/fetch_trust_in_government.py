@@ -11,18 +11,32 @@
 Module Description:
 Provides data related to trust in government.
 """
+import os
 import pandas as pd
 
+_HERE = os.path.dirname(os.path.abspath(__file__))
+_DATA_DIR = os.path.abspath(os.path.join(_HERE, ".."))
+
+
 def fetch():
-    """Fetch the 2025 Trust in Government score from the Edelman dataset."""
-    file_path = "data/edelman-trust-barometer-us.csv"
+    """Fetch the most recent Trust in Government score from the Edelman dataset."""
+    candidates = [
+        os.path.join(_DATA_DIR, "edelman-trust-barometer-us.csv"),
+        "data/edelman-trust-barometer-us.csv",
+        "runtime/data/edelman-trust-barometer-us.csv",
+    ]
+    file_path = next((p for p in candidates if os.path.exists(p)), candidates[0])
 
     try:
         df = pd.read_csv(file_path)
         df.columns = df.columns.str.strip().str.lower()
-        government_row = df[df["institution"] == "Government"]
-        trust_score = government_row["2025"].values[0]
-        return {"status": "success", "data": {"trust_in_government": round(float(trust_score), 2)}}
+        government_row = df[df["institution"].str.lower() == "government"]
+        # Pick the most recent year column present in the dataset.
+        year_cols = [c for c in df.columns if c.isdigit()]
+        latest_year = max(year_cols)
+        trust_score = government_row[latest_year].values[0]
+        return {"status": "success", "fetched_at": latest_year,
+                "data": {"trust_in_government": round(float(trust_score), 2)}}
     except KeyError as e:
         return {"status": "error", "message": f"Column missing: {str(e)}"}
     except Exception as e:

@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}BugOut Index{% endblock %}</title>
+  <meta name="description" content="The BugOut Index — a weekly, data-driven measure of U.S. societal stability combining economic, crime, and governance indicators into a single 0–100 score.">
+  <link rel="stylesheet" href="./assets/style.css">
+</head>
+<body>
+  <div class="wrap">
+    <header class="site">
+      <h1><a href="./index.html" style="text-decoration:none">🪲 BugOut Index</a></h1>
+      <nav>
+        <a href="./index.html">Current</a>
+        <a href="./history.html">History</a>
+        <a href="./methodology.html">Methodology</a>
+        <a href="https://github.com/adammontville/bugoutindex">Source</a>
+      </nav>
+    </header>
+    {% block body %}{% endblock %}
+    <footer>
+      <div>
+        Methodology v{{ snapshot.methodology_version }} ·
+        Published {{ snapshot.publication_date }} ·
+        Generated {{ snapshot.generated_at_utc }}
+      </div>
+      <div>
+        <a href="./data/latest.json">Raw JSON</a> ·
+        <a href="https://github.com/adammontville/bugoutindex">GitHub</a> ·
+        Dual-licensed (AGPL-3.0 / Commercial)
+      </div>
+    </footer>
+  </div>
+</body>
+</html>

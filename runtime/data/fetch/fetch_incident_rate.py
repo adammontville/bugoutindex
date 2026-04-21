@@ -7,17 +7,29 @@
 # GNU Affero General Public License v3.0 as published by the Free Software Foundation.
 #
 # For proprietary or commercial use, please contact: your-email@example.com
+import os
 import pandas as pd
 
 """
 Fetcher for violent crime incident rate.
 """
+
+# Resolve path relative to this file so it works from any CWD.
+_HERE = os.path.dirname(os.path.abspath(__file__))
+_DATA_DIR = os.path.abspath(os.path.join(_HERE, ".."))
+
+
 def fetch():
     """
     Fetch the latest violent crime incident rate (Real-Time Crime Index)
     """
-    # Load the locally downloaded dataset
-    file_path = "data/final_sample.csv"  # Adjust the path as needed
+    # Load the locally downloaded dataset — check multiple candidate paths.
+    candidates = [
+        os.path.join(_DATA_DIR, "final_sample.csv"),
+        "data/final_sample.csv",
+        "runtime/data/final_sample.csv",
+    ]
+    file_path = next((p for p in candidates if os.path.exists(p)), candidates[0])
     df = pd.read_csv(file_path)
 
     # Keep only the most recent month (latest data available)

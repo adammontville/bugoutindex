@@ -1,0 +1,99 @@
+{% extends "_base.html.j2" %}
+{% block title %}BugOut Index — {{ snapshot.bugout_index }} · {{ snapshot.interpretation.band }}{% endblock %}
+{% block body %}
+
+<section class="hero">
+  <div>{{ gauge|safe }}</div>
+  <div>
+    <div class="label">Week of {{ snapshot.publication_date }}</div>
+    <h2>{{ snapshot.interpretation.band }}</h2>
+    <div class="sub">{{ snapshot.interpretation.risk }}. The BugOut Index combines six core metrics spanning the economy, public safety, and institutional trust into one 0–100 score. Higher is more stable.</div>
+    <span class="band {{ snapshot.interpretation.band_key }}">{{ snapshot.interpretation.band }}</span>
+    <div class="delta">
+      {% if boi_delta is not none %}
+        Week-over-week: <strong>{{ "%+.2f"|format(boi_delta) }}</strong> points
+      {% else %}
+        Week-over-week: <strong>first recorded week</strong>
+      {% endif %}
+      · {{ history_count }} week(s) of history
+    </div>
+  </div>
+</section>
+
+<div class="section-title">
+  <h3>Core metrics</h3>
+  <span class="hint">Each tile shows the raw value, normalized 0–100 contribution, and weight in the index.</span>
+</div>
+<div class="grid metrics">
+  {% for m in metrics %}
+  <div class="tile">
+    <div class="k">{{ m.label }}</div>
+    <div class="v">{{ m.raw|fmt(m.unit) }}</div>
+    {{ m.sparkline|safe }}
+    <div class="norm-bar"><span style="width: {{ m.normalized or 0 }}%"></span></div>
+    <div class="meta">
+      <span>Normalized {{ (m.normalized if m.normalized is not none else '—') }} / 100</span>
+      <span>Weight {{ m.weight_pct }}%</span>
+    </div>
+    <div class="meta">
+      <span><a href="{{ m.source_url }}">{{ m.source }}</a></span>
+      <span>{% if m.as_of %}as of {{ m.as_of }}{% endif %}</span>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<div class="section-title">
+  <h3>Markets — weekly close</h3>
+  <span class="hint">Spot gold &amp; silver (USD/oz) from <a href="https://gold-api.com">gold-api.com</a>; Broad US Dollar Index from <a href="https://fred.stlouisfed.org/series/DTWEXBGS">FRED (DTWEXBGS)</a>.</span>
+</div>
+<div class="grid markets">
+  {% for mk in markets %}
+  <div class="tile">
+    <div class="k">{{ mk.label }}</div>
+    <div class="v">{{ mk.value|fmt(mk.unit) }}</div>
+    {{ mk.sparkline|safe }}
+    <div class="meta">
+      <span>Week close</span>
+      <span>
+        {% if mk.delta is not none %}
+          <span class="{{ 'delta-up' if mk.delta >= 0 else 'delta-down' }}">
+            {{ "%+.2f"|format(mk.delta) }}% WoW
+          </span>
+        {% else %}
+          —
+        {% endif %}
+      </span>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<div class="section-title">
+  <h3>Short-term pulse</h3>
+  <span class="hint">Faster-moving indicators that sit outside the core index but provide weekly context. Source: <a href="https://fred.stlouisfed.org">FRED</a>.</span>
+</div>
+<div class="grid pulse">
+  {% for p in pulse %}
+  <div class="tile">
+    <div class="k">{{ p.label }}</div>
+    <div class="v">{{ p.value|fmt(p.unit) }}</div>
+    {{ p.sparkline|safe }}
+    <div class="meta">
+      <span><a href="https://fred.stlouisfed.org/series/{{ p.source_id }}">{{ p.source_id }}</a></span>
+      <span>{% if p.as_of %}as of {{ p.as_of }}{% endif %}</span>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<div class="section-title"><h3>About this index</h3></div>
+<p style="max-width:70ch;color:var(--muted);">
+  The BugOut Index is not a forecast or a prediction. It is a transparent, versioned composite score
+  designed to surface slow-moving shifts in stability that individuals and communities can reason about.
+  All inputs come from public sources; see <a href="./methodology.html">methodology</a> for the full
+  calculation, weights, and normalization ranges. Historical scores can be recalculated at any time
+  from the raw data in this repository.
+</p>
+
+{% endblock %}

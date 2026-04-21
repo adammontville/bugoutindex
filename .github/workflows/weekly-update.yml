@@ -1,0 +1,57 @@
+name: Weekly BugOut Index Update
+
+on:
+  schedule:
+    # Friday 22:00 America/Chicago = Saturday 03:00 UTC (CST)
+    # Friday 22:00 America/Chicago = Saturday 03:00 UTC (CDT is 02:00 UTC,
+    # so we run at 03:00 UTC which is 21:00 CDT / 22:00 CST — within the
+    # post-close window year-round).
+    - cron: "0 3 * * 6"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: runtime/requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r runtime/requirements.txt
+
+      - name: Run weekly pipeline
+        env:
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          python -m runtime.publish.weekly_run
+
+      - name: Commit updated data & site
+        run: |
+          git config user.name  "bugout-bot"
+          git config user.email "bugout-bot@users.noreply.github.com"
+          git add runtime/data/weekly_bugout_index.csv \
+                  runtime/data/markets_history.csv \
+                  runtime/data/pulse_history.csv \
+                  docs/
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+          else
+            RUN_DATE=$(date -u +%Y-%m-%d)
+            git commit -m "weekly: BugOut Index update for ${RUN_DATE}"
+            git push
+          fi

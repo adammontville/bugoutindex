@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "methodology_version": "1.0.0",
-  "generated_at_utc": "2026-04-21T12:28:02+00:00",
-  "publication_date": "2026-04-21",
-  "bugout_index": 57.03,
+  "generated_at_utc": "2026-04-25T04:00:45+00:00",
+  "publication_date": "2026-04-25",
+  "bugout_index": 58.95,
   "interpretation": {
     "band": "Moderate Stability",
     "risk": "Warning Signs",
@@ -11,11 +11,11 @@
   },
   "metrics": {
     "inflation_rate": {
-      "raw": 3.2859577528652006,
-      "normalized": 46.86,
+      "raw": null,
+      "normalized": null,
       "weight": 0.15,
-      "source_fetched_at": "2026-03-01",
-      "status": "success"
+      "source_fetched_at": null,
+      "status": "error"
     },
     "incident_rate": {
       "raw": 2723.0,
@@ -25,18 +25,18 @@
       "status": "success"
     },
     "unemployment_rate": {
-      "raw": 4.3,
-      "normalized": 82.8,
+      "raw": null,
+      "normalized": null,
       "weight": 0.12,
-      "source_fetched_at": "2026-03-01",
-      "status": "success"
+      "source_fetched_at": null,
+      "status": "error"
     },
     "debt_to_gdp_ratio": {
-      "raw": 122.56815,
-      "normalized": 38.72,
+      "raw": null,
+      "normalized": null,
       "weight": 0.12,
-      "source_fetched_at": "2025-10-01",
-      "status": "success"
+      "source_fetched_at": null,
+      "status": "error"
     },
     "homelessness_rate": {
       "raw": 0.23,
@@ -54,28 +54,25 @@
     }
   },
   "markets": {
-    "status": "success",
-    "fetched_at": "2026-04-21",
-    "gold_usd_per_oz": 4784.2998,
-    "silver_usd_per_oz": 78.966,
-    "dxy": 118.0795
+    "status": "partial",
+    "fetched_at": "2026-04-25",
+    "gold_usd_per_oz": 4710.7998,
+    "silver_usd_per_oz": 75.807,
+    "dxy": null
   },
   "pulse": {
-    "status": "success",
-    "fetched_at": "2026-04-20",
+    "status": "partial",
+    "fetched_at": "2026-04-18",
     "values": {
-      "initial_jobless_claims": 207000.0,
-      "consumer_sentiment_umich": 56.6,
-      "business_confidence": 98.96989,
-      "yield_curve_10y_2y": 0.54,
-      "vix": 17.48
+      "initial_jobless_claims": 214000.0,
+      "consumer_sentiment_umich": 53.3,
+      "business_confidence": null,
+      "yield_curve_10y_2y": null,
+      "vix": null
     },
     "dates": {
-      "initial_jobless_claims": "2026-04-11",
-      "consumer_sentiment_umich": "2026-02-01",
-      "business_confidence": "2024-01-01",
-      "yield_curve_10y_2y": "2026-04-20",
-      "vix": "2026-04-17"
+      "initial_jobless_claims": "2026-04-18",
+      "consumer_sentiment_umich": "2026-03-01"
     }
   },
   "history": {
@@ -95,6 +92,22 @@
         "debt_to_gdp_ratio_normalized": "38.72",
         "homelessness_rate_normalized": "54.0",
         "trust_in_government_normalized": "51.25"
+      },
+      {
+        "date": "2026-04-25",
+        "bugout_index": "58.95",
+        "inflation_rate": "",
+        "incident_rate": "2723.0",
+        "unemployment_rate": "",
+        "debt_to_gdp_ratio": "",
+        "homelessness_rate": "0.23",
+        "trust_in_government": "41.0",
+        "inflation_rate_normalized": "",
+        "incident_rate_normalized": "70.36",
+        "unemployment_rate_normalized": "",
+        "debt_to_gdp_ratio_normalized": "",
+        "homelessness_rate_normalized": "54.0",
+        "trust_in_government_normalized": "51.25"
       }
     ],
     "markets": [
@@ -103,6 +116,12 @@
         "gold_usd_per_oz": "4784.2998",
         "silver_usd_per_oz": "78.966",
         "dxy": "118.0795"
+      },
+      {
+        "date": "2026-04-25",
+        "gold_usd_per_oz": "4710.7998",
+        "silver_usd_per_oz": "75.807",
+        "dxy": ""
       }
     ],
     "pulse": [
@@ -113,6 +132,14 @@
         "business_confidence": "98.96989",
         "yield_curve_10y_2y": "0.54",
         "vix": "17.48"
+      },
+      {
+        "date": "2026-04-25",
+        "initial_jobless_claims": "214000.0",
+        "consumer_sentiment_umich": "53.3",
+        "business_confidence": "",
+        "yield_curve_10y_2y": "",
+        "vix": ""
       }
     ]
   }

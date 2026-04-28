@@ -243,6 +243,25 @@ def load_history(path: Path, limit: int = 52) -> list:
     return rows[-limit:]
 
 
+MIN_REQUIRED_METRICS = 6  # all six must succeed; refuse to publish a degraded BOI
+
+
+def _summarize_failures(core, markets, pulse) -> list:
+    failed = []
+    for metric, payload in core.items():
+        if payload.get("status") != "success":
+            failed.append(f"core.{metric}: {payload.get('message') or payload.get('errors')}")
+    if markets.get("status") not in ("success", "partial"):
+        failed.append(f"markets: {markets.get('errors') or markets.get('message')}")
+    elif markets.get("errors"):
+        failed.append(f"markets (partial): {markets['errors']}")
+    if pulse.get("status") not in ("success", "partial"):
+        failed.append(f"pulse: {pulse.get('errors') or pulse.get('message')}")
+    elif pulse.get("errors"):
+        failed.append(f"pulse (partial): {pulse['errors']}")
+    return failed
+
+
 def main() -> int:
     run_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
@@ -251,11 +270,42 @@ def main() -> int:
     boi = compute_index(core)
     print(f"[weekly_run] BOI = {boi['index']}")
 
+    successful_core = sum(1 for m in CORE_METRICS
+                          if core.get(m, {}).get("status") == "success")
+    if successful_core < MIN_REQUIRED_METRICS:
+        missing = [m for m in CORE_METRICS
+                   if core.get(m, {}).get("status") != "success"]
+        msg = (f"REFUSING TO PUBLISH: only {successful_core}/{MIN_REQUIRED_METRICS} "
+               f"core metrics succeeded. Missing: {missing}")
+        for line in _summarize_failures(core, {}, {}):
+            print(f"  - {line}", file=sys.stderr)
+        print(msg, file=sys.stderr)
+        return 2
+
     print("[weekly_run] fetching markets…")
     markets = fetch_markets()
 
     print("[weekly_run] fetching short-term pulse…")
     pulse = fetch_pulse()
+
+    # Hard-fail if any non-core fetcher returned no usable data at all.
+    hard_failures = []
+    if markets.get("status") == "error":
+        hard_failures.append("markets fully failed")
+    if pulse.get("status") == "error":
+        hard_failures.append("pulse fully failed")
+    if hard_failures:
+        for line in _summarize_failures(core, markets, pulse):
+            print(f"  - {line}", file=sys.stderr)
+        print(f"REFUSING TO PUBLISH: {'; '.join(hard_failures)}", file=sys.stderr)
+        return 3
+
+    # Soft-warn if any partial failures occurred (some pulse items missing, etc.).
+    partial_warnings = _summarize_failures(core, markets, pulse)
+    if partial_warnings:
+        print("[weekly_run] partial failures (publishing anyway):", file=sys.stderr)
+        for line in partial_warnings:
+            print(f"  - {line}", file=sys.stderr)
 
     print("[weekly_run] appending history…")
     append_history(run_date, boi, markets, pulse)

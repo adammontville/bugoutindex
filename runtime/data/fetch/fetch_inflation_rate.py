@@ -1,73 +1,52 @@
 # BugOutIndex
-# Copyright (C) 2025 Your Name or Organization
-#
-# This file is dual-licensed under the AGPL-3.0 and a commercial license.
-#
-# You may use, modify, and distribute this software under the terms of the
-# GNU Affero General Public License v3.0 as published by the Free Software Foundation.
-#
-# For proprietary or commercial use, please contact: your-email@example.com
+# Copyright (C) 2025 Adam Montville
+# Dual-licensed under AGPL-3.0 and a commercial license.
+"""Year-over-year inflation rate from FRED's CPIAUCSL series."""
+from __future__ import annotations
 
-"""
-Module Description:
-<Add a description of this module here>
-"""
-# def fetch():
-#     """Fetch the latest inflation rate data."""
-#     print("Fetching inflation rate...")
-#     # Simulate fetching data
-#     return {"status": "success", "fetched_at": "2025-01-01T00:00:00Z", "data": {"rate": 2.5}}
-import os
-import requests
-import streamlit as st
-from dotenv import load_dotenv
-
-load_dotenv()
+from runtime.util.http_retry import get_with_retry, RetryError
+from runtime.util.secrets_compat import get_secret
 
 FRED_API_BASE_URL = "https://api.stlouisfed.org/fred/series/observations"
-FRED_API_KEY = st.secrets["FRED_API_KEY"]
 SERIES_ID = "CPIAUCSL"
 
-def fetch():
-    """Fetch the year-over-year inflation rate from the FRED API."""
-    if not FRED_API_KEY:
-        raise EnvironmentError("FRED_API_KEY is not set in the environment variables.")
 
-    params_current = {
+def fetch():
+    api_key = get_secret("FRED_API_KEY")
+    if not api_key:
+        return {"status": "error", "message": "FRED_API_KEY not set"}
+
+    base_params = {
         "series_id": SERIES_ID,
-        "api_key": FRED_API_KEY,
+        "api_key": api_key,
         "file_type": "json",
         "sort_order": "desc",
-        "limit": 1  # Fetch latest CPI value
+        "limit": 1,
     }
 
     try:
-        # Fetch current CPI value
-        response_current = requests.get(FRED_API_BASE_URL, params=params_current)
-        response_current.raise_for_status()
-        data_current = response_current.json()
-        current_cpi = float(data_current["observations"][0]["value"])
-        current_date = data_current["observations"][0]["date"]
+        # Latest CPI.
+        resp = get_with_retry(FRED_API_BASE_URL, params=base_params)
+        latest = resp.json()["observations"][0]
+        current_cpi = float(latest["value"])
+        current_date = latest["date"]
 
-        # Fetch CPI value from 1 year ago
-        params_previous = params_current.copy()
-        params_previous["observation_start"] = str(int(current_date[:4]) - 1) + current_date[4:]
-        params_previous["observation_end"] = params_previous["observation_start"]
-        response_previous = requests.get(FRED_API_BASE_URL, params=params_previous)
-        response_previous.raise_for_status()
-        data_previous = response_previous.json()
-        previous_cpi = float(data_previous["observations"][0]["value"])
+        # CPI from one year prior.
+        prev_params = dict(base_params)
+        prev_year_date = str(int(current_date[:4]) - 1) + current_date[4:]
+        prev_params["observation_start"] = prev_year_date
+        prev_params["observation_end"] = prev_year_date
 
-        # Calculate the inflation rate
+        resp_prev = get_with_retry(FRED_API_BASE_URL, params=prev_params)
+        previous_cpi = float(resp_prev.json()["observations"][0]["value"])
+
         inflation_rate = ((current_cpi - previous_cpi) / previous_cpi) * 100
-
         return {
             "status": "success",
             "fetched_at": current_date,
-            "data": {"inflation_rate": inflation_rate}
+            "data": {"inflation_rate": inflation_rate},
         }
-
-    except requests.RequestException as e:
-        return {"status": "error", "message": f"Request error: {str(e)}"}
-    except (KeyError, IndexError) as e:
-        return {"status": "error", "message": f"Data parsing error: {e}"}
+    except RetryError as exc:
+        return {"status": "error", "message": f"FRED unreachable: {exc}"}
+    except (KeyError, IndexError, ValueError) as exc:
+        return {"status": "error", "message": f"FRED response parse error: {exc}"}

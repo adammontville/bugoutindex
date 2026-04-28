@@ -19,8 +19,7 @@ import time
 from datetime import datetime, timezone
 from typing import Dict, Optional
 
-import requests
-
+from runtime.util.http_retry import get_with_retry, RetryError
 from runtime.util.secrets_compat import get_secret
 
 GOLD_API_URL = "https://api.gold-api.com/price/{symbol}"
@@ -31,12 +30,11 @@ UA = "Mozilla/5.0 (BugOutIndex weekly pipeline; +https://github.com/adammontvill
 
 def _fetch_metal(symbol: str) -> Optional[dict]:
     """Fetch spot USD/oz for XAU or XAG."""
-    resp = requests.get(
+    resp = get_with_retry(
         GOLD_API_URL.format(symbol=symbol),
         headers={"User-Agent": UA, "Accept": "application/json"},
         timeout=TIMEOUT,
     )
-    resp.raise_for_status()
     body = resp.json()
     price = body.get("price")
     updated = body.get("updatedAt") or ""
@@ -59,8 +57,7 @@ def _fetch_dxy_from_fred() -> Optional[dict]:
         "sort_order": "desc",
         "limit": 10,  # tolerate '.' placeholder rows for holidays
     }
-    resp = requests.get(FRED_OBS_URL, params=params, timeout=TIMEOUT)
-    resp.raise_for_status()
+    resp = get_with_retry(FRED_OBS_URL, params=params, timeout=TIMEOUT)
     for obs in resp.json().get("observations", []):
         if obs.get("value") not in (".", "", None):
             try:

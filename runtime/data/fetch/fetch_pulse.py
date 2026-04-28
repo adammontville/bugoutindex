@@ -16,8 +16,7 @@ Series pulled from FRED:
 from __future__ import annotations
 from typing import Dict, Optional
 
-import requests
-
+from runtime.util.http_retry import get_with_retry, RetryError
 from runtime.util.secrets_compat import get_secret
 
 FRED_URL = "https://api.stlouisfed.org/fred/series/observations"
@@ -41,8 +40,7 @@ def _latest(series_id: str, api_key: str) -> Optional[dict]:
         "sort_order": "desc",
         "limit": 5,  # get a few in case the newest is '.'
     }
-    resp = requests.get(FRED_URL, params=params, timeout=TIMEOUT)
-    resp.raise_for_status()
+    resp = get_with_retry(FRED_URL, params=params, timeout=TIMEOUT)
     obs = resp.json().get("observations", [])
     for o in obs:
         if o.get("value") not in (".", "", None):
@@ -70,6 +68,9 @@ def fetch() -> dict:
                 continue
             out[name] = row["value"]
             dates[name] = row["date"]
+        except RetryError as exc:
+            out[name] = None
+            errors.append(f"{name}: FRED unreachable: {exc}")
         except Exception as exc:  # noqa: BLE001
             out[name] = None
             errors.append(f"{name}: {exc}")

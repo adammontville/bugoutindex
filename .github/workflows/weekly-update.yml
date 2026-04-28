@@ -2,11 +2,13 @@ name: Weekly BugOut Index Update
 
 on:
   schedule:
-    # Friday 22:00 America/Chicago = Saturday 03:00 UTC (CST)
-    # Friday 22:00 America/Chicago = Saturday 03:00 UTC (CDT is 02:00 UTC,
-    # so we run at 03:00 UTC which is 21:00 CDT / 22:00 CST — within the
-    # post-close window year-round).
-    - cron: "0 3 * * 6"
+    # Friday 18:30 America/Chicago = Friday 23:30 UTC (CST) /
+    # Saturday 00:30 UTC (CDT). US equity markets close at 16:00 ET
+    # (21:00 UTC), so 23:30 UTC is safely post-close, and FRED has
+    # historically been most reliable in late-evening US hours.
+    # Previous slot (03:00 UTC Saturday) overlapped FRED maintenance
+    # and produced a degraded run on 2026-04-25.
+    - cron: "30 23 * * 5"
   workflow_dispatch: {}
 
 permissions:

@@ -112,6 +112,23 @@ table.hx th, table.hx td { padding: 8px 10px; border-bottom: 1px solid var(--lin
 table.hx th:first-child, table.hx td:first-child { text-align: left; }
 table.hx thead th { background: rgba(0,0,0,0.03); font-weight: 600; font-size: 12px; }
 
+.chart-card {
+  background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+  padding: 16px; margin-bottom: 8px; overflow-x: auto;
+}
+.chart-card svg.chart-multiline { display: block; width: 100%; height: auto; max-width: 100%; }
+.chart-caption { color: var(--muted); font-size: 12px; padding: 8px 4px 0; }
+.rev-callout {
+  margin: -4px 0 16px; padding: 10px 14px; font-size: 13px;
+  background: var(--card); border: 1px solid var(--line); border-left: 3px solid var(--moderate);
+  border-radius: 8px; color: var(--muted);
+}
+details.rev-table { margin: 8px 0 24px; }
+details.rev-table > summary {
+  cursor: pointer; color: var(--muted); font-size: 13px; padding: 6px 0; user-select: none;
+}
+details.rev-table[open] > summary { margin-bottom: 8px; }
+
 @media print {
   body { background: white; }
   .hero, .tile, table.hx { border-color: #ccc; }

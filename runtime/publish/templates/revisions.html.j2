@@ -1,0 +1,116 @@
+{% extends "_base.html.j2" %}
+{% block title %}BugOut Index — Data revisions tracker{% endblock %}
+{% block body %}
+
+<section class="hero" style="grid-template-columns: 1fr;">
+  <div>
+    <div class="label">Data revisions tracker</div>
+    <h2>How much do the headlines change after the fact?</h2>
+    <div class="sub">
+      Most economic indicators are revised after their first release. This page shows two
+      lenses on that for the U.S. labor market: monthly revisions to <strong>nonfarm
+      payrolls (PAYEMS)</strong> and the annual <strong>benchmark revision</strong> to
+      the unemployment rate (UNRATE). Lower unemployment isn't necessarily lower revision
+      risk &mdash; the point here is to see whether the number you read on day one
+      survives contact with later data.
+    </div>
+    {% if callout %}
+      <div class="delta" style="margin-top:16px;">
+        Most recent fully-revised PAYEMS observation
+        (<strong>{{ callout.observation_date[:7] }}</strong>):
+        initial {{ "{:,.0f}".format(callout.initial) }}k
+        &rarr; +1mo {{ "{:,.0f}".format(callout.first) }}k
+        ({% if callout.delta_first >= 0 %}+{% endif %}{{ "{:,.0f}".format(callout.delta_first) }}k)
+        &rarr; +2mo {{ "{:,.0f}".format(callout.second) }}k
+        ({% if callout.delta_second >= 0 %}+{% endif %}{{ "{:,.0f}".format(callout.delta_second) }}k).
+      </div>
+    {% endif %}
+    {% if revisions_status and revisions_status != "success" %}
+      <p style="color:var(--muted);font-size:13px;margin-top:12px;">
+        Note: this week's revision pull did not complete cleanly
+        (<code>{{ revisions_status }}</code>). The chart below uses the most recent successful build.
+      </p>
+    {% endif %}
+  </div>
+</section>
+
+<div class="section-title">
+  <h3>Nonfarm payrolls revisions, last 24 months</h3>
+  <span class="hint">
+    Each observation month plotted three times: as first published (blue), one month
+    later (orange), and two months later (green). Source:
+    <a href="https://alfred.stlouisfed.org/series?seid=PAYEMS">ALFRED (PAYEMS)</a>.
+  </span>
+</div>
+<div class="chart-card">
+  {{ payems_chart|safe }}
+</div>
+
+<details class="rev-table">
+  <summary>Show PAYEMS table</summary>
+  <table class="hx">
+    <thead>
+      <tr>
+        <th>Observation</th>
+        <th>Initial release</th>
+        <th>Initial value</th>
+        <th>+1 month</th>
+        <th>+2 months</th>
+        <th>Net revision (+2 &minus; initial)</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in payems_rows %}
+        <tr>
+          <td>{{ r.observation_date[:7] }}</td>
+          <td>{{ r.initial_release_date or "—" }}</td>
+          <td>{{ "{:,.0f}".format(r.vintage_initial) if r.vintage_initial is not none else "—" }}</td>
+          <td>{{ "{:,.0f}".format(r.vintage_first) if r.vintage_first is not none else "—" }}</td>
+          <td>{{ "{:,.0f}".format(r.vintage_second) if r.vintage_second is not none else "—" }}</td>
+          <td>
+            {% if r.vintage_initial is not none and r.vintage_second is not none %}
+              {% set diff = r.vintage_second - r.vintage_initial %}
+              {% if diff >= 0 %}+{% endif %}{{ "{:,.0f}".format(diff) }}k
+            {% else %}
+              —
+            {% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</details>
+
+<div class="section-title">
+  <h3>Unemployment rate &mdash; before vs after the latest annual benchmark</h3>
+  <span class="hint">
+    UNRATE is rarely revised between releases, but each January's Employment Situation
+    incorporates an annual benchmark that can shift up to five years of history.
+    Blue is today's series; orange is the same series as it stood the day
+    before the most recent benchmark release. Source:
+    <a href="https://alfred.stlouisfed.org/series?seid=UNRATE">ALFRED (UNRATE)</a>.
+  </span>
+</div>
+<div class="chart-card">
+  {{ unrate_chart|safe }}
+  {% if unrate_meta.benchmark_release_date %}
+    <div class="chart-caption">
+      Most recent benchmark release: <strong>{{ unrate_meta.benchmark_release_date }}</strong>
+      &middot; pre-benchmark snapshot taken on
+      <strong>{{ unrate_meta.pre_benchmark_snapshot_date }}</strong>.
+    </div>
+  {% endif %}
+</div>
+
+<div class="section-title"><h3>How to read this page</h3></div>
+<p style="max-width:70ch;color:var(--muted);">
+  &ldquo;Initial release&rdquo; means the value the day BLS first published it.
+  &ldquo;+1 month&rdquo; and &ldquo;+2 months&rdquo; are the values as they stood after
+  the next two scheduled employment reports. Larger gaps between the lines indicate that
+  the headline number moved meaningfully as additional survey responses came in. Small
+  gaps don't prove the data is right &mdash; only that it didn't change much within the
+  monthly revision window. Annual benchmark revisions can still rewrite older months
+  beyond what this chart shows.
+</p>
+
+{% endblock %}

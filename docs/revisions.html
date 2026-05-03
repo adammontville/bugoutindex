@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BugOut Index — Data revisions tracker</title>
+  <meta name="description" content="The BugOut Index — a weekly, data-driven measure of U.S. societal stability combining economic, crime, and governance indicators into a single 0–100 score.">
+  <link rel="stylesheet" href="./assets/style.css">
+</head>
+<body>
+  <div class="wrap">
+    <header class="site">
+      <h1><a href="./index.html" style="text-decoration:none">🪲 BugOut Index</a></h1>
+      <nav>
+        <a href="./index.html">Current</a>
+        <a href="./history.html">History</a>
+        <a href="./revisions.html">Revisions</a>
+        <a href="./methodology.html">Methodology</a>
+        <a href="https://github.com/adammontville/bugoutindex">Source</a>
+      </nav>
+    </header>
+
+<section class="hero" style="grid-template-columns: 1fr;">
+  <div>
+    <div class="label">Data revisions tracker</div>
+    <h2>How much do the headlines change after the fact?</h2>
+    <div class="sub">
+      Most economic indicators are revised after their first release. This page shows two
+      lenses on that for the U.S. labor market: monthly revisions to <strong>nonfarm
+      payrolls (PAYEMS)</strong> and the annual <strong>benchmark revision</strong> to
+      the unemployment rate (UNRATE). Lower unemployment isn't necessarily lower revision
+      risk &mdash; the point here is to see whether the number you read on day one
+      survives contact with later data.
+    </div>
+  </div>
+</section>
+
+<div class="section-title">
+  <h3>Nonfarm payrolls revisions, last 24 months</h3>
+  <span class="hint">
+    Each observation month plotted three times: as first published (blue), one month
+    later (orange), and two months later (green). Source:
+    <a href="https://alfred.stlouisfed.org/series?seid=PAYEMS">ALFRED (PAYEMS)</a>.
+  </span>
+</div>
+<div class="chart-card">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 320"><text x="440.0" y="160.0" text-anchor="middle" font-size="13" fill="#9ca3af">no data yet</text></svg>
+</div>
+
+<details class="rev-table">
+  <summary>Show PAYEMS table</summary>
+  <table class="hx">
+    <thead>
+      <tr>
+        <th>Observation</th>
+        <th>Initial release</th>
+        <th>Initial value</th>
+        <th>+1 month</th>
+        <th>+2 months</th>
+        <th>Net revision (+2 &minus; initial)</th>
+      </tr>
+    </thead>
+    <tbody>
+    </tbody>
+  </table>
+</details>
+
+<div class="section-title">
+  <h3>Unemployment rate &mdash; before vs after the latest annual benchmark</h3>
+  <span class="hint">
+    UNRATE is rarely revised between releases, but each January's Employment Situation
+    incorporates an annual benchmark that can shift up to five years of history.
+    Blue is today's series; orange is the same series as it stood the day
+    before the most recent benchmark release. Source:
+    <a href="https://alfred.stlouisfed.org/series?seid=UNRATE">ALFRED (UNRATE)</a>.
+  </span>
+</div>
+<div class="chart-card">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 320"><text x="440.0" y="160.0" text-anchor="middle" font-size="13" fill="#9ca3af">no data yet</text></svg>
+</div>
+
+<div class="section-title"><h3>How to read this page</h3></div>
+<p style="max-width:70ch;color:var(--muted);">
+  &ldquo;Initial release&rdquo; means the value the day BLS first published it.
+  &ldquo;+1 month&rdquo; and &ldquo;+2 months&rdquo; are the values as they stood after
+  the next two scheduled employment reports. Larger gaps between the lines indicate that
+  the headline number moved meaningfully as additional survey responses came in. Small
+  gaps don't prove the data is right &mdash; only that it didn't change much within the
+  monthly revision window. Annual benchmark revisions can still rewrite older months
+  beyond what this chart shows.
+</p>
+
+    <footer>
+      <div>
+        Methodology v1.0.0 ·
+        Published 2026-05-01 ·
+        Generated 2026-05-01T23:46:11+00:00
+      </div>
+      <div>
+        <a href="./data/latest.json">Raw JSON</a> ·
+        <a href="https://github.com/adammontville/bugoutindex">GitHub</a> ·
+        Dual-licensed (AGPL-3.0 / Commercial)
+      </div>
+    </footer>
+  </div>
+</body>
+</html>

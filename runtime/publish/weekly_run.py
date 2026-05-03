@@ -161,6 +161,21 @@ def fetch_pulse() -> Dict[str, Any]:
     return mod.fetch()
 
 
+def fetch_revisions() -> Dict[str, Any]:
+    """
+    Pull PAYEMS + UNRATE revision history from ALFRED.
+
+    Non-fatal: if this fails the rest of the run continues; the revisions
+    page will reuse the last successful payload from the previous snapshot.
+    """
+    sys.path.insert(0, str(REPO_ROOT))
+    try:
+        mod = importlib.import_module("runtime.data.fetch.fetch_revisions")
+        return mod.fetch()
+    except Exception as exc:  # noqa: BLE001
+        return {"status": "error", "message": f"revisions fetch raised: {exc}"}
+
+
 def _append_row(csv_path: Path, headers: list, row: dict) -> None:
     csv_path.parent.mkdir(parents=True, exist_ok=True)
     exists = csv_path.exists()
@@ -288,6 +303,12 @@ def main() -> int:
     print("[weekly_run] fetching short-term pulse…")
     pulse = fetch_pulse()
 
+    print("[weekly_run] fetching revision history (PAYEMS, UNRATE)…")
+    revisions = fetch_revisions()
+    if revisions.get("status") != "success":
+        print(f"[weekly_run] revisions: {revisions.get('message') or revisions.get('status')}",
+              file=sys.stderr)
+
     # Hard-fail if any non-core fetcher returned no usable data at all.
     hard_failures = []
     if markets.get("status") == "error":
@@ -311,6 +332,30 @@ def main() -> int:
     append_history(run_date, boi, markets, pulse)
 
     snapshot = build_snapshot(run_date, boi, core, markets, pulse)
+
+    # Carry the previous revisions payload forward if this week's fetch failed.
+    if revisions.get("status") == "success":
+        snapshot["revisions"] = revisions
+    else:
+        prev_path = DOCS_DATA / "latest.json"
+        try:
+            if prev_path.exists():
+                prev = json.loads(prev_path.read_text())
+                if prev.get("revisions", {}).get("status") == "success":
+                    snapshot["revisions"] = {
+                        **prev["revisions"],
+                        "reused_from": prev.get("publication_date"),
+                        "current_status": revisions.get("status"),
+                        "current_message": revisions.get("message"),
+                    }
+                else:
+                    snapshot["revisions"] = revisions
+            else:
+                snapshot["revisions"] = revisions
+        except Exception as exc:  # noqa: BLE001
+            print(f"[weekly_run] could not reuse prior revisions: {exc}", file=sys.stderr)
+            snapshot["revisions"] = revisions
+
     snapshot["history"] = {
         "bugout_index": load_history(DATA_DIR / "weekly_bugout_index.csv"),
         "markets": load_history(DATA_DIR / "markets_history.csv"),

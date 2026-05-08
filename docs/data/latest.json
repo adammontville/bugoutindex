@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "methodology_version": "1.0.0",
-  "generated_at_utc": "2026-05-01T23:46:11+00:00",
-  "publication_date": "2026-05-01",
+  "generated_at_utc": "2026-05-08T23:48:02+00:00",
+  "publication_date": "2026-05-08",
   "bugout_index": 57.03,
   "interpretation": {
     "band": "Moderate Stability",
@@ -28,7 +28,7 @@
       "raw": 4.3,
       "normalized": 82.8,
       "weight": 0.12,
-      "source_fetched_at": "2026-03-01",
+      "source_fetched_at": "2026-04-01",
       "status": "success"
     },
     "debt_to_gdp_ratio": {
@@ -55,27 +55,506 @@
   },
   "markets": {
     "status": "success",
-    "fetched_at": "2026-05-01",
-    "gold_usd_per_oz": 4615.3999,
-    "silver_usd_per_oz": 75.472,
-    "dxy": 118.7294
+    "fetched_at": "2026-05-08",
+    "gold_usd_per_oz": 4715.7002,
+    "silver_usd_per_oz": 80.468,
+    "dxy": 118.3926
   },
   "pulse": {
     "status": "success",
-    "fetched_at": "2026-05-01",
+    "fetched_at": "2026-05-08",
     "values": {
-      "initial_jobless_claims": 189000.0,
+      "initial_jobless_claims": 200000.0,
       "consumer_sentiment_umich": 53.3,
       "business_confidence": 98.96989,
-      "yield_curve_10y_2y": 0.51,
-      "vix": 16.89
+      "yield_curve_10y_2y": 0.48,
+      "vix": 17.08
     },
     "dates": {
-      "initial_jobless_claims": "2026-04-25",
+      "initial_jobless_claims": "2026-05-02",
       "consumer_sentiment_umich": "2026-03-01",
       "business_confidence": "2024-01-01",
-      "yield_curve_10y_2y": "2026-05-01",
-      "vix": "2026-04-30"
+      "yield_curve_10y_2y": "2026-05-08",
+      "vix": "2026-05-07"
+    }
+  },
+  "revisions": {
+    "status": "success",
+    "payems": [
+      {
+        "observation_date": "2024-05-01",
+        "vintage_initial": 158543.0,
+        "vintage_first": 158432.0,
+        "vintage_second": 158430.0,
+        "initial_release_date": "2024-06-07"
+      },
+      {
+        "observation_date": "2024-06-01",
+        "vintage_initial": 158638.0,
+        "vintage_first": 158609.0,
+        "vintage_second": 158609.0,
+        "initial_release_date": "2024-07-05"
+      },
+      {
+        "observation_date": "2024-07-01",
+        "vintage_initial": 158723.0,
+        "vintage_first": 158723.0,
+        "vintage_second": 158637.0,
+        "initial_release_date": "2024-08-02"
+      },
+      {
+        "observation_date": "2024-08-01",
+        "vintage_initial": 158779.0,
+        "vintage_first": 158851.0,
+        "vintage_second": 158770.0,
+        "initial_release_date": "2024-09-06"
+      },
+      {
+        "observation_date": "2024-09-01",
+        "vintage_initial": 159105.0,
+        "vintage_first": 158993.0,
+        "vintage_second": 158993.0,
+        "initial_release_date": "2024-10-04"
+      },
+      {
+        "observation_date": "2024-10-01",
+        "vintage_initial": 159005.0,
+        "vintage_first": 159005.0,
+        "vintage_second": 159061.0,
+        "initial_release_date": "2024-11-01"
+      },
+      {
+        "observation_date": "2024-11-01",
+        "vintage_initial": 159288.0,
+        "vintage_first": 159288.0,
+        "vintage_second": 159280.0,
+        "initial_release_date": "2024-12-06"
+      },
+      {
+        "observation_date": "2024-12-01",
+        "vintage_initial": 159536.0,
+        "vintage_first": 158926.0,
+        "vintage_second": 158942.0,
+        "initial_release_date": "2025-01-10"
+      },
+      {
+        "observation_date": "2025-01-01",
+        "vintage_initial": 159069.0,
+        "vintage_first": 159067.0,
+        "vintage_second": 159053.0,
+        "initial_release_date": "2025-02-07"
+      },
+      {
+        "observation_date": "2025-02-01",
+        "vintage_initial": 159218.0,
+        "vintage_first": 159170.0,
+        "vintage_second": 159155.0,
+        "initial_release_date": "2025-03-07"
+      },
+      {
+        "observation_date": "2025-03-01",
+        "vintage_initial": 159398.0,
+        "vintage_first": 159340.0,
+        "vintage_second": 159340.0,
+        "initial_release_date": "2025-04-04"
+      },
+      {
+        "observation_date": "2025-04-01",
+        "vintage_initial": 159517.0,
+        "vintage_first": 159517.0,
+        "vintage_second": 159422.0,
+        "initial_release_date": "2025-05-02"
+      },
+      {
+        "observation_date": "2025-05-01",
+        "vintage_initial": 159561.0,
+        "vintage_first": 159577.0,
+        "vintage_second": 159452.0,
+        "initial_release_date": "2025-06-06"
+      },
+      {
+        "observation_date": "2025-06-01",
+        "vintage_initial": 159724.0,
+        "vintage_first": 159466.0,
+        "vintage_second": 159466.0,
+        "initial_release_date": "2025-07-03"
+      },
+      {
+        "observation_date": "2025-07-01",
+        "vintage_initial": 159539.0,
+        "vintage_first": 159539.0,
+        "vintage_second": 159518.0,
+        "initial_release_date": "2025-08-01"
+      },
+      {
+        "observation_date": "2025-08-01",
+        "vintage_initial": 159540.0,
+        "vintage_first": 159540.0,
+        "vintage_second": 159540.0,
+        "initial_release_date": "2025-09-05"
+      },
+      {
+        "observation_date": "2025-09-01",
+        "vintage_initial": 159626.0,
+        "vintage_first": 159593.0,
+        "vintage_second": 159593.0,
+        "initial_release_date": "2025-11-20"
+      },
+      {
+        "observation_date": "2025-10-01",
+        "vintage_initial": 159488.0,
+        "vintage_first": 159420.0,
+        "vintage_second": 158408.0,
+        "initial_release_date": "2025-12-16"
+      },
+      {
+        "observation_date": "2025-11-01",
+        "vintage_initial": 159552.0,
+        "vintage_first": 159476.0,
+        "vintage_second": 158449.0,
+        "initial_release_date": "2025-12-16"
+      },
+      {
+        "observation_date": "2025-12-01",
+        "vintage_initial": 159526.0,
+        "vintage_first": 159526.0,
+        "vintage_second": 158432.0,
+        "initial_release_date": "2026-01-09"
+      },
+      {
+        "observation_date": "2026-01-01",
+        "vintage_initial": 158627.0,
+        "vintage_first": 158558.0,
+        "vintage_second": 158592.0,
+        "initial_release_date": "2026-02-11"
+      },
+      {
+        "observation_date": "2026-02-01",
+        "vintage_initial": 158466.0,
+        "vintage_first": 158459.0,
+        "vintage_second": 158459.0,
+        "initial_release_date": "2026-03-06"
+      },
+      {
+        "observation_date": "2026-03-01",
+        "vintage_initial": 158637.0,
+        "vintage_first": 158637.0,
+        "vintage_second": null,
+        "initial_release_date": "2026-04-03"
+      },
+      {
+        "observation_date": "2026-04-01",
+        "vintage_initial": 158736.0,
+        "vintage_first": null,
+        "vintage_second": null,
+        "initial_release_date": "2026-05-08"
+      }
+    ],
+    "unrate": {
+      "benchmark_release_date": "2026-02-11",
+      "pre_benchmark_snapshot_date": "2026-02-10",
+      "rows": [
+        {
+          "observation_date": "2021-05-01",
+          "value_current": 5.8,
+          "value_pre_benchmark": 5.8
+        },
+        {
+          "observation_date": "2021-06-01",
+          "value_current": 5.9,
+          "value_pre_benchmark": 5.9
+        },
+        {
+          "observation_date": "2021-07-01",
+          "value_current": 5.4,
+          "value_pre_benchmark": 5.4
+        },
+        {
+          "observation_date": "2021-08-01",
+          "value_current": 5.1,
+          "value_pre_benchmark": 5.1
+        },
+        {
+          "observation_date": "2021-09-01",
+          "value_current": 4.7,
+          "value_pre_benchmark": 4.7
+        },
+        {
+          "observation_date": "2021-10-01",
+          "value_current": 4.5,
+          "value_pre_benchmark": 4.5
+        },
+        {
+          "observation_date": "2021-11-01",
+          "value_current": 4.1,
+          "value_pre_benchmark": 4.1
+        },
+        {
+          "observation_date": "2021-12-01",
+          "value_current": 3.9,
+          "value_pre_benchmark": 3.9
+        },
+        {
+          "observation_date": "2022-01-01",
+          "value_current": 4.0,
+          "value_pre_benchmark": 4.0
+        },
+        {
+          "observation_date": "2022-02-01",
+          "value_current": 3.9,
+          "value_pre_benchmark": 3.9
+        },
+        {
+          "observation_date": "2022-03-01",
+          "value_current": 3.7,
+          "value_pre_benchmark": 3.7
+        },
+        {
+          "observation_date": "2022-04-01",
+          "value_current": 3.7,
+          "value_pre_benchmark": 3.7
+        },
+        {
+          "observation_date": "2022-05-01",
+          "value_current": 3.6,
+          "value_pre_benchmark": 3.6
+        },
+        {
+          "observation_date": "2022-06-01",
+          "value_current": 3.6,
+          "value_pre_benchmark": 3.6
+        },
+        {
+          "observation_date": "2022-07-01",
+          "value_current": 3.5,
+          "value_pre_benchmark": 3.5
+        },
+        {
+          "observation_date": "2022-08-01",
+          "value_current": 3.6,
+          "value_pre_benchmark": 3.6
+        },
+        {
+          "observation_date": "2022-09-01",
+          "value_current": 3.5,
+          "value_pre_benchmark": 3.5
+        },
+        {
+          "observation_date": "2022-10-01",
+          "value_current": 3.6,
+          "value_pre_benchmark": 3.6
+        },
+        {
+          "observation_date": "2022-11-01",
+          "value_current": 3.6,
+          "value_pre_benchmark": 3.6
+        },
+        {
+          "observation_date": "2022-12-01",
+          "value_current": 3.5,
+          "value_pre_benchmark": 3.5
+        },
+        {
+          "observation_date": "2023-01-01",
+          "value_current": 3.5,
+          "value_pre_benchmark": 3.5
+        },
+        {
+          "observation_date": "2023-02-01",
+          "value_current": 3.6,
+          "value_pre_benchmark": 3.6
+        },
+        {
+          "observation_date": "2023-03-01",
+          "value_current": 3.5,
+          "value_pre_benchmark": 3.5
+        },
+        {
+          "observation_date": "2023-04-01",
+          "value_current": 3.4,
+          "value_pre_benchmark": 3.4
+        },
+        {
+          "observation_date": "2023-05-01",
+          "value_current": 3.6,
+          "value_pre_benchmark": 3.6
+        },
+        {
+          "observation_date": "2023-06-01",
+          "value_current": 3.6,
+          "value_pre_benchmark": 3.6
+        },
+        {
+          "observation_date": "2023-07-01",
+          "value_current": 3.5,
+          "value_pre_benchmark": 3.5
+        },
+        {
+          "observation_date": "2023-08-01",
+          "value_current": 3.7,
+          "value_pre_benchmark": 3.7
+        },
+        {
+          "observation_date": "2023-09-01",
+          "value_current": 3.7,
+          "value_pre_benchmark": 3.7
+        },
+        {
+          "observation_date": "2023-10-01",
+          "value_current": 3.9,
+          "value_pre_benchmark": 3.9
+        },
+        {
+          "observation_date": "2023-11-01",
+          "value_current": 3.7,
+          "value_pre_benchmark": 3.7
+        },
+        {
+          "observation_date": "2023-12-01",
+          "value_current": 3.8,
+          "value_pre_benchmark": 3.8
+        },
+        {
+          "observation_date": "2024-01-01",
+          "value_current": 3.7,
+          "value_pre_benchmark": 3.7
+        },
+        {
+          "observation_date": "2024-02-01",
+          "value_current": 3.9,
+          "value_pre_benchmark": 3.9
+        },
+        {
+          "observation_date": "2024-03-01",
+          "value_current": 3.9,
+          "value_pre_benchmark": 3.9
+        },
+        {
+          "observation_date": "2024-04-01",
+          "value_current": 3.9,
+          "value_pre_benchmark": 3.9
+        },
+        {
+          "observation_date": "2024-05-01",
+          "value_current": 3.9,
+          "value_pre_benchmark": 3.9
+        },
+        {
+          "observation_date": "2024-06-01",
+          "value_current": 4.1,
+          "value_pre_benchmark": 4.1
+        },
+        {
+          "observation_date": "2024-07-01",
+          "value_current": 4.2,
+          "value_pre_benchmark": 4.2
+        },
+        {
+          "observation_date": "2024-08-01",
+          "value_current": 4.2,
+          "value_pre_benchmark": 4.2
+        },
+        {
+          "observation_date": "2024-09-01",
+          "value_current": 4.1,
+          "value_pre_benchmark": 4.1
+        },
+        {
+          "observation_date": "2024-10-01",
+          "value_current": 4.1,
+          "value_pre_benchmark": 4.1
+        },
+        {
+          "observation_date": "2024-11-01",
+          "value_current": 4.2,
+          "value_pre_benchmark": 4.2
+        },
+        {
+          "observation_date": "2024-12-01",
+          "value_current": 4.1,
+          "value_pre_benchmark": 4.1
+        },
+        {
+          "observation_date": "2025-01-01",
+          "value_current": 4.0,
+          "value_pre_benchmark": 4.0
+        },
+        {
+          "observation_date": "2025-02-01",
+          "value_current": 4.2,
+          "value_pre_benchmark": 4.2
+        },
+        {
+          "observation_date": "2025-03-01",
+          "value_current": 4.2,
+          "value_pre_benchmark": 4.2
+        },
+        {
+          "observation_date": "2025-04-01",
+          "value_current": 4.2,
+          "value_pre_benchmark": 4.2
+        },
+        {
+          "observation_date": "2025-05-01",
+          "value_current": 4.3,
+          "value_pre_benchmark": 4.3
+        },
+        {
+          "observation_date": "2025-06-01",
+          "value_current": 4.1,
+          "value_pre_benchmark": 4.1
+        },
+        {
+          "observation_date": "2025-07-01",
+          "value_current": 4.3,
+          "value_pre_benchmark": 4.3
+        },
+        {
+          "observation_date": "2025-08-01",
+          "value_current": 4.3,
+          "value_pre_benchmark": 4.3
+        },
+        {
+          "observation_date": "2025-09-01",
+          "value_current": 4.4,
+          "value_pre_benchmark": 4.4
+        },
+        {
+          "observation_date": "2025-10-01",
+          "value_current": null,
+          "value_pre_benchmark": null
+        },
+        {
+          "observation_date": "2025-11-01",
+          "value_current": 4.5,
+          "value_pre_benchmark": 4.5
+        },
+        {
+          "observation_date": "2025-12-01",
+          "value_current": 4.4,
+          "value_pre_benchmark": 4.4
+        },
+        {
+          "observation_date": "2026-01-01",
+          "value_current": 4.3,
+          "value_pre_benchmark": null
+        },
+        {
+          "observation_date": "2026-02-01",
+          "value_current": 4.4,
+          "value_pre_benchmark": null
+        },
+        {
+          "observation_date": "2026-03-01",
+          "value_current": 4.3,
+          "value_pre_benchmark": null
+        },
+        {
+          "observation_date": "2026-04-01",
+          "value_current": 4.3,
+          "value_pre_benchmark": null
+        }
+      ]
     }
   },
   "history": {
@@ -127,6 +606,22 @@
         "debt_to_gdp_ratio_normalized": "38.72",
         "homelessness_rate_normalized": "54.0",
         "trust_in_government_normalized": "51.25"
+      },
+      {
+        "date": "2026-05-08",
+        "bugout_index": "57.03",
+        "inflation_rate": "3.2859577528652006",
+        "incident_rate": "2723.0",
+        "unemployment_rate": "4.3",
+        "debt_to_gdp_ratio": "122.56815",
+        "homelessness_rate": "0.23",
+        "trust_in_government": "41.0",
+        "inflation_rate_normalized": "46.86",
+        "incident_rate_normalized": "70.36",
+        "unemployment_rate_normalized": "82.8",
+        "debt_to_gdp_ratio_normalized": "38.72",
+        "homelessness_rate_normalized": "54.0",
+        "trust_in_government_normalized": "51.25"
       }
     ],
     "markets": [
@@ -147,6 +642,12 @@
         "gold_usd_per_oz": "4615.3999",
         "silver_usd_per_oz": "75.472",
         "dxy": "118.7294"
+      },
+      {
+        "date": "2026-05-08",
+        "gold_usd_per_oz": "4715.7002",
+        "silver_usd_per_oz": "80.468",
+        "dxy": "118.3926"
       }
     ],
     "pulse": [
@@ -173,6 +674,14 @@
         "business_confidence": "98.96989",
         "yield_curve_10y_2y": "0.51",
         "vix": "16.89"
+      },
+      {
+        "date": "2026-05-08",
+        "initial_jobless_claims": "200000.0",
+        "consumer_sentiment_umich": "53.3",
+        "business_confidence": "98.96989",
+        "yield_curve_10y_2y": "0.48",
+        "vix": "17.08"
       }
     ]
   }

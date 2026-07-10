@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "methodology_version": "1.0.0",
-  "generated_at_utc": "2026-07-03T23:50:13+00:00",
-  "publication_date": "2026-07-03",
+  "generated_at_utc": "2026-07-10T23:48:19+00:00",
+  "publication_date": "2026-07-10",
   "bugout_index": 56.36,
   "interpretation": {
     "band": "Moderate Stability",
@@ -55,27 +55,27 @@
   },
   "markets": {
     "status": "success",
-    "fetched_at": "2026-07-03",
-    "gold_usd_per_oz": 4176.1001,
-    "silver_usd_per_oz": 62.517,
-    "dxy": 120.8866
+    "fetched_at": "2026-07-10",
+    "gold_usd_per_oz": 4121.3999,
+    "silver_usd_per_oz": 60.014,
+    "dxy": 120.6902
   },
   "pulse": {
     "status": "success",
-    "fetched_at": "2026-07-02",
+    "fetched_at": "2026-07-10",
     "values": {
       "initial_jobless_claims": 215000.0,
       "consumer_sentiment_umich": 44.8,
       "business_confidence": 98.96989,
       "yield_curve_10y_2y": 0.35,
-      "vix": 16.59
+      "vix": 15.84
     },
     "dates": {
-      "initial_jobless_claims": "2026-06-27",
+      "initial_jobless_claims": "2026-07-04",
       "consumer_sentiment_umich": "2026-05-01",
       "business_confidence": "2024-01-01",
-      "yield_curve_10y_2y": "2026-07-02",
-      "vix": "2026-07-01"
+      "yield_curve_10y_2y": "2026-07-10",
+      "vix": "2026-07-09"
     }
   },
   "revisions": {
@@ -232,13 +232,13 @@
         "observation_date": "2026-04-01",
         "vintage_initial": 158736.0,
         "vintage_first": 158829.0,
-        "vintage_second": null,
+        "vintage_second": 158798.0,
         "initial_release_date": "2026-05-08"
       },
       {
         "observation_date": "2026-05-01",
         "vintage_initial": 159001.0,
-        "vintage_first": null,
+        "vintage_first": 158927.0,
         "vintage_second": null,
         "initial_release_date": "2026-06-05"
       },
@@ -750,6 +750,22 @@
         "debt_to_gdp_ratio_normalized": "38.7",
         "homelessness_rate_normalized": "54.0",
         "trust_in_government_normalized": "51.25"
+      },
+      {
+        "date": "2026-07-10",
+        "bugout_index": "56.36",
+        "inflation_rate": "4.166614684049648",
+        "incident_rate": "2723.0",
+        "unemployment_rate": "4.2",
+        "debt_to_gdp_ratio": "122.59387",
+        "homelessness_rate": "0.23",
+        "trust_in_government": "41.0",
+        "inflation_rate_normalized": "43.33",
+        "incident_rate_normalized": "70.36",
+        "unemployment_rate_normalized": "83.2",
+        "debt_to_gdp_ratio_normalized": "38.7",
+        "homelessness_rate_normalized": "54.0",
+        "trust_in_government_normalized": "51.25"
       }
     ],
     "markets": [
@@ -824,6 +840,12 @@
         "gold_usd_per_oz": "4176.1001",
         "silver_usd_per_oz": "62.517",
         "dxy": "120.8866"
+      },
+      {
+        "date": "2026-07-10",
+        "gold_usd_per_oz": "4121.3999",
+        "silver_usd_per_oz": "60.014",
+        "dxy": "120.6902"
       }
     ],
     "pulse": [
@@ -922,6 +944,14 @@
         "business_confidence": "98.96989",
         "yield_curve_10y_2y": "0.35",
         "vix": "16.59"
+      },
+      {
+        "date": "2026-07-10",
+        "initial_jobless_claims": "215000.0",
+        "consumer_sentiment_umich": "44.8",
+        "business_confidence": "98.96989",
+        "yield_curve_10y_2y": "0.35",
+        "vix": "15.84"
       }
     ]
   }

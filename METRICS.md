@@ -121,3 +121,6 @@ You can find detailed documentation for these incubating metrics in the **[incub
 - [Grid Outages](./incubating/grid_outages.md)
 - [Natural Disaster Frequency](./incubating/natural_disaster_frequency.md)
 - [Trust in Government](./incubating/Government_Authoritarianism_Index.md)
+
+### Companion Measures (non-core, no BOI weight)
+- [AI Discontinuity Watch (AIDW)](./incubating/boi-ai-discontinuity-watch-incubating.md) — optional watch level; does not change the BOI score.

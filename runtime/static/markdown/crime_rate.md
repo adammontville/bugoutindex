@@ -10,15 +10,17 @@ Crime is one of the most **visible and immediate indicators of societal distress
 
 ## **3. Source & Attribution**
 - **Primary Source:** [Real-Time Crime Index (RTCI)](https://realtimecrimeindex.com/)
-- **Data URL:** [RTCI GitHub Repository](https://github.com/AH-Datalytics/rtci/blob/development/data/final_sample.csv)
-- **Last Updated:** Updated approximately **monthly**, with data spanning **2018 to November 2024**.
+- **Data file:** [AH-Datalytics/rtci `docs/app_data/final_sample.csv` on main](https://raw.githubusercontent.com/AH-Datalytics/rtci/main/docs/app_data/final_sample.csv) (raw CSV, not a GitHub blob page). Repository: [AH-Datalytics/rtci](https://github.com/AH-Datalytics/rtci).
+- **Last Updated:** RTCI refreshes the cleaned file on its own cadence. The weekly job records that file’s latest month. The published index input stays **2723.0** until a reviewed revision accepts a new rate.
 - **Data Collection Method:** RTCI aggregates data from **500 law enforcement agencies**, most of which use **state-level Uniform Crime Reporting (UCR) standards**.
 
 ---
 
 ## **4. Acquisition Method**
-- The weekly publisher reads a local RTCI sample file (`runtime/data/final_sample.csv`) via `fetch_incident_rate.py`.
-- The fetcher computes an **unweighted mean** across reporting agencies of violent-plus-property rates on a **per 100,000 people** basis (typically using a 12-month moving average when available).
+- The weekly publisher downloads the RTCI cleaned sample from the raw URL above via `download_crime_rate_data.py`, then `fetch_incident_rate.py` reads it.
+- A download that is empty, HTML, or not the RTCI CSV fails the crime fetcher. The weekly job then refuses to publish. It does not treat that body as a successful crime reading.
+- The fetcher computes an **unweighted mean** across reporting agencies of violent-plus-property rates on a **per 100,000 people** basis (12-month moving sums in the file) and a population-weighted alternative. Both are **diagnostic fields**. They are not inputs to `compute_index`.
+- The headline crime input remains the locked **2723.0** until that diagnostic is accepted in a later reviewed change.
 - Coverage is the Real-Time Crime Index sample, not a population-weighted national census of every agency.
 
 ---

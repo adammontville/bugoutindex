@@ -84,7 +84,7 @@ python -m http.server 8765 --directory docs
 | Metric | Module | Source |
 | --- | --- | --- |
 | inflation_rate | `fetch_inflation_rate` | FRED `CPIAUCSL` |
-| incident_rate | `fetch_incident_rate` | Real-Time Crime Index (local CSV) |
+| incident_rate | `fetch_incident_rate` | Real-Time Crime Index cleaned file (`AH-Datalytics/rtci` `docs/app_data/final_sample.csv` via raw.githubusercontent.com). Published input stays 2723.0; the file’s candidate rate is a diagnostic only. |
 | unemployment_rate | `fetch_unemployment_rate` | FRED `UNRATE` |
 | debt_to_gdp_ratio | `fetch_debt_to_gdp_ratio` | FRED `GFDEGDQ188S` |
 | homelessness_rate | `fetch_homelessness_rate` | HUD AHAR (hardcoded annual) |

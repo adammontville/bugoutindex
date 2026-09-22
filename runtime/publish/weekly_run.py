@@ -200,6 +200,10 @@ def _metric_snapshot(metric: str, scored: Dict[str, Any], payload: Dict[str, Any
     provenance = payload.get("provenance")
     if provenance:
         block["provenance"] = provenance
+    # Candidate crime rates live here. compute_index reads only data[metric].
+    diagnostics = payload.get("diagnostics")
+    if diagnostics:
+        block["diagnostics"] = diagnostics
     return block
 
 

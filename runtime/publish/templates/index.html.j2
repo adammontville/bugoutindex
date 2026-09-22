@@ -52,6 +52,9 @@
       <span><a href="{{ m.source_url }}">{{ m.source }}</a></span>
     </div>
     <div class="age">{{ m.age_text }}{% if m.stale %} <span class="badge-stale">Stale</span>{% endif %}</div>
+    {% if m.diagnostics and not m.diagnostics.index_input %}
+    <div class="age">Candidate {{ m.diagnostics.candidate_incident_rate }} per 100k for {{ m.diagnostics.candidate_month }} (population-weighted {{ m.diagnostics.population_weighted_incident_rate }}). Not an index input; the published crime figure stays {{ m.raw }}.</div>
+    {% endif %}
   </div>
   {% endfor %}
 </div>

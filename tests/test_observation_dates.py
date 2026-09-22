@@ -278,10 +278,15 @@ def test_manual_fetchers_keep_published_raws_and_record_periods():
     assert trust["data"]["trust_in_government"] == 41.0
     assert trust["observation_date"] == "2025"
 
-    crime = fetch_crime()
+    # Local file, not a network download. The locked input stays 2723;
+    # the candidate rate in diagnostics is not the observation used for scoring.
+    crime = fetch_crime(csv_path=str(ROOT / "runtime" / "data" / "final_sample.csv"))
     assert crime["data"]["incident_rate"] == 2723.0
     assert crime["fetched_at"] is None
     assert crime["observation_date"] == "2024-09-30"
+    assert crime["diagnostics"]["index_input"] is False
+    assert crime["diagnostics"]["published_incident_rate"] == 2723.0
+    assert "AH-Datalytics/rtci" in crime["provenance"]["source_url"]
 
 
 def test_schema_upgrade_leaves_old_dates_blank(tmp_path):

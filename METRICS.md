@@ -3,101 +3,171 @@
 **Version**: 1.0.0  
 **Effective Date**: January 1, 2025  
 
+> **Authoritative implementation:** `runtime/publish/weekly_run.py`
+> (`CORE_METRICS`, `METRIC_RANGES`, `WEIGHTS`, `normalize`, `compute_index`, `interpret`).
+> This document describes what that publisher already does. It does not define a
+> separate formula.
+
 ---
 
-## **Introduction**
+## Introduction
 
 The BugOutIndex is a societal stability scoring system designed to help individuals and communities assess when conditions may deteriorate to a critical point. This document describes the metrics and methodology for **BugOutIndex Version 1.0.0**, the initial release of the system. Each version of the methodology will be documented, ensuring transparency and allowing for historical recalculations.
 
----
-
-## **Metrics Overview**
-
-The BugOutIndex incorporates the following metrics to evaluate societal stability:
-
-### **Economic Metrics**
-- **Inflation Rate**: Measures the annual percentage increase in consumer prices.
-- **Unemployment Rate**: Tracks the percentage of people in the labor force who are unemployed.
-- **Debt-to-GDP Ratio**: Indicates the government’s ability to manage debt relative to its economic output.
-
-### **Social Health Metrics**
-- **Crime Rate**: Represents reported violent crimes per 100,000 people.
-- **Homelessness Rate**: Measures the percentage of the population experiencing homelessness.
+On a perfect week (every core metric at its most stable endpoint), the index scores **100**. Raw weights sum to **0.72**; the publisher divides by that sum so the six relative weights always fill the 0–100 scale.
 
 ---
 
-## **Scoring Methodology**
+## Metrics Overview
+
+The BugOutIndex incorporates six core metrics:
+
+### Economic Metrics
+- **Inflation Rate**: Year-over-year percentage change in consumer prices (CPI-U via FRED).
+- **Unemployment Rate**: Percentage of the labor force that is unemployed (FRED UNRATE).
+- **Debt-to-GDP Ratio**: Federal debt as a percentage of GDP (FRED).
+
+### Social Health Metrics
+- **Crime Rate** (`incident_rate`): Violent **plus** property crime incidents per 100,000 people (Real-Time Crime Index sample; unweighted mean of reporting agencies).
+- **Homelessness Rate**: Percentage of the population experiencing homelessness (HUD PIT / AHAR).
+
+### Governance Metrics
+- **Trust in Government**: Percentage of respondents expressing confidence in government (Edelman Trust Barometer). Higher trust maps to higher stability.
+
+---
+
+## Scoring Methodology
 
 Each metric is scored on a normalized scale of **0–100**, where:
-- **100**: Indicates optimal conditions (low risk).
+- **100**: Indicates optimal conditions (low risk / high stability).
 - **0**: Indicates critical instability (high risk).
 
-### **Normalization Process**
-For each metric, raw data is normalized using predefined thresholds:
+### Normalization Process
 
-Normalized Score = (1 - ((Raw Value - Min) / (Max - Min))) * 100
+For each metric, raw data is mapped onto 0–100 between fixed endpoints:
 
-- **Example** (Inflation Rate):
-  - Thresholds: 0%–10%.
-  - Raw Value: 4%.
-  - Normalized Score:
+```
+normalized = (1 − (raw − min) / (max − min)) × 100
+```
 
-(1 - ((4 - 0) / (10 - 0))) * 100 = 60
+Values outside the endpoints are clamped to 0 or 100.
 
----
+**Trust in Government** uses the same linear map with `inverse=True` (higher trust → higher stability). Equivalently:
 
-## **Weights and Normalization Ranges**
+```
+normalized_trust = ((raw − 0) / (80 − 0)) × 100
+```
 
-| **Metric**           | **Weight** | **Normalization Range**        |
-|-----------------------|------------|--------------------------------|
-| **Inflation Rate**    | 0.15       | -15%–10%                       |
-| **Crime Rate**        | 0.12       | 500–8000 incidents per 100,000 |
-| **Unemployment Rate** | 0.12       | 0%–25%                         |
-| **Debt-to-GDP Ratio** | 0.12       | 0%–200%                        |
-| **Homelessness Rate** | 0.09       | 0%–0.5%                        |
-| **Trust in Government Score** | 0.12       | 0%-80%                         |
+so an Edelman trust reading of **41%** normalizes to **51.25**.
 
----
+### Worked examples (publisher math)
 
-## **Rollup into the BugOutIndex**
+**Inflation at 4%** (endpoints −10 to 15):
 
-### **Step 1: Metric Normalization**
-Each metric is normalized to a 0–100 scale based on its thresholds.
+```
+normalized = (1 − (4 − (−10)) / (15 − (−10))) × 100
+           = (1 − 14/25) × 100
+           = 44.00
+```
 
-### **Step 2: Metric Weighting**
-Each normalized metric score is multiplied by its weight to calculate its contribution to the overall score:
+**Trust at 41%** (endpoints 0 to 80, inverted):
 
-Metric Weighted Score = Normalized Score * Metric Weight
-
-### **Step 3: Overall Index Calculation**
-The overall BugOutIndex score is the sum of all weighted metric scores:
-
-BugOutIndex = Σ (Metric Weighted Score)
+```
+normalized = ((41 − 0) / (80 − 0)) × 100
+           = 51.25
+```
 
 ---
 
-## **Interpreting the BugOutIndex**
+## Weights and Normalization Ranges
 
-| **Score Range**  | **Interpretation**                            | **Suggested Actions**                                               |
-|------------------|-----------------------------------------------|---------------------------------------------------------------------|
-| **70.00–100.00** | **High Stability (Low Risk)**                 | Focus on long-term planning and gradual improvements.               |
-| **55.00–69.99**  | **Moderate Stability (Warning Signs)**        | Monitor trends closely; prepare contingency plans.                  |
-| **40.00–54.99**  | **Low Stability (Heightened Risk)**           | Keep preparedness in mind; consider real planning.                  |
-| **35.00-39.99**  | **Critical Fragility (Preparedness Mode)**    | Begin executing initial preparedness plans                          |
-| **25.00-34.99**  | **Critical Instability (Active Risk)**        | Validate action plans; pay attention; define your triggers          |
-| **00.00-24.99**  | **Systemic Collapse (Evaluation considered)** | Trigger your bugout plans, whatever they may be, at your discretion |
+Raw weights are relative coefficients. They sum to **0.72**. After dividing by that sum, each metric’s **share of the index** is `weight / 0.72`.
 
----
+| Metric | Raw weight | Share of score (weight / 0.72) | Normalization range |
+|--------|------------|--------------------------------|---------------------|
+| Inflation Rate | 0.15 | 20.83% | −10% to 15% |
+| Crime Rate (violent + property) | 0.12 | 16.67% | 500 to 8,000 per 100,000 |
+| Unemployment Rate | 0.12 | 16.67% | 0% to 25% |
+| Debt-to-GDP Ratio | 0.12 | 16.67% | 0% to 200% |
+| Homelessness Rate | 0.09 | 12.50% | 0% to 0.5% |
+| Trust in Government | 0.12 | 16.67% | 0% to 80% (inverted) |
+| **Total** | **0.72** | **100%** | |
 
-## **Version History**
-
-| **Version** | **Date**       | **Changes**                                           |
-|-------------|----------------|-----------------------------------------------------|
-| 1.0.0       | March 16, 2025 | Initial release with core metrics and methodology. |
+Site tiles that print “Weight 15%” are showing the raw weight × 100, not the post-division share. Inflation’s share of the finished index is about **20.8%**.
 
 ---
 
-## **Versioning and Licensing**
+## Rollup into the BugOutIndex
+
+### Step 1: Metric Normalization
+Each available core metric is normalized to a 0–100 scale (trust inverted as above).
+
+### Step 2: Weighted contribution
+Each normalized score is multiplied by its raw weight:
+
+```
+contribution_i = normalized_i × weight_i
+```
+
+### Step 3: Overall Index Calculation
+The BugOutIndex is the **weight-normalized** sum (divide by the sum of weights that participated):
+
+```
+BugOutIndex = Σ (normalized_i × weight_i) / Σ weight_i
+```
+
+With all six metrics present, `Σ weight_i = 0.72`. A week where every metric is at its best endpoint therefore scores **100**, not 72.
+
+Missing metrics are skipped and the denominator shrinks. The weekly publisher refuses to publish unless all six core fetches succeed, so a live publish does not silently drop an input.
+
+### Worked example — week of 19 September 2026
+
+Raw inputs from `docs/data/latest.json` / the weekly CSV:
+
+| Metric | Raw | Normalized | Weight | Contribution (norm × weight) |
+|--------|-----|------------|--------|------------------------------|
+| Inflation | 3.3530… | 46.59 | 0.15 | 6.9885 |
+| Crime (violent + property) | 2723.0 | 70.36 | 0.12 | 8.4432 |
+| Unemployment | 4.1 | 83.60 | 0.12 | 10.0320 |
+| Debt-to-GDP | 122.59387 | 38.70 | 0.12 | 4.6440 |
+| Homelessness | 0.23 | 54.00 | 0.09 | 4.8600 |
+| Trust in Government | 41.0 | 51.25 | 0.12 | 6.1500 |
+| **Sum** | | | **0.72** | **41.1177** |
+
+```
+BugOutIndex = 41.1177 / 0.72 ≈ 57.11
+```
+
+Interpretation: **Moderate Stability / Warning Signs** (55–69.99).
+
+A plain sum of the weighted contributions **without** dividing by 0.72 would yield about **41.12** (Low Stability). That is **not** how v1.0.0 publishes.
+
+---
+
+## Interpreting the BugOutIndex
+
+Four risk bands match `interpret()` in the weekly publisher:
+
+| Score Range | Band | Interpretation |
+|-------------|------|----------------|
+| **70.00–100.00** | **High Stability** | Low Risk — focus on long-term planning. |
+| **55.00–69.99** | **Moderate Stability** | Warning Signs — monitor trends; prepare contingencies. |
+| **40.00–54.99** | **Low Stability** | Heightened Risk — keep preparedness in mind. |
+| **Below 40** | **Critical Instability** | Collapse Likely — activate bug-out plans at your discretion. |
+
+Band wording and thresholds are unchanged from the live site. Recalibrating how “calm” Moderate feels is deferred to an explicit later methodology version.
+
+---
+
+## Version History
+
+| Version | Date | Changes |
+|---------|------|---------|
+| 1.0.0 | March 16, 2025 | Initial release with core metrics and methodology. |
+
+---
+
+## Versioning and Licensing
 
 The BugOutIndex uses a versioning system to ensure transparency as the methodology evolves. Historical scores can be recalculated using past versions.
 
@@ -107,9 +177,9 @@ BugOutIndex is dual-licensed:
 
 For more information, see the [LICENSE](./LICENSE.md) file.
 
-## **Future Metrics in Development**
+## Future Metrics in Development
 
-The BugOutIndex team is actively exploring additional metrics to expand the scoring system. These metrics are currently in the "incubating" phase and are not part of the core scoring methodology.
+The BugOutIndex team is actively exploring additional metrics to expand the scoring system. These metrics are currently in the "incubating" phase and are **not** part of the core scoring methodology.
 
 You can find detailed documentation for these incubating metrics in the **[incubating folder](./incubating/)**.
 
@@ -120,7 +190,8 @@ You can find detailed documentation for these incubating metrics in the **[incub
 - [Epidemic Spread Index](./incubating/Epidemic_Spread_Index.md)
 - [Grid Outages](./incubating/grid_outages.md)
 - [Natural Disaster Frequency](./incubating/natural_disaster_frequency.md)
-- [Trust in Government](./incubating/Government_Authoritarianism_Index.md)
+- [Government Authoritarianism Index](./incubating/Government_Authoritarianism_Index.md) — incubating; distinct from the core Edelman **Trust in Government** metric already in the score
+- [Labor Utilization](./incubating/boi-labor-utilization-incubating.md) — proposed companion / possible future replacement for headline unemployment; not in v1.0.0
 
 ### Companion Measures (non-core, no BOI weight)
 - [AI Discontinuity Watch (AIDW)](./incubating/boi-ai-discontinuity-watch-incubating.md) — optional watch level; does not change the BOI score.

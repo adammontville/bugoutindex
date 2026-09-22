@@ -10,9 +10,14 @@
 </p>
 
 <div class="section-title"><h3>1. Inputs and weights</h3></div>
+<p style="max-width:70ch;color:var(--muted)">
+  Raw weights are relative coefficients that sum to <strong>0.72</strong>.
+  The “share of score” column is <code>weight / 0.72</code> — the fraction of the finished index each metric actually carries after the publisher divides by the sum of weights.
+  Tile labels that say “Raw weight 15%” are the raw weight × 100, not the post-division share.
+</p>
 <table class="hx">
   <thead>
-    <tr><th>Metric</th><th>Raw value</th><th>Unit</th><th>Normalization range</th><th>Normalized</th><th>Weight</th><th>Source</th></tr>
+    <tr><th>Metric</th><th>Raw value</th><th>Unit</th><th>Normalization range</th><th>Normalized</th><th>Raw weight</th><th>Share of score</th><th>Source</th></tr>
   </thead>
   <tbody>
     {% for m in metrics %}
@@ -30,6 +35,7 @@
         </td>
         <td>{{ m.normalized if m.normalized is not none else '—' }}</td>
         <td>{{ m.weight_pct }}%</td>
+        <td>{{ "%.1f"|format(m.weight_pct / 0.72) }}%</td>
         <td><a href="{{ m.source_url }}">{{ m.source }}</a></td>
       </tr>
     {% endfor %}
@@ -39,10 +45,10 @@
 <div class="section-title"><h3>2. Normalization</h3></div>
 <p>Each metric is normalized to 0–100 using predefined thresholds:</p>
 <pre class="json">normalized = (1 − (raw − min) / (max − min)) × 100</pre>
-<p>Trust in Government is inverted (higher trust → higher stability) by applying <code>100 − normalized</code> after the above transform.</p>
+<p>Trust in Government is inverted (higher trust → higher stability) by applying <code>100 − normalized</code> after the above transform — equivalently a linear map of the trust percent on 0–80. An Edelman reading of 41 normalizes to <strong>51.25</strong>. Inflation at 4% on −10…15 normalizes to <strong>44</strong>.</p>
 
 <div class="section-title"><h3>3. Aggregation</h3></div>
-<p>The index is the weight-normalized sum of the per-metric scores:</p>
+<p>The index is the weight-normalized sum of the per-metric scores (divide by the sum of weights; with all six present that denominator is 0.72). A perfect week on every metric therefore scores 100:</p>
 <pre class="json">BOI = Σ (normalized_i × weight_i) / Σ weight_i</pre>
 
 <div class="section-title"><h3>4. Risk bands</h3></div>

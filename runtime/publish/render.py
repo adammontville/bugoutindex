@@ -16,6 +16,13 @@ from typing import Any, Dict, List, Optional
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
+from runtime.publish.week_note import (
+    build_week_note,
+    describe_core_age,
+    describe_pulse_age,
+    series_is_flat,
+)
+
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DOCS = REPO_ROOT / "docs"
 TEMPLATES = Path(__file__).parent / "templates"
@@ -327,6 +334,7 @@ def render_site(snapshot: Dict[str, Any]) -> None:
     for key, meta in METRIC_LABELS.items():
         entry = snapshot["metrics"].get(key, {})
         metric_series = _series(boi_history, key)
+        age = describe_core_age(key, entry, snapshot.get("publication_date"))
         metrics_vm.append({
             "key": key,
             "label": meta["label"],
@@ -337,7 +345,8 @@ def render_site(snapshot: Dict[str, Any]) -> None:
             "normalized": entry.get("normalized"),
             "weight_pct": round(entry.get("weight", 0) * 100, 1),
             "sparkline": sparkline_svg(metric_series),
-            "as_of": entry.get("source_fetched_at"),
+            "age_text": age["text"],
+            "stale": age["stale"],
         })
 
     markets = snapshot.get("markets", {})
@@ -361,11 +370,17 @@ def render_site(snapshot: Dict[str, Any]) -> None:
     pulse_tiles = []
     for key, (label, unit, sid) in PULSE_LABELS.items():
         series = _series(pulse_history, key)
+        age = describe_pulse_age(
+            pulse_dates.get(key),
+            snapshot.get("publication_date"),
+            flat=series_is_flat(series),
+        )
         pulse_tiles.append({
             "label": label,
             "unit": unit,
             "value": pulse_values.get(key),
-            "as_of": pulse_dates.get(key),
+            "age_text": age["text"],
+            "stale": age["stale"],
             "source_id": sid,
             "sparkline": sparkline_svg(series),
         })
@@ -383,6 +398,7 @@ def render_site(snapshot: Dict[str, Any]) -> None:
         "markets": market_tiles,
         "pulse": pulse_tiles,
         "history_count": len(boi_history),
+        "week_note": build_week_note(snapshot),
     }
 
     (DOCS / "index.html").write_text(env.get_template("index.html.j2").render(**ctx))

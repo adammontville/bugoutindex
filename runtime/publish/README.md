@@ -23,8 +23,15 @@ Action runs `weekly_run.py`, which:
    `runtime/data/markets_history.csv`, and
    `runtime/data/pulse_history.csv`.
 6. Writes a snapshot to `docs/data/latest.json`.
-7. Renders `docs/index.html`, `docs/methodology.html`, and
-   `docs/history.html` via Jinja2 templates.
+7. Renders `docs/index.html`, `docs/methodology.html`,
+   `docs/history.html`, and `docs/revisions.html` via Jinja2 templates.
+   The homepage week note is built in `week_note.py` from this snapshot
+   versus the previous history row. It does not call a language model.
+   Core and pulse tiles show observation dates and ages. Crime uses the
+   local file's value month (not a placeholder timestamp). Homelessness
+   is labeled as a manual annual input. OECD business confidence is
+   marked stale when its observation is more than 365 days before the
+   publication date.
 8. Commits and pushes the results to `main`.
 
 GitHub Pages is configured to serve the `/docs` directory on `main`.

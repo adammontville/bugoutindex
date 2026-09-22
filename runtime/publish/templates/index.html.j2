@@ -20,9 +20,18 @@
   </div>
 </section>
 
+{% if week_note %}
+<section class="week-note" aria-label="What changed this week">
+  <h3>This week</h3>
+  {% for sentence in week_note %}
+  <p{% if loop.last %} class="disclaimer"{% endif %}>{{ sentence }}</p>
+  {% endfor %}
+</section>
+{% endif %}
+
 <div class="section-title">
   <h3>Core metrics</h3>
-  <span class="hint">Each tile shows the raw value, normalized 0–100 score, and raw weight (weights sum to 0.72; see Methodology for shares of the finished index).</span>
+  <span class="hint">Each tile shows the raw value, how old that reading is, the normalized 0–100 score, and the raw weight (weights sum to 0.72; see Methodology for shares of the finished index).</span>
 </div>
 <p class="rev-callout">
   Headline labor numbers move after release. See how much the last 24 months of payrolls
@@ -30,7 +39,7 @@
 </p>
 <div class="grid metrics">
   {% for m in metrics %}
-  <div class="tile">
+  <div class="tile{% if m.stale %} stale{% endif %}">
     <div class="k">{{ m.label }}</div>
     <div class="v">{{ m.raw|fmt(m.unit) }}</div>
     {{ m.sparkline|safe }}
@@ -41,8 +50,8 @@
     </div>
     <div class="meta">
       <span><a href="{{ m.source_url }}">{{ m.source }}</a></span>
-      <span>{% if m.as_of %}as of {{ m.as_of }}{% endif %}</span>
     </div>
+    <div class="age">{{ m.age_text }}{% if m.stale %} <span class="badge-stale">Stale</span>{% endif %}</div>
   </div>
   {% endfor %}
 </div>
@@ -75,18 +84,18 @@
 
 <div class="section-title">
   <h3>Short-term pulse</h3>
-  <span class="hint">Faster-moving indicators that sit outside the core index but provide weekly context. Source: <a href="https://fred.stlouisfed.org">FRED</a>.</span>
+  <span class="hint">Faster-moving indicators outside the BugOut Index. Each tile shows the observation date and age. Source: <a href="https://fred.stlouisfed.org">FRED</a>.</span>
 </div>
 <div class="grid pulse">
   {% for p in pulse %}
-  <div class="tile">
-    <div class="k">{{ p.label }}</div>
+  <div class="tile{% if p.stale %} stale{% endif %}">
+    <div class="k">{{ p.label }}{% if p.stale %} <span class="badge-stale">Stale</span>{% endif %}</div>
     <div class="v">{{ p.value|fmt(p.unit) }}</div>
     {{ p.sparkline|safe }}
     <div class="meta">
       <span><a href="https://fred.stlouisfed.org/series/{{ p.source_id }}">{{ p.source_id }}</a></span>
-      <span>{% if p.as_of %}as of {{ p.as_of }}{% endif %}</span>
     </div>
+    <div class="age">{{ p.age_text }}</div>
   </div>
   {% endfor %}
 </div>

@@ -5,9 +5,11 @@
 
 The **BugOutIndex** is a societal stability scoring system designed to help individuals and communities anticipate critical points of instability. By analyzing a wide range of metrics—spanning economic, social, infrastructure, and environmental factors—the BugOutIndex provides a single, actionable score to gauge societal health.
 
-**Live site:** <https://adammontville.github.io/bugoutindex/> — updated every Friday evening after US markets close.
+**Live site:** <https://www.bugoutindex.com/> (also <https://adammontville.github.io/bugoutindex/>) — updated every Friday evening after US markets close.
 
 **Weekly pipeline:** See [`runtime/publish/README.md`](./runtime/publish/README.md) for how the automated weekly update works.
+
+**Architecture and roadmap:** See [`ARCHITECTURE_AND_ROADMAP.md`](./ARCHITECTURE_AND_ROADMAP.md) for how the score is produced, where the docs disagree, and a proposed Now / Next / Later plan. That document does not change the calculation.
 
 ## **How It Works**
 1. **Metrics Analysis**: We evaluate key indicators like inflation, crime rates, natural disasters, and more.

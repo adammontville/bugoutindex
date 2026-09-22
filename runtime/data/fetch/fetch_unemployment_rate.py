@@ -30,6 +30,8 @@ def fetch():
         return {
             "status": "success",
             "fetched_at": observation["date"],
+            # FRED observation date (month), kept separate from the publish date.
+            "observation_date": observation["date"],
             "data": {"unemployment_rate": float(observation["value"])},
         }
     except RetryError as exc:

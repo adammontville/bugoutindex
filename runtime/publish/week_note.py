@@ -14,18 +14,21 @@ from datetime import date, datetime
 from decimal import Decimal
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
+from runtime.publish.observation_dates import (
+    FAKE_FETCH_TIMESTAMPS,
+    NEW_PERIOD,
+    REVISION,
+    UNCHANGED,
+    classify_core_change,
+    normalize_observation_date,
+    observation_column,
+)
+
 # Pulse observations older than this, relative to the publication date, are
 # labeled stale. A year catches a series stuck on a prior-year print
 # (OECD business confidence, dated 2024-01-01) without flagging a quarterly
 # core series that is still the latest official reading.
 PULSE_STALE_AFTER_DAYS = 365
-
-# Placeholder written by the crime and homelessness fetchers before they
-# recorded a real observation. Never display it as a fetch time.
-FAKE_FETCH_TIMESTAMPS = {
-    "2025-01-01T00:00:00Z",
-    "2025-01-01T00:00:00+00:00",
-}
 
 CORE_ORDER = (
     "inflation_rate",
@@ -124,7 +127,7 @@ def describe_core_age(key: str, entry: Optional[dict], publication: str) -> Dict
         year = str(provenance.get("year") or fetched)
         return {"text": _annual_age(year, published), "stale": False}
 
-    observed = _as_date(fetched)
+    observed = _as_date(_generic_stamp(entry))
     if observed is None or published is None:
         if fetched and not fake:
             return {"text": f"as of {fetched}", "stale": False}
@@ -325,14 +328,49 @@ def _core_changes(snapshot: dict, prior: dict) -> Tuple[List[str], List[str]]:
         title = CORE_TITLES[key]
         dating = _dating_phrase(key, entry)
         previous = prior.get(key)
-        if previous in ("", None) or _same(current, previous):
+        kind = classify_core_change(
+            previous,
+            current,
+            prior.get(observation_column(key)),
+            entry.get("observation_date"),
+        )
+        if kind == UNCHANGED:
             unchanged.append(f"{title} stayed at {format_number(current)} ({dating})")
             continue
-        changed.append(
-            f"{title} changed from {format_number(previous)} to {format_number(current)} "
-            f"(change of {format_change(previous, current)}; {dating})"
-        )
+        changed.append(_change_clause(title, previous, current, dating, kind, prior, key, entry))
     return changed, unchanged
+
+
+def _change_clause(title, previous, current, dating, kind, prior, key, entry) -> str:
+    """One core move. A same-date value change is named as a revision."""
+    delta = format_change(previous, current)
+    if kind == REVISION:
+        observed = normalize_observation_date(entry.get("observation_date"))
+        return (
+            f"{title} was revised from {format_number(previous)} to {format_number(current)} "
+            f"for the same observation date {observed} "
+            f"{_change_tail(delta, dating, observed)}"
+        )
+    if kind == NEW_PERIOD:
+        previous_observed = normalize_observation_date(prior.get(observation_column(key)))
+        current_observed = normalize_observation_date(entry.get("observation_date"))
+        return (
+            f"{title} changed from {format_number(previous)} (observed {previous_observed}) "
+            f"to {format_number(current)} (observed {current_observed}) "
+            f"{_change_tail(delta, dating, previous_observed, current_observed)}"
+        )
+    return (
+        f"{title} changed from {format_number(previous)} to {format_number(current)} "
+        f"(change of {delta}; {dating})"
+    )
+
+
+def _change_tail(delta: str, dating: str, *already_stated: Optional[str]) -> str:
+    """Skip a dating phrase that only repeats an observation date already in the clause."""
+    repeated = any(dating == f"observed {stated}" for stated in already_stated if stated)
+    if repeated:
+        return f"(change of {delta})"
+    return f"(change of {delta}; {dating})"
 
 
 def _pulse_level_sentence(snapshot: dict) -> str:
@@ -443,9 +481,21 @@ def _dating_phrase(key: str, entry: dict) -> str:
     if kind == "annual" or _is_year(fetched):
         year = provenance.get("year") or fetched
         return f"annual, {year}"
-    if fetched and not _is_fake(fetched):
-        return f"observed {fetched}"
+    stamp = _generic_stamp(entry)
+    observed = _as_date(stamp)
+    if observed is not None:
+        return f"observed {observed.isoformat()}"
+    if stamp and not _is_fake(stamp):
+        return f"observed {stamp}"
     return "observation date not recorded"
+
+
+def _generic_stamp(entry: dict):
+    """Calendar observation date, or ``source_fetched_at`` when that is all we have."""
+    observed = normalize_observation_date(entry.get("observation_date"))
+    if observed and len(observed) == 10:
+        return observed
+    return entry.get("source_fetched_at")
 
 
 def _pulse_dating(observed_on: Optional[str], publication: str, *, flat: bool) -> str:

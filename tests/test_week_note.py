@@ -272,6 +272,8 @@ def test_week_note_when_inflation_and_the_index_move():
     assert unexplained_numerals(note, snapshot) == []
     assert "moved from 57.15 on 2026-09-05 to 57.11, a change of -0.04 points" in text
     assert "Inflation changed from 3.303856050706308 to 3.353016322755652" in text
+    # Prior row has no observation date, so this move is not called a revision.
+    assert "revised" not in text.lower()
     assert "observed 2026-08-01" in text
     unchanged = next(sentence for sentence in note if sentence.startswith("Unchanged core inputs"))
     for name in ("unemployment", "debt-to-GDP", "crime", "homelessness", "trust in government"):

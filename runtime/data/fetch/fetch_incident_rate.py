@@ -118,9 +118,11 @@ def fetch():
         df["Last Updated"].tolist() if "Last Updated" in df.columns else [],
     )
     # No fetch timestamp: the file is local and is not re-downloaded here.
+    # The observation date is the last day of the month the rate describes.
     return {
         "status": "success",
         "fetched_at": None,
+        "observation_date": provenance.get("value_month_end"),
         "provenance": provenance,
         "data": {
             "incident_rate": float(round(national_crime_rate, 2))

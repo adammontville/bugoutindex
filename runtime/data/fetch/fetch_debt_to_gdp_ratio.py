@@ -30,6 +30,9 @@ def fetch():
         return {
             "status": "success",
             "fetched_at": observation["date"],
+            # FRED observation date (quarter). A later vintage of this same
+            # date is a revision, not a new quarter.
+            "observation_date": observation["date"],
             "data": {"debt_to_gdp_ratio": float(observation["value"])},
         }
     except RetryError as exc:

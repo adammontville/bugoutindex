@@ -250,7 +250,7 @@ METRIC_LABELS = {
                        "source_url": "https://fred.stlouisfed.org/series/CPIAUCSL"},
     "incident_rate": {"label": "Violent + Property Crime", "unit": "per 100k",
                       "source": "Real-Time Crime Index",
-                      "source_url": "https://github.com/jacobkap/real_time_crime_index"},
+                      "source_url": "https://realtimecrimeindex.com/"},
     "unemployment_rate": {"label": "Unemployment Rate", "unit": "%", "source": "FRED (UNRATE)",
                           "source_url": "https://fred.stlouisfed.org/series/UNRATE"},
     "debt_to_gdp_ratio": {"label": "Debt-to-GDP Ratio", "unit": "%",
@@ -347,6 +347,7 @@ def render_site(snapshot: Dict[str, Any]) -> None:
             "sparkline": sparkline_svg(metric_series),
             "age_text": age["text"],
             "stale": age["stale"],
+            "diagnostics": entry.get("diagnostics"),
         })
 
     markets = snapshot.get("markets", {})

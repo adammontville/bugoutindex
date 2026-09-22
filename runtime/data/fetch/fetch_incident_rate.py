@@ -10,14 +10,25 @@
 import calendar
 import os
 from collections import Counter
+from typing import Optional
 
 """
 Fetcher for violent crime incident rate.
+
+The published index input is locked at ``PUBLISHED_INCIDENT_RATE``. A weekly
+run downloads the AH-Datalytics RTCI cleaned file, records its vintage, and
+stores an unweighted candidate plus a population-weighted alternative as
+diagnostics. Those diagnostics are not ``compute_index`` inputs. Replacing
+2723.0 is a separate reviewed revision.
 """
 
 # Resolve path relative to this file so it works from any CWD.
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _DATA_DIR = os.path.abspath(os.path.join(_HERE, ".."))
+
+# v1.0.0 published crime input. Do not replace this from the RTCI file
+# until a reviewed data revision says so.
+PUBLISHED_INCIDENT_RATE = 2723.0
 
 _MONTHS = {
     "January": 1,
@@ -85,50 +96,122 @@ def _month_end(label: str):
     return f"{year:04d}-{month:02d}-{last:02d}"
 
 
-def fetch():
-    """
-    Fetch the latest violent crime incident rate (Real-Time Crime Index)
+def _rates_for_month(frame, month: str) -> dict:
+    """Unweighted agency mean and population-weighted total for one month.
+
+    Rows with a missing crime count or a non-positive population are left
+    out of both figures so the two alternatives describe the same agencies.
     """
     import pandas as pd
 
-    # Load the locally downloaded dataset — check multiple candidate paths.
-    candidates = [
-        os.path.join(_DATA_DIR, "final_sample.csv"),
-        "data/final_sample.csv",
-        "runtime/data/final_sample.csv",
-    ]
-    file_path = next((p for p in candidates if os.path.exists(p)), candidates[0])
-    df = pd.read_csv(file_path)
+    month_text = str(month).strip()
+    dates = frame["Date"].astype(str).str.strip()
+    slice_ = frame.loc[dates == month_text]
+    violent = pd.to_numeric(slice_["Violent Crime_mvs_12mo"], errors="coerce")
+    prop = pd.to_numeric(slice_["Property Crime_mvs_12mo"], errors="coerce")
+    pop = pd.to_numeric(slice_["FBI.Population.Covered"], errors="coerce")
+    total = violent + prop
+    usable = total.notna() & pop.notna() & (pop > 0)
+    if not bool(usable.any()):
+        raise ValueError(f"no usable agency rows for {month_text}")
+    rates = (total[usable] / pop[usable]) * 100000
+    unweighted = float(round(float(rates.mean()), 2))
+    weighted = float(round(float(total[usable].sum() / pop[usable].sum() * 100000), 2))
+    return {
+        "unweighted": unweighted,
+        "population_weighted": weighted,
+        "agencies": int(usable.sum()),
+    }
 
-    # Same month selection as before: lexicographic max of the Date strings,
-    # which is the published 2,723 input (September 2024 in the current file).
-    # Do not switch this to the latest calendar month without a reviewed revision.
-    latest_date = df["Date"].max()
-    df_latest = df[df["Date"] == latest_date]
 
-    # Compute crime rate per 100,000 people
-    df_latest["Total Crime"] = df_latest["Violent Crime_mvs_12mo"] + df_latest["Property Crime_mvs_12mo"]
-    df_latest["Crime Rate"] = (df_latest["Total Crime"] / df_latest["FBI.Population.Covered"]) * 100000
+def crime_rate_diagnostics(frame) -> dict:
+    """Candidate rates from an RTCI frame. Not an index input.
 
-    # Aggregate to get national average
-    national_crime_rate = df_latest["Crime Rate"].mean()
+    ``candidate_incident_rate`` uses the same month rule as the locked
+    series: the lexicographic maximum of ``Date`` (what ``DataFrame.max``
+    selects). ``latest_month_*`` is the latest calendar month in the file,
+    which can be newer than that lexicographic month.
+    """
+    provenance = crime_file_provenance(
+        frame["Date"].tolist(),
+        frame["Last Updated"].tolist() if "Last Updated" in frame.columns else [],
+    )
+    candidate_month = frame["Date"].max()
+    candidate = _rates_for_month(frame, candidate_month)
+    diagnostics = {
+        "candidate_incident_rate": candidate["unweighted"],
+        "candidate_month": str(candidate_month).strip(),
+        "population_weighted_incident_rate": candidate["population_weighted"],
+        "agencies": candidate["agencies"],
+        "published_incident_rate": PUBLISHED_INCIDENT_RATE,
+        "index_input": False,
+    }
+    file_through = provenance.get("file_through")
+    if file_through:
+        latest = _rates_for_month(frame, file_through)
+        diagnostics["latest_month"] = file_through
+        diagnostics["latest_month_incident_rate"] = latest["unweighted"]
+        diagnostics["latest_month_population_weighted_incident_rate"] = latest["population_weighted"]
+        diagnostics["latest_month_agencies"] = latest["agencies"]
+    return diagnostics
+
+
+def _error(message: str) -> dict:
+    return {"status": "error", "message": message, "data": {}}
+
+
+def fetch(csv_text: Optional[str] = None, csv_path: Optional[str] = None):
+    """
+    Fetch RTCI diagnostics and return the locked published incident rate.
+
+    With no arguments, download the cleaned file from the raw RTCI URL.
+    Tests pass ``csv_text`` or ``csv_path`` and do not touch the network.
+
+    An unreadable file or a non-CSV body (HTML included) returns
+    ``status: error`` and no incident rate. It does not return success.
+    """
+    from runtime.util.download_crime_rate_data import (
+        CrimeFileError,
+        download_rtci_csv,
+        read_rtci_csv,
+        rtci_raw_csv_url,
+    )
+
+    source_url = rtci_raw_csv_url()
+    try:
+        if csv_text is None and csv_path is None:
+            csv_text = download_rtci_csv()
+        elif csv_text is None:
+            try:
+                with open(csv_path, encoding="utf-8-sig") as handle:
+                    csv_text = handle.read()
+            except OSError as exc:
+                return _error(f"crime file unreadable: {exc}")
+        frame = read_rtci_csv(csv_text)
+        diagnostics = crime_rate_diagnostics(frame)
+    except CrimeFileError as exc:
+        return _error(str(exc))
+    except ValueError as exc:
+        return _error(f"crime file unreadable: {exc}")
 
     provenance = crime_file_provenance(
-        df["Date"].tolist(),
-        df["Last Updated"].tolist() if "Last Updated" in df.columns else [],
+        frame["Date"].tolist(),
+        frame["Last Updated"].tolist() if "Last Updated" in frame.columns else [],
     )
-    # No fetch timestamp: the file is local and is not re-downloaded here.
+    provenance["source_url"] = source_url
+    # No observation timestamp: the rate's vintage is the file month.
+    # The locked number below is the index input. Diagnostics are not.
     return {
         "status": "success",
         "fetched_at": None,
         "provenance": provenance,
+        "diagnostics": diagnostics,
         "data": {
-            "incident_rate": float(round(national_crime_rate, 2))
-        }
+            "incident_rate": PUBLISHED_INCIDENT_RATE,
+        },
     }
 
 
 if __name__ == "__main__":
-    # Debugging fetcher output
     result = fetch()
     print(result)

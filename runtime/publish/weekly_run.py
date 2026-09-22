@@ -59,44 +59,20 @@ DOCS_DATA = REPO_ROOT / "docs" / "data"
 
 # Make `data.fetch.fetch_<metric>` importable (the existing modules use that path).
 sys.path.insert(0, str(RUNTIME_DIR))
+# Repo root so `runtime.processing.formula` imports when this file is executed directly.
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
 
-# Core metrics — must match the v1.0.0 methodology.
-CORE_METRICS = [
-    "inflation_rate",
-    "incident_rate",           # crime rate (per 100k)
-    "unemployment_rate",
-    "debt_to_gdp_ratio",
-    "homelessness_rate",
-    "trust_in_government",
-]
+# v1.0.0 formula: endpoints, weights, inversion, clamp, aggregation, bands.
+# Rebound here so existing callers of weekly_run keep the same entry points.
+import runtime.processing.formula as _formula  # noqa: E402
 
-METRIC_RANGES: Dict[str, tuple] = {
-    "inflation_rate": (-10, 15),
-    "incident_rate": (500, 8000),
-    "unemployment_rate": (0, 25),
-    "debt_to_gdp_ratio": (0, 200),
-    "homelessness_rate": (0, 0.5),
-    "trust_in_government": (0, 80),  # trust is inverted (higher = better)
-}
-
-WEIGHTS: Dict[str, float] = {
-    "inflation_rate": 0.15,
-    "incident_rate": 0.12,
-    "unemployment_rate": 0.12,
-    "debt_to_gdp_ratio": 0.12,
-    "homelessness_rate": 0.09,
-    "trust_in_government": 0.12,
-}
-
-
-def normalize(raw: float, lo: float, hi: float, inverse: bool = False) -> float:
-    """Normalize to 0-100. Higher = more stable."""
-    if hi == lo:
-        return 0.0
-    score = (1 - ((raw - lo) / (hi - lo))) * 100
-    if inverse:
-        score = 100 - score
-    return max(0.0, min(100.0, score))
+CORE_METRICS = _formula.CORE_METRICS
+METRIC_RANGES = _formula.METRIC_RANGES
+WEIGHTS = _formula.WEIGHTS
+normalize = _formula.normalize
+compute_index = _formula.compute_index
+interpret = _formula.interpret
 
 
 def fetch_core_metrics() -> Dict[str, Dict[str, Any]]:
@@ -112,41 +88,6 @@ def fetch_core_metrics() -> Dict[str, Dict[str, Any]]:
             print(f"[error] fetch {metric}: {exc}", file=sys.stderr)
             out[metric] = {"status": "error", "message": str(exc), "data": {}}
     return out
-
-
-def compute_index(metric_results: Dict[str, Dict[str, Any]]) -> Dict[str, Any]:
-    total_weighted = 0.0
-    total_weight = 0.0
-    per_metric = {}
-    for metric in CORE_METRICS:
-        payload = metric_results.get(metric, {})
-        data = payload.get("data") or {}
-        raw = data.get(metric)
-        if raw is None or not isinstance(raw, (int, float)):
-            per_metric[metric] = {"raw": None, "normalized": None, "weight": WEIGHTS[metric]}
-            continue
-        lo, hi = METRIC_RANGES[metric]
-        norm = normalize(float(raw), lo, hi, inverse=(metric == "trust_in_government"))
-        per_metric[metric] = {
-            "raw": float(raw),
-            "normalized": round(norm, 2),
-            "weight": WEIGHTS[metric],
-        }
-        total_weighted += norm * WEIGHTS[metric]
-        total_weight += WEIGHTS[metric]
-
-    index = round(total_weighted / total_weight, 2) if total_weight else 0.0
-    return {"index": index, "metrics": per_metric}
-
-
-def interpret(index: float) -> Dict[str, str]:
-    if index >= 70:
-        return {"band": "High Stability", "risk": "Low Risk", "band_key": "high"}
-    if index >= 55:
-        return {"band": "Moderate Stability", "risk": "Warning Signs", "band_key": "moderate"}
-    if index >= 40:
-        return {"band": "Low Stability", "risk": "Heightened Risk", "band_key": "low"}
-    return {"band": "Critical Instability", "risk": "Collapse Likely", "band_key": "critical"}
 
 
 def fetch_markets() -> Dict[str, Any]:

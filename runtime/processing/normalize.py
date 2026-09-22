@@ -9,17 +9,10 @@
 # For proprietary or commercial use, please contact: your-email@example.com
 
 """
-Module Description:
-<Add a description of this module here>
+Normalization entry point.
+
+The implementation, including the 0–100 clamp, is ``formula.normalize``.
 """
-# def normalize_metric(raw_value, min_value, max_value):
-#     """Normalize a raw value to a 0-100 scale."""
-#     if max_value == min_value:
-#         return 0  # Avoid division by zero
-#     return (1 - ((raw_value - min_value) / (max_value - min_value))) * 100
-def normalize_metric(raw_value, min_value, max_value, inverse=False):
-    """Normalize a raw value to a 0-100 scale. Inverts if needed."""
-    if max_value == min_value:
-        return 0  # Avoid division by zero
-    norm_score = (1 - ((raw_value - min_value) / (max_value - min_value))) * 100
-    return 100 - norm_score if inverse else norm_score  # Invert for stability metrics
+from .formula import normalize as normalize_metric
+
+__all__ = ["normalize_metric"]

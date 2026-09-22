@@ -275,6 +275,8 @@ def _file_age(provenance: dict, published: Optional[date]) -> str:
     file_through = provenance.get("file_through")
     file_updated = provenance.get("file_updated")
     if not value_month:
+        if file_through:
+            return f"file vintage · crime file through {file_through}"
         return "file vintage · last known month not recorded in this snapshot"
     if file_through and file_through != value_month:
         bits = [f"file vintage · value month {value_month}"]
@@ -284,8 +286,8 @@ def _file_age(provenance: dict, published: Optional[date]) -> str:
     if anchor is not None and published is not None:
         days = (published - anchor).days
         bits.append(_days_since(days, anchor))
-    if file_through and file_through != value_month:
-        bits.append(f"file through {file_through}")
+    if file_through:
+        bits.append(f"crime file through {file_through}")
     if file_updated:
         bits.append(f"file updated {file_updated}")
     return " · ".join(bits)
@@ -432,11 +434,15 @@ def _dating_phrase(key: str, entry: dict) -> str:
         through = provenance.get("file_through")
         updated = provenance.get("file_updated")
         if not month:
+            if through:
+                return f"crime file through {through}"
             return "file vintage"
         if through and through != month:
-            phrase = f"file vintage, value month {month}; file through {through}"
+            phrase = f"file vintage, value month {month}; crime file through {through}"
         else:
             phrase = f"file vintage, last known month {month}"
+            if through:
+                phrase += f"; crime file through {through}"
         if updated:
             phrase += f"; file updated {updated}"
         return phrase

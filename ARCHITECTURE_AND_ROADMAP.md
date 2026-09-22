@@ -64,7 +64,7 @@ Trust is the exception. The code sets `inverse=True`, which replaces that result
 | Input | What is actually fetched | Endpoints in code | Raw weight | Series / file |
 | --- | --- | --- | --- | --- |
 | Inflation | CPI-U year-over-year, computed in the fetcher from FRED `CPIAUCSL` | −10% to 15% | 0.15 | `fetch_inflation_rate.py` |
-| Crime | Unweighted mean of agency rates: (12-month violent + 12-month property) / population × 100,000 | 500 to 8,000 per 100k | 0.12 | Local `runtime/data/final_sample.csv` via `fetch_incident_rate.py` |
+| Crime | Unweighted mean of agency rates: (12-month violent + 12-month property) / population × 100,000 | 500 to 8,000 per 100k | 0.12 | RTCI cleaned file via `fetch_incident_rate.py`. Published input locked at 2723.0; file candidate is diagnostic only |
 | Unemployment | Latest FRED `UNRATE` | 0% to 25% | 0.12 | `fetch_unemployment_rate.py` |
 | Debt-to-GDP | Latest FRED `GFDEGDQ188S` | 0% to 200% | 0.12 | `fetch_debt_to_gdp_ratio.py` |
 | Homelessness | Constant `0.23` | 0% to 0.5% of population | 0.09 | Hardcoded in `fetch_homelessness_rate.py` |
@@ -161,7 +161,7 @@ These are product constraints, not just style notes:
 ### Known limitations (from the code and the data, not from theory)
 
 - **Freshness.** CPI and unemployment are monthly. Debt-to-GDP is quarterly. Edelman is annual. Homelessness is a manual annual constant. The job still runs every week. The methodology page states this. The homepage does not say which tiles are stale.
-- **Crime is frozen in the published series.** Every weekly row, and the March 2025 daily file before that, stores incident rate **2723.0**. The CSV’s newest month is November 2024 and its “Last Updated” field is 19 February 2025. `fetched_at` is the string `2025-01-01T00:00:00Z`, not the file date. The weekly job does not refresh the file. `runtime/util/download_crime_rate_data.py` is not called, and it downloads a GitHub **blob HTML page** (`.../blob/development/data/final_sample.csv`), not a raw CSV. The site’s source link points at `jacobkap/real_time_crime_index`; the downloader points at `AH-Datalytics/rtci`.
+- **Crime’s published input is still 2723.0.** Every weekly row through 19 September 2026 stores incident rate **2723.0**. The weekly job now downloads the cleaned RTCI file from `AH-Datalytics/rtci` (`docs/app_data/final_sample.csv` on `main`, via `raw.githubusercontent.com`). A non-CSV body fails the crime fetcher, and the run refuses to publish. The file’s calendar max month is stored on the snapshot. The unweighted candidate and a population-weighted alternative are diagnostic fields and are not inputs to `compute_index`. Accepting a number other than 2723.0 is a separate reviewed revision. The public source link is https://realtimecrimeindex.com/ (repository https://github.com/AH-Datalytics/rtci). `jacobkap/real_time_crime_index` is not a download target.
 - **Crime is an unweighted agency mean**, not a population-weighted national total. Small agencies count as much as large ones. The crime essay says this is an average across reporting agencies. Coverage is the Real-Time Crime Index sample, not the whole country.
 - **Homelessness cannot update** until someone edits the return value `0.23`. The essay says the 2024 HUD point-in-time figure is 0.23% and that updates are manual. The timestamp is fake.
 - **Trust cannot update** until someone adds a year column to the Edelman CSV. The fetcher does take the max year present, which is good. Nothing fetches a new year.
@@ -364,7 +364,7 @@ These raise data quality and prepare a real methodology version. They still do n
 
 - **Outcome:** The weekly job can download the RTCI file from a raw URL, record the file’s max month, and fail the crime fetcher if the file is unreadable. Do not let a bad download return success. Compute the candidate rate (and a population-weighted alternative) into the JSON as **diagnostic fields** that are not inputs to `compute_index`, until the PM accepts a data revision.
 - **Effort:** M.
-- **Dependencies:** Confirm which RTCI repository is canonical (`jacobkap/real_time_crime_index` vs `AH-Datalytics/rtci`). A change to the 2,723 input is a published revision, even if the formula version stays 1.0.0, and should be explained in that week’s note.
+- **Dependencies:** Canonical source is **AH-Datalytics/rtci** (https://realtimecrimeindex.com/). `jacobkap/real_time_crime_index` is not a download target. A change to the 2,723 input is a published revision, even if the formula version stays 1.0.0, and should be explained in that week’s note.
 - **Success:** The site can say “crime file through {month}”. A broken download does not publish a new index. The headline stays  on 2,723 until an explicit, reviewed switch.
 
 **9. Annual manual inputs get a checklist, not a silent constant**

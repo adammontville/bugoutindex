@@ -21,7 +21,7 @@ The BugOut Index is **recomputed every week** (typically Friday evening after US
 - **Crime & Public Safety:** Violent **plus** property crime rates (Real-Time Crime Index sample).
 - **Social Stability:** Homelessness rates and institutional trust levels (Edelman).
 
-Each of these metrics is weighted and combined into a single **composite score**, which represents the overall **stability or instability** of a given society. See [METRICS.md](../../../METRICS.md) for the full worked example.
+Each of these metrics is weighted and combined into a single **composite score**, which represents the overall **stability or instability** of a given society. See `METRICS.md` at the repository root for the full worked example.
 
 ---
 

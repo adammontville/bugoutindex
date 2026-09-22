@@ -5,8 +5,19 @@ This directory contains the headless weekly pipeline that powers
 
 ## What it does
 
-Every Friday at 22:00 America/Chicago (03:00 UTC Saturday), a GitHub
-Action runs `weekly_run.py`, which:
+Every Friday at 23:30 UTC, GitHub Actions runs this pipeline. The cron in
+`.github/workflows/weekly-update.yml` is `30 23 * * 5`. That instant is
+18:30 America/Chicago during daylight time (CDT, UTC−5) and 17:30 during
+standard time (CST, UTC−6). `workflow_dispatch` can start the same job
+by hand.
+
+`publication_date` is the America/Chicago calendar date when the run
+starts, not the UTC date. GitHub often starts the scheduled job after
+00:00 UTC Saturday; that start is still Friday evening in Chicago, so
+the week label stays Friday. Dates already written in the history CSVs
+are left as they were stamped.
+
+The Action runs `weekly_run.py`, which:
 
 1. Fetches the six core BugOut Index metrics (inflation, crime,
    unemployment, debt-to-GDP, homelessness, trust in government) using
@@ -50,7 +61,8 @@ python -m http.server 8765 --directory docs
 
 | File | Purpose |
 | --- | --- |
-| `weekly_run.py` | Orchestrator. Fetches all inputs, computes index, emits JSON, triggers render. |
+| `weekly_run.py` | Orchestrator. Fetches all inputs, computes index, emits JSON, triggers render. Stamps `publication_date` in America/Chicago. |
+| `failure_notice.py` | Text for the Actions job summary when a publish does not land. |
 | `render.py` | Jinja2 renderer. Converts the JSON snapshot into HTML pages + inline SVG charts. |
 | `templates/*.j2` | Page templates. |
 | `static/style.css` | CSS; copied into `docs/assets/` on render. |
@@ -75,6 +87,35 @@ The weekly pipeline recomputes the index regardless of whether the
 underlying raw data has changed; this makes the site always reflect the
 most current published inputs, even though the BOI itself may not move
 week over week.
+
+## When a Friday publish fails
+
+`weekly_run.py` exits **2** when a core metric did not succeed, and exits
+**3** when markets or the pulse failed completely. Either exit happens
+before history, `docs/data/latest.json`, or HTML is written. Any other
+non-zero exit is a crash. The workflow records that code, then fails the
+job. The commit step does not run, so GitHub Pages keeps serving the last
+successful HTML. The footer line “Published {date}” stays that last good
+publication date. There is no failure banner on the site.
+
+The failed run is visible without opening the raw log:
+
+- The job is red. For a scheduled run, GitHub emails the person who last
+  changed the cron in `weekly-update.yml`, or who re-enabled the workflow.
+  That is GitHub’s built-in Actions notification (repository notification
+  settings still apply). A `workflow_dispatch` run notifies the person who
+  started it.
+- A step with `if: failure()` appends a short summary to
+  `$GITHUB_STEP_SUMMARY` and adds an error annotation on the run page. The
+  summary says whether this was a refusal (exit 2 or 3) or a crash.
+
+Preview that summary locally:
+
+```bash
+python -m runtime.publish.failure_notice 2
+python -m runtime.publish.failure_notice 3
+python -m runtime.publish.failure_notice 1
+```
 
 ## Secrets
 

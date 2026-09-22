@@ -50,12 +50,17 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict
+from zoneinfo import ZoneInfo
 
 # Repo paths — this file lives at runtime/publish/weekly_run.py
 REPO_ROOT = Path(__file__).resolve().parents[2]
 RUNTIME_DIR = REPO_ROOT / "runtime"
 DATA_DIR = RUNTIME_DIR / "data"
 DOCS_DATA = REPO_ROOT / "docs" / "data"
+
+# Editorial week is the U.S. Central calendar date, not the UTC date.
+# A Friday cron that GitHub starts just after 00:00 UTC Saturday is still Friday here.
+PUBLICATION_TZ = ZoneInfo("America/Chicago")
 
 # Make `data.fetch.fetch_<metric>` importable (the existing modules use that path).
 sys.path.insert(0, str(RUNTIME_DIR))
@@ -66,6 +71,10 @@ if str(REPO_ROOT) not in sys.path:
 # v1.0.0 formula: endpoints, weights, inversion, clamp, aggregation, bands.
 # Rebound here so existing callers of weekly_run keep the same entry points.
 import runtime.processing.formula as _formula  # noqa: E402
+from runtime.publish.failure_notice import (  # noqa: E402
+    EXIT_CORE_REFUSED,
+    EXIT_MARKETS_OR_PULSE_REFUSED,
+)
 
 CORE_METRICS = _formula.CORE_METRICS
 METRIC_RANGES = _formula.METRIC_RANGES
@@ -200,6 +209,22 @@ def build_snapshot(run_date: str, boi: Dict[str, Any],
     }
 
 
+def publication_date_for(now: datetime | None = None) -> str:
+    """Calendar date for this publish, in America/Chicago.
+
+    ``now`` should be timezone-aware. A naive value is read as UTC, which is
+    the clock GitHub Actions uses. The result is ``YYYY-MM-DD``.
+
+    This applies to new runs only. Rows already stored in the history CSVs
+    are not rewritten.
+    """
+    if now is None:
+        now = datetime.now(timezone.utc)
+    elif now.tzinfo is None:
+        now = now.replace(tzinfo=timezone.utc)
+    return now.astimezone(PUBLICATION_TZ).strftime("%Y-%m-%d")
+
+
 def load_history(path: Path, limit: int = 52) -> list:
     if not path.exists():
         return []
@@ -228,7 +253,7 @@ def _summarize_failures(core, markets, pulse) -> list:
 
 
 def main() -> int:
-    run_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    run_date = publication_date_for()
 
     print(f"[weekly_run] {run_date} — fetching core metrics…")
     core = fetch_core_metrics()
@@ -245,7 +270,7 @@ def main() -> int:
         for line in _summarize_failures(core, {}, {}):
             print(f"  - {line}", file=sys.stderr)
         print(msg, file=sys.stderr)
-        return 2
+        return EXIT_CORE_REFUSED
 
     print("[weekly_run] fetching markets…")
     markets = fetch_markets()
@@ -269,7 +294,7 @@ def main() -> int:
         for line in _summarize_failures(core, markets, pulse):
             print(f"  - {line}", file=sys.stderr)
         print(f"REFUSING TO PUBLISH: {'; '.join(hard_failures)}", file=sys.stderr)
-        return 3
+        return EXIT_MARKETS_OR_PULSE_REFUSED
 
     # Soft-warn if any partial failures occurred (some pulse items missing, etc.).
     partial_warnings = _summarize_failures(core, markets, pulse)

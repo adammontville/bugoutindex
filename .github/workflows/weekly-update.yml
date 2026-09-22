@@ -2,11 +2,15 @@ name: Weekly BugOut Index Update
 
 on:
   schedule:
-    # Friday 18:30 America/Chicago = Friday 23:30 UTC (CST) /
-    # Saturday 00:30 UTC (CDT). US equity markets close at 16:00 ET
-    # (21:00 UTC), so 23:30 UTC is safely post-close, and FRED has
-    # historically been most reliable in late-evening US hours.
-    # Previous slot (03:00 UTC Saturday) overlapped FRED maintenance
+    # cron is 23:30 UTC Friday (`30 23 * * 5`).
+    # America/Chicago at that instant:
+    #   18:30 Friday during CDT (daylight, UTC-5)
+    #   17:30 Friday during CST (standard, UTC-6)
+    # US equity markets close at 16:00 ET (21:00 UTC), so this is after
+    # the close. GitHub often starts the job late; a start just after
+    # 00:00 UTC Saturday is still Friday evening in Chicago.
+    # publication_date uses that Chicago calendar date.
+    # The previous slot (03:00 UTC Saturday) overlapped FRED maintenance
     # and produced a degraded run on 2026-04-25.
     - cron: "30 23 * * 5"
   workflow_dispatch: {}
@@ -40,7 +44,14 @@ jobs:
           FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
           PYTHONPATH: ${{ github.workspace }}
         run: |
+          set +e
           python -m runtime.publish.weekly_run
+          code=$?
+          set -e
+          echo "$code" > "${RUNNER_TEMP}/weekly_run_exit_code"
+          # Non-zero fails the job so GitHub's scheduled-run notification fires.
+          # The commit step is skipped. docs/ on main stays the last good publish.
+          exit "$code"
 
       - name: Commit updated data & site
         run: |
@@ -53,7 +64,22 @@ jobs:
           if git diff --cached --quiet; then
             echo "No changes to commit."
           else
-            RUN_DATE=$(date -u +%Y-%m-%d)
+            RUN_DATE=$(python -c "import json; print(json.load(open('docs/data/latest.json'))['publication_date'])")
             git commit -m "weekly: BugOut Index update for ${RUN_DATE}"
             git push
           fi
+
+      # Visible on the Actions run page without opening the raw log.
+      # if: failure() still leaves the job red, so the scheduled-run email is sent.
+      - name: Summarize a missed publish
+        if: failure()
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          code="unknown"
+          if [ -f "${RUNNER_TEMP}/weekly_run_exit_code" ]; then
+            code=$(tr -d '[:space:]' < "${RUNNER_TEMP}/weekly_run_exit_code")
+          fi
+          python -m runtime.publish.failure_notice "$code" >> "$GITHUB_STEP_SUMMARY"
+          summary=$(python -m runtime.publish.failure_notice --oneline "$code")
+          echo "::error title=Weekly publish failed::${summary}"

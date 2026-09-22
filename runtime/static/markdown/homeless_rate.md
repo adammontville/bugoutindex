@@ -73,7 +73,8 @@ Normalized Score = (1 - (Homelessness Rate - 0) / (0.5 - 0)) * 100
 ---
 
 ## **7. Weighting**
-- **Homelessness Rate Weight in BOI:** **0.09 (9%)**
+- **Raw weight in BOI:** **0.09**
+- **Share of the finished index:** **0.09 / 0.72 = 12.50%** (raw weights sum to 0.72; the publisher divides by that sum)
 - **Justification for Weighting:**
   - Homelessness is a **direct measure of economic hardship and social breakdown**.
   - Higher homelessness rates indicate **severe economic distress** and **a failure in public services**.
@@ -82,4 +83,4 @@ Normalized Score = (1 - (Homelessness Rate - 0) / (0.5 - 0)) * 100
 ---
 
 ## **Summary**
-The **Homelessness Rate** provides a crucial indicator of **economic and social well-being**, offering insight into the effectiveness of public policies and economic conditions. By integrating **authoritative HUD data, normalizing within a reasonable range, and weighting appropriately**, the BugOut Index ensures that **rising homelessness is reflected as a sign of increasing instability**.
+The **Homelessness Rate** provides a crucial indicator of **economic and social well-being**, offering insight into the effectiveness of public policies and economic conditions. By integrating **authoritative HUD data**, normalizing on **0–0.5%**, and weighting at **0.09 / 0.72**, the BugOut Index reflects rising homelessness as lower stability — matching the weekly publisher.

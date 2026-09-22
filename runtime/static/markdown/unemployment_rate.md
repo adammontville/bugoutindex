@@ -69,13 +69,14 @@ Max = 25% (Severe Unemployment Crisis)
 Normalized Score = (1 - (Unemployment Rate - 0) / (25 - 0)) * 100
 ```
 
-- An **unemployment rate of 0%** results in a **BOI contribution of 100 (full stability)**.
-- An **unemployment rate of 25% or higher** results in a **BOI contribution of 0 (critical instability)**.
+- An **unemployment rate of 0%** results in a **normalized score of 100 (full stability)**.
+- An **unemployment rate of 25% or higher** results in a **normalized score of 0 (critical instability)**.
 
 ---
 
 ## **7. Weighting**
-- **Unemployment Rate Weight in BOI:** **0.12 (12%)**
+- **Raw weight in BOI:** **0.12**
+- **Share of the finished index:** **0.12 / 0.72 ≈ 16.67%** (raw weights sum to 0.72; the publisher divides by that sum)
 - **Justification for Weighting:**
   - Unemployment is a **key driver of economic instability**.
   - It **correlates with other factors**, such as crime, homelessness, and social unrest.
@@ -84,4 +85,4 @@ Normalized Score = (1 - (Unemployment Rate - 0) / (25 - 0)) * 100
 ---
 
 ## **Summary**
-The **Unemployment Rate** is a fundamental indicator of **economic health, workforce stability, and financial security**. By integrating **real-time FRED data, normalizing within a reasonable range, and weighting appropriately**, the BugOut Index ensures that **rising unemployment is captured as a sign of increasing instability**.
+The **Unemployment Rate** is a fundamental indicator of **economic health, workforce stability, and financial security**. By integrating **monthly FRED data**, normalizing on **0–25%**, and weighting at **0.12 / 0.72**, the BugOut Index captures rising unemployment as lower stability — matching the weekly publisher.

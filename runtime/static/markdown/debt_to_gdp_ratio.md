@@ -67,13 +67,14 @@ Max = 200% (Extreme Debt Burden)
 Normalized Score = (1 - (Debt-to-GDP - 0) / (200 - 0)) * 100
 ```
 
-- A **Debt-to-GDP ratio of 0%** results in a **BOI contribution of 100 (full stability)**.
-- A **Debt-to-GDP ratio of 200%** results in a **BOI contribution of 0 (critical instability)**.
+- A **Debt-to-GDP ratio of 0%** results in a **normalized score of 100 (full stability)**.
+- A **Debt-to-GDP ratio of 200%** results in a **normalized score of 0 (critical instability)**.
 
 ---
 
 ## **7. Weighting**
-- **Debt-to-GDP Ratio Weight in BOI:** **0.12 (12%)**
+- **Raw weight in BOI:** **0.12**
+- **Share of the finished index:** **0.12 / 0.72 ≈ 16.67%** (raw weights sum to 0.72; the publisher divides by that sum)
 - **Justification for Weighting:**
   - While important, the **Debt-to-GDP ratio does not create immediate instability**, unlike crime or inflation.
   - However, sustained high debt levels **increase long-term economic risk** (e.g., recession, inflation, currency devaluation).
@@ -82,4 +83,4 @@ Normalized Score = (1 - (Debt-to-GDP - 0) / (200 - 0)) * 100
 ---
 
 ## **Summary**
-The **Debt-to-GDP Ratio** is a critical measure of **government fiscal health**, influencing investor confidence, inflation risk, and economic stability. By integrating **real-time FRED data, normalizing within a reasonable risk range, and weighting appropriately**, the BugOut Index ensures that **rising national debt is factored into overall stability assessments.**
+The **Debt-to-GDP Ratio** is a critical measure of **government fiscal health**, influencing investor confidence, inflation risk, and economic stability. By integrating **quarterly FRED data**, normalizing on **0–200%**, and weighting at **0.12 / 0.72**, the BugOut Index factors rising national debt into overall stability assessments — matching the weekly publisher.

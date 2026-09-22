@@ -71,14 +71,25 @@ Normalized Score = (1 - (Inflation Rate - (-10)) / (15 - (-10))) * 100
 
 ---
 
+**Worked example (publisher endpoints −10 to 15):** inflation at **4%** normalizes to **44.00**:
+
+```
+normalized = (1 − (4 − (−10)) / (15 − (−10))) × 100
+           = (1 − 14/25) × 100
+           = 44.00
+```
+
+---
+
 ## **7. Weighting**
-- **Inflation Rate Weight in BOI:** **0.15 (15%)**
+- **Raw weight in BOI:** **0.15**
+- **Share of the finished index:** **0.15 / 0.72 ≈ 20.83%** (raw weights sum to 0.72; the publisher divides by that sum)
 - **Justification for Weighting:**
   - Inflation **directly affects consumer confidence and economic conditions**.
   - High inflation **reduces disposable income**, affecting affordability and social stability.
-  - **One of the highest-weighted factors** due to its widespread economic impact.
+  - **The highest raw weight** among the six core metrics due to its widespread economic impact.
 
 ---
 
 ## **Summary**
-The **Inflation Rate** is a fundamental economic indicator that affects **cost of living, economic stability, and financial security**. By integrating **real-time FRED data, normalizing within a reasonable range, and weighting appropriately**, the BugOut Index ensures that **rising inflation is captured as a sign of increasing instability**.
+The **Inflation Rate** is a fundamental economic indicator that affects **cost of living, economic stability, and financial security**. By integrating **monthly FRED CPI data**, normalizing on **−10% to 15%**, and weighting at **0.15 / 0.72**, the BugOut Index captures rising inflation as lower stability — matching the weekly publisher.

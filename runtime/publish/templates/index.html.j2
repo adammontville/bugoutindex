@@ -22,7 +22,7 @@
 
 <div class="section-title">
   <h3>Core metrics</h3>
-  <span class="hint">Each tile shows the raw value, normalized 0–100 contribution, and weight in the index.</span>
+  <span class="hint">Each tile shows the raw value, normalized 0–100 score, and raw weight (weights sum to 0.72; see Methodology for shares of the finished index).</span>
 </div>
 <p class="rev-callout">
   Headline labor numbers move after release. See how much the last 24 months of payrolls
@@ -37,7 +37,7 @@
     <div class="norm-bar"><span style="width: {{ m.normalized or 0 }}%"></span></div>
     <div class="meta">
       <span>Normalized {{ (m.normalized if m.normalized is not none else '—') }} / 100</span>
-      <span>Weight {{ m.weight_pct }}%</span>
+      <span>Raw weight {{ m.weight_pct }}%</span>
     </div>
     <div class="meta">
       <span><a href="{{ m.source_url }}">{{ m.source }}</a></span>

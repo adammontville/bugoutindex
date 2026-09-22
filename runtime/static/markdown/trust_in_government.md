@@ -1,6 +1,8 @@
 ## **1. Description**
 The **Trust in Government** metric measures public confidence in key government institutions. It reflects how much people believe their government is competent, transparent, and acting in their best interests. **Higher trust in government typically indicates greater stability**, while **declining trust can signal unrest, governance failures, or weakening institutional legitimacy**.
 
+This is the **core** BugOut Index input from the Edelman Trust Barometer. It is distinct from the incubating **Government Authoritarianism Index**, which is not part of the v1.0.0 score.
+
 ---
 
 ## **2. Why It's Included**
@@ -31,54 +33,47 @@ A high level of trust indicates **strong institutional stability**, while low tr
 ---
 
 ## **5. Calculation Details**
-The **Trust in Government** score is provided as a **percentage (0-100%)** of people expressing confidence in government institutions.
+The **Trust in Government** score is provided as a **percentage (0–100%)** of people expressing confidence in government institutions.
 
-The metric is calculated as follows:
-
-```angular2html
+```
 Trust Score (%) = Percentage of respondents expressing confidence in government
 ```
 
-Since trust in government is **inversely related to instability**, we **invert** the value to reflect **distrust**:
+The publisher uses this trust percent **directly** as the raw input. It does **not** convert to a distrust score first.
 
-```angular2html
-Distrust Score (%) = 100 - Trust Score
-```
-
-**Example Calculation:**
-- **Edelman Trust Score (2025):** 41%
-```angular2html
-Distrust Score = 100 - 41
-= 59%
-```
-
-This **distrust score** is then normalized within the BugOut Index.
+**Example (2025 Edelman reading used in the live score):**
+- **Trust Score:** 41%
 
 ---
 
 ## **6. Normalization Method**
-To integrate **Trust in Government** into the **BugOut Index**, it must be normalized to a **0-100 scale**.
+To integrate **Trust in Government** into the **BugOut Index**, it is normalized to a **0–100 scale** with endpoints **0 to 80** and `inverse=True` (higher trust → higher stability).
 
-- **Normalization Range:**  
+In `weekly_run.normalize`, the default transform is:
 
-```angular2html
-Min = 0% (Full Trust in Government)
-Max = 80% (Widespread Distrust)
+```
+normalized = (1 − (raw − min) / (max − min)) × 100
 ```
 
-- **Formula:**  
+With `inverse=True`, the result is flipped (`100 − normalized`). For the 0–80 trust window that is equivalent to:
 
-```angular2html
-Normalized Score = (1 - (Distrust Score - 0) / (80 - 0)) * 100
+```
+normalized = ((Trust Score − 0) / (80 − 0)) × 100
 ```
 
-- A **distrust score of 0% (high trust)** results in a **BOI contribution of 100 (full stability)**.
-- A **distrust score of 80% or higher** results in a **BOI contribution of 0 (critical instability)**.
+- A **trust score of 0%** results in a **normalized score of 0** (critical instability).
+- A **trust score of 80% or higher** results in a **normalized score of 100** (full stability), after clamping.
+- **Worked example:** trust **41** → **51.25**.
+
+```
+normalized = (41 / 80) × 100 = 51.25
+```
 
 ---
 
 ## **7. Weighting**
-- **Trust in Government Weight in BOI:** **0.12 (12%)**
+- **Raw weight in BOI:** **0.12**
+- **Share of the finished index:** **0.12 / 0.72 ≈ 16.67%** (raw weights sum to 0.72; the publisher divides by that sum)
 - **Justification for Weighting:**
   - Trust in government **is a strong predictor of political and social stability**.
   - **Moderate weight ensures trust trends impact BOI scores**, but do not dominate over economic or crime-related factors.
@@ -87,4 +82,4 @@ Normalized Score = (1 - (Distrust Score - 0) / (80 - 0)) * 100
 ---
 
 ## **Summary**
-The **Trust in Government** metric provides a key indicator of **institutional stability, governance effectiveness, and public confidence**. By integrating **annual Edelman Trust data, normalizing within a reasonable range, and weighting appropriately**, the BugOut Index ensures that **rising distrust in government is accurately reflected as a sign of increasing instability**.
+The **Trust in Government** metric provides a key indicator of **institutional stability, governance effectiveness, and public confidence**. By integrating **annual Edelman Trust data**, mapping the trust percent linearly on **0–80** with inversion, and weighting at **0.12 / 0.72**, the BugOut Index reflects declining institutional confidence as lower stability — matching the weekly publisher.

@@ -17,11 +17,9 @@ Crime is one of the most **visible and immediate indicators of societal distress
 ---
 
 ## **4. Acquisition Method**
-- The **latest RTCI dataset** is checked **daily** via a script that:
-  1. **Compares the latest dataset commit on GitHub to the local file.**
-  2. **Downloads the newest version** if an update is detected.
-  3. **Stores the updated dataset in the `data/` directory**.
-- The data is pre-processed to extract crime counts and normalize them to a **per 100,000 people basis**.
+- The weekly publisher reads a local RTCI sample file (`runtime/data/final_sample.csv`) via `fetch_incident_rate.py`.
+- The fetcher computes an **unweighted mean** across reporting agencies of violent-plus-property rates on a **per 100,000 people** basis (typically using a 12-month moving average when available).
+- Coverage is the Real-Time Crime Index sample, not a population-weighted national census of every agency.
 
 ---
 
@@ -69,13 +67,14 @@ Normalized Score = (1 - (Crime Rate - 500) / (8000 - 500)) * 100
 ---
 
 ## **7. Weighting**
-- **Crime Rate Weight in BOI:** **0.12 (12%)**
+- **Raw weight in BOI:** **0.12**
+- **Share of the finished index:** **0.12 / 0.72 ≈ 16.67%** (raw weights sum to 0.72; the publisher divides by that sum)
 - **Justification for Weighting:**
-- Crime has a **direct impact on public perception of safety**.
-- Affects **business investment, migration patterns, and governance stability**.
-- Heavily weighted but **balanced against economic indicators** (e.g., inflation, unemployment).
+  - Crime has a **direct impact on public perception of safety**.
+  - Affects **business investment, migration patterns, and governance stability**.
+  - Heavily weighted but **balanced against economic indicators** (e.g., inflation, unemployment).
 
 ---
 
 ## **Summary**
-The **Crime Rate** metric provides a **real-time assessment of public safety**, offering critical insights into **societal stability trends**. By integrating **RTCI data, normalizing crime rates per capita, and weighting the results appropriately**, the BugOut Index ensures that **fluctuations in crime levels** are accurately reflected in its overall stability score.
+The **Crime Rate** metric provides a weekly public-safety input based on **violent plus property** crime in the RTCI sample. By normalizing on **500–8,000 per 100k** and weighting at **0.12 / 0.72**, the BugOut Index reflects crime fluctuations in line with the weekly publisher.

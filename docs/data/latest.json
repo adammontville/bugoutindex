@@ -21,8 +21,15 @@
       "raw": 2723.0,
       "normalized": 70.36,
       "weight": 0.12,
-      "source_fetched_at": "2025-01-01T00:00:00Z",
-      "status": "success"
+      "source_fetched_at": null,
+      "status": "success",
+      "provenance": {
+        "kind": "file",
+        "value_month": "September 2024",
+        "value_month_end": "2024-09-30",
+        "file_through": "December 2024",
+        "file_updated": "2025-02-19"
+      }
     },
     "unemployment_rate": {
       "raw": 4.1,
@@ -42,15 +49,25 @@
       "raw": 0.23,
       "normalized": 54.0,
       "weight": 0.09,
-      "source_fetched_at": "2025-01-01T00:00:00Z",
-      "status": "success"
+      "source_fetched_at": null,
+      "status": "success",
+      "provenance": {
+        "kind": "manual",
+        "last_set": "2024 HUD AHAR",
+        "observation_period": "January 2024 point-in-time count",
+        "reference_date": "2024-01-01"
+      }
     },
     "trust_in_government": {
       "raw": 41.0,
       "normalized": 51.25,
       "weight": 0.12,
       "source_fetched_at": "2025",
-      "status": "success"
+      "status": "success",
+      "provenance": {
+        "kind": "annual",
+        "year": "2025"
+      }
     }
   },
   "markets": {

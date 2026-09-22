@@ -35,8 +35,12 @@ def fetch():
         year_cols = [c for c in df.columns if c.isdigit()]
         latest_year = max(year_cols)
         trust_score = government_row[latest_year].values[0]
-        return {"status": "success", "fetched_at": latest_year,
-                "data": {"trust_in_government": round(float(trust_score), 2)}}
+        return {
+            "status": "success",
+            "fetched_at": latest_year,
+            "provenance": {"kind": "annual", "year": str(latest_year)},
+            "data": {"trust_in_government": round(float(trust_score), 2)},
+        }
     except KeyError as e:
         return {"status": "error", "message": f"Column missing: {str(e)}"}
     except Exception as e:

@@ -216,6 +216,19 @@ def append_history(run_date: str, boi: Dict[str, Any],
     _append_row(DATA_DIR / "pulse_history.csv", p_headers, {"date": run_date, **p_data})
 
 
+def _metric_snapshot(scored: Dict[str, Any], payload: Dict[str, Any]) -> Dict[str, Any]:
+    """Copy the scored inputs plus dating metadata. Provenance is not an input."""
+    block: Dict[str, Any] = {
+        **scored,
+        "source_fetched_at": payload.get("fetched_at"),
+        "status": payload.get("status"),
+    }
+    provenance = payload.get("provenance")
+    if provenance:
+        block["provenance"] = provenance
+    return block
+
+
 def build_snapshot(run_date: str, boi: Dict[str, Any],
                    core: Dict[str, Dict[str, Any]],
                    markets: Dict[str, Any],
@@ -229,11 +242,7 @@ def build_snapshot(run_date: str, boi: Dict[str, Any],
         "bugout_index": boi["index"],
         "interpretation": band,
         "metrics": {
-            m: {
-                **boi["metrics"][m],
-                "source_fetched_at": core.get(m, {}).get("fetched_at"),
-                "status": core.get(m, {}).get("status"),
-            }
+            m: _metric_snapshot(boi["metrics"][m], core.get(m, {}))
             for m in CORE_METRICS
         },
         "markets": {

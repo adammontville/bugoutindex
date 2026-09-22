@@ -92,6 +92,20 @@ header.site nav a:hover { color: var(--ink); }
 .tile .u { color: var(--muted); font-size: 12px; font-weight: 500; margin-left: 4px; }
 .tile .meta { color: var(--muted); font-size: 12px; margin-top: 8px; display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
 .tile .meta > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tile .age { color: var(--muted); font-size: 12px; margin-top: 8px; line-height: 1.4; overflow-wrap: anywhere; }
+.tile.stale { border-color: var(--critical); }
+.badge-stale {
+  display: inline-block; margin-left: 6px; padding: 1px 6px; border-radius: 999px;
+  background: rgba(192, 57, 43, 0.12); color: var(--critical); font-weight: 700;
+  letter-spacing: 0.04em; text-transform: uppercase; font-size: 10px; vertical-align: middle;
+}
+.week-note {
+  margin-top: 16px; background: var(--card); border: 1px solid var(--line);
+  border-radius: 12px; padding: 16px 18px;
+}
+.week-note h3 { margin: 0 0 8px; font-size: 16px; letter-spacing: -0.01em; }
+.week-note p { margin: 0 0 10px; font-size: 15px; max-width: 78ch; }
+.week-note p.disclaimer { margin-bottom: 0; color: var(--muted); }
 .tile svg.sparkline { display: block; width: 100%; height: 32px; margin-top: 10px; }
 
 .tile .delta-up   { color: var(--high); }

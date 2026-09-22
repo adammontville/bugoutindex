@@ -14,9 +14,23 @@ Module Description:
 """
 
 
-def fetch():
-    """Fetch the latest Homelessness Rate data."""
+# Manual annual input from the 2024 HUD Annual Homeless Assessment Report,
+# Part 1 (January point-in-time count). There is no HUD API call. Do not
+# invent a fetch timestamp. See runtime/static/markdown/homeless_rate.md.
+HOMELESSNESS_RATE = 0.23
+PROVENANCE = {
+    "kind": "manual",
+    "last_set": "2024 HUD AHAR",
+    "observation_period": "January 2024 point-in-time count",
+    "reference_date": "2024-01-01",
+}
 
-    # Fetch data hard-coded based on the most recent HUD data
-    # See the data directory for the raw data.
-    return {"status": "success", "fetched_at": "2025-01-01T00:00:00Z", "data": {"homelessness_rate": 0.23}}
+
+def fetch():
+    """Return the manually maintained homelessness rate."""
+    return {
+        "status": "success",
+        "fetched_at": None,
+        "provenance": dict(PROVENANCE),
+        "data": {"homelessness_rate": HOMELESSNESS_RATE},
+    }

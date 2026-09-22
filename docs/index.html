@@ -34,9 +34,19 @@
   </div>
 </section>
 
+<section class="week-note" aria-label="What changed this week">
+  <h3>This week</h3>
+  <p>The BugOut Index is 57.11, unchanged from 57.11 on 2026-09-12.</p>
+  <p>No core raw value changed: inflation stayed at 3.353016322755652 (observed 2026-08-01); crime stayed at 2,723 (file vintage, value month September 2024; file through December 2024; file updated 2025-02-19); unemployment stayed at 4.1 (observed 2026-08-01); debt-to-GDP stayed at 122.59387 (observed 2026-01-01); homelessness stayed at 0.23 (manual, last set 2024 HUD AHAR); trust in government stayed at 41 (annual, 2025).</p>
+  <p>Initial jobless claims changed from 206,000 to 196,000 (change of -10,000; observed 2026-09-12), the Treasury yield spread changed from 0.33 to 0.25 (change of -0.08; observed 2026-09-18), and VIX changed from 17.84 to 15.44 (change of -2.4; observed 2026-09-17).</p>
+  <p>Unchanged pulse series: U. Michigan consumer sentiment stayed at 55.2 (observed 2026-07-01); OECD business confidence stayed at 98.96989 (observed 2024-01-01, stale, unchanged across recorded weeks).</p>
+  <p>Gold changed from 4,349.7002 to 4,379 (change of +29.2998), silver changed from 64.622 to 66.377 (change of +1.755), and the US dollar index changed from 118.0732 to 118.2126 (change of +0.1394); markets fetched 2026-09-19.</p>
+  <p class="disclaimer">Markets and the short-term pulse are not inputs to the BugOut Index score.</p>
+</section>
+
 <div class="section-title">
   <h3>Core metrics</h3>
-  <span class="hint">Each tile shows the raw value, normalized 0–100 contribution, and weight in the index.</span>
+  <span class="hint">Each tile shows the raw value, how old that reading is, the normalized 0–100 score, and the weight.</span>
 </div>
 <p class="rev-callout">
   Headline labor numbers move after release. See how much the last 24 months of payrolls
@@ -54,8 +64,8 @@
     </div>
     <div class="meta">
       <span><a href="https://fred.stlouisfed.org/series/CPIAUCSL">FRED (CPIAUCSL)</a></span>
-      <span>as of 2026-08-01</span>
     </div>
+    <div class="age">observed 2026-08-01 · 49 days old</div>
   </div>
   <div class="tile">
     <div class="k">Violent + Property Crime</div>
@@ -68,8 +78,8 @@
     </div>
     <div class="meta">
       <span><a href="https://github.com/jacobkap/real_time_crime_index">Real-Time Crime Index</a></span>
-      <span>as of 2025-01-01T00:00:00Z</span>
     </div>
+    <div class="age">file vintage · value month September 2024 · 719 days since 2024-09-30 · file through December 2024 · file updated 2025-02-19</div>
   </div>
   <div class="tile">
     <div class="k">Unemployment Rate</div>
@@ -82,8 +92,8 @@
     </div>
     <div class="meta">
       <span><a href="https://fred.stlouisfed.org/series/UNRATE">FRED (UNRATE)</a></span>
-      <span>as of 2026-08-01</span>
     </div>
+    <div class="age">observed 2026-08-01 · 49 days old</div>
   </div>
   <div class="tile">
     <div class="k">Debt-to-GDP Ratio</div>
@@ -96,8 +106,8 @@
     </div>
     <div class="meta">
       <span><a href="https://fred.stlouisfed.org/series/GFDEGDQ188S">FRED (GFDEGDQ188S)</a></span>
-      <span>as of 2026-01-01</span>
     </div>
+    <div class="age">observed 2026-01-01 · 261 days old</div>
   </div>
   <div class="tile">
     <div class="k">Homelessness Rate</div>
@@ -110,8 +120,8 @@
     </div>
     <div class="meta">
       <span><a href="https://www.huduser.gov/portal/sites/default/files/pdf/2024-AHAR-Part-1.pdf">HUD AHAR</a></span>
-      <span>as of 2025-01-01T00:00:00Z</span>
     </div>
+    <div class="age">manual, last set 2024 HUD AHAR · January 2024 point-in-time count · 992 days since 2024-01-01</div>
   </div>
   <div class="tile">
     <div class="k">Trust in Government</div>
@@ -124,8 +134,8 @@
     </div>
     <div class="meta">
       <span><a href="https://www.edelman.com/trust">Edelman Trust Barometer</a></span>
-      <span>as of 2025</span>
     </div>
+    <div class="age">annual, last set 2025 · 626 days since 2025-01-01</div>
   </div>
 </div>
 
@@ -177,7 +187,7 @@
 
 <div class="section-title">
   <h3>Short-term pulse</h3>
-  <span class="hint">Faster-moving indicators that sit outside the core index but provide weekly context. Source: <a href="https://fred.stlouisfed.org">FRED</a>.</span>
+  <span class="hint">Faster-moving indicators outside the BugOut Index. Each tile shows the observation date and age. Source: <a href="https://fred.stlouisfed.org">FRED</a>.</span>
 </div>
 <div class="grid pulse">
   <div class="tile">
@@ -186,8 +196,8 @@
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 36" class="sparkline"><polyline points="2.0,18.8 7.3,13.4 12.5,32.5 17.8,24.1 23.1,15.7 28.4,17.2 33.6,12.7 38.9,5.0 44.2,2.0 49.5,4.3 54.7,12.7 60.0,12.7 65.3,12.7 70.5,18.0 75.8,34.0 81.1,26.4 86.4,24.9 91.6,17.2 96.9,19.5 102.2,21.8 107.5,19.5 112.7,19.5 118.0,27.1" fill="none" stroke="#374151" stroke-width="1.5"/><circle cx="118.0" cy="27.1" r="2.2" fill="#111"/></svg>
     <div class="meta">
       <span><a href="https://fred.stlouisfed.org/series/ICSA">ICSA</a></span>
-      <span>as of 2026-09-12</span>
     </div>
+    <div class="age">observed 2026-09-12 · 7 days old</div>
   </div>
   <div class="tile">
     <div class="k">U. Michigan Consumer Sentiment</div>
@@ -195,17 +205,17 @@
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 36" class="sparkline"><polyline points="2.0,2.0 7.3,10.9 12.5,10.9 17.8,10.9 23.1,10.9 28.4,20.4 33.6,20.4 38.9,20.4 44.2,20.4 49.5,20.4 54.7,34.0 60.0,34.0 65.3,34.0 70.5,34.0 75.8,34.0 81.1,21.3 86.4,21.3 91.6,21.3 96.9,21.3 102.2,5.8 107.5,5.8 112.7,5.8 118.0,5.8" fill="none" stroke="#374151" stroke-width="1.5"/><circle cx="118.0" cy="5.8" r="2.2" fill="#111"/></svg>
     <div class="meta">
       <span><a href="https://fred.stlouisfed.org/series/UMCSENT">UMCSENT</a></span>
-      <span>as of 2026-07-01</span>
     </div>
+    <div class="age">observed 2026-07-01 · 80 days old</div>
   </div>
-  <div class="tile">
-    <div class="k">OECD Business Confidence (US)</div>
+  <div class="tile stale">
+    <div class="k">OECD Business Confidence (US) <span class="badge-stale">Stale</span></div>
     <div class="v">98.97 index</div>
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 36" class="sparkline"><polyline points="2.0,34.0 7.3,34.0 12.5,34.0 17.8,34.0 23.1,34.0 28.4,34.0 33.6,34.0 38.9,34.0 44.2,34.0 49.5,34.0 54.7,34.0 60.0,34.0 65.3,34.0 70.5,34.0 75.8,34.0 81.1,34.0 86.4,34.0 91.6,34.0 96.9,34.0 102.2,34.0 107.5,34.0 112.7,34.0 118.0,34.0" fill="none" stroke="#374151" stroke-width="1.5"/><circle cx="118.0" cy="34.0" r="2.2" fill="#111"/></svg>
     <div class="meta">
       <span><a href="https://fred.stlouisfed.org/series/BSCICP03USM665S">BSCICP03USM665S</a></span>
-      <span>as of 2024-01-01</span>
     </div>
+    <div class="age">observed 2024-01-01 · 992 days old · unchanged across recorded weeks · stale</div>
   </div>
   <div class="tile">
     <div class="k">10y − 2y Treasury Spread</div>
@@ -213,8 +223,8 @@
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 36" class="sparkline"><polyline points="2.0,5.0 7.3,2.0 12.5,8.0 17.8,11.0 23.1,9.0 28.4,16.0 33.6,13.0 38.9,21.0 44.2,20.0 49.5,32.0 54.7,28.0 60.0,24.0 65.3,24.0 70.5,22.0 75.8,23.0 81.1,12.0 86.4,13.0 91.6,8.0 96.9,9.0 102.2,20.0 107.5,18.0 112.7,26.0 118.0,34.0" fill="none" stroke="#374151" stroke-width="1.5"/><circle cx="118.0" cy="34.0" r="2.2" fill="#111"/></svg>
     <div class="meta">
       <span><a href="https://fred.stlouisfed.org/series/T10Y2Y">T10Y2Y</a></span>
-      <span>as of 2026-09-18</span>
     </div>
+    <div class="age">observed 2026-09-18 · 1 day old</div>
   </div>
   <div class="tile">
     <div class="k">VIX (Volatility)</div>
@@ -222,8 +232,8 @@
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 36" class="sparkline"><polyline points="2.0,14.3 7.3,10.9 12.5,17.9 17.8,16.8 23.1,15.6 28.4,18.7 33.6,25.1 38.9,27.2 44.2,2.0 49.5,8.2 54.7,5.4 60.0,19.8 65.3,24.5 70.5,18.9 75.8,6.6 81.1,16.7 86.4,28.8 91.6,32.1 96.9,23.4 102.2,32.8 107.5,34.0 112.7,12.0 118.0,27.0" fill="none" stroke="#374151" stroke-width="1.5"/><circle cx="118.0" cy="27.0" r="2.2" fill="#111"/></svg>
     <div class="meta">
       <span><a href="https://fred.stlouisfed.org/series/VIXCLS">VIXCLS</a></span>
-      <span>as of 2026-09-17</span>
     </div>
+    <div class="age">observed 2026-09-17 · 2 days old</div>
   </div>
 </div>
 

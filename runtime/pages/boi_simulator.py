@@ -2,39 +2,13 @@ import streamlit as st
 import pandas as pd
 import ast  # Converts string representations of dictionaries into actual dictionaries
 from presentation.display_logo import display_logo
-from processing.scoring_v1 import calculate_category_score
+from processing.formula import (
+    METRIC_RANGES as metric_ranges,
+    calculate_category_score,
+    stability_css_class as get_stability_class,
+)
 
 CSS_FILE_PATH = "presentation/styles.css"
-
-metric_ranges = {
-    "inflation_rate": (-10, 15),
-    "incident_rate": (500, 8000),
-    "unemployment_rate": (0, 25),
-    "debt_to_gdp_ratio": (0, 200),
-    "homelessness_rate": (0, 0.5),
-    "trust_in_government": (0, 80),
-}
-
-# Define weights for BOI calculation
-weights = {
-    "inflation_rate": 0.15,
-    "incident_rate": 0.12,
-    "unemployment_rate": 0.12,
-    "debt_to_gdp_ratio": 0.12,
-    "homelessness_rate": 0.09,
-    "trust_in_government": 0.12,
-}
-
-
-def get_stability_class(score):
-    if score >= 70:
-        return "stable"
-    elif 55 <= score < 70:
-        return "moderate"
-    elif 40 <= score < 55:
-        return "severe"
-    else:
-        return "critical"
 
 
 # Function to load CSS from an external file
@@ -118,7 +92,7 @@ with col2:
 
 
 # Calculate the BugOut Index dynamically
-boi_score = calculate_category_score(user_inputs, metric_ranges, weights)
+boi_score = calculate_category_score(user_inputs)
 
 stability_class = get_stability_class(boi_score)
 

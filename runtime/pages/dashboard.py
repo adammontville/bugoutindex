@@ -11,6 +11,7 @@ import pandas as pd
 import streamlit as st
 import ast
 from presentation.display_logo import display_logo
+from processing.formula import stability_css_class as get_stability_class
 
 
 # File path to historical data
@@ -30,17 +31,6 @@ def load_latest_bugout_index():
     except FileNotFoundError:
         print("HERE")
         return None
-
-
-def get_stability_class(score):
-    if score >= 70:
-        return "stable"
-    elif 55 <= score < 70:
-        return "moderate"
-    elif 40 <= score < 55:
-        return "severe"
-    else:
-        return "critical"
 
 
 # Function to load CSS from an external file

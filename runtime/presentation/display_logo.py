@@ -1,6 +1,7 @@
 import base64
 import pandas as pd
 import streamlit as st
+from processing.formula import stability_css_class as get_stability_class
 
 CSV_FILE_PATH = "data/historical_bugout_index.csv"
 
@@ -15,17 +16,6 @@ def load_latest_bugout_index():
         return latest_entry
     except FileNotFoundError:
         return None
-
-
-def get_stability_class(score):
-    if score >= 70:
-        return "stable"
-    elif 55 <= score < 70:
-        return "moderate"
-    elif 40 <= score < 55:
-        return "severe"
-    else:
-        return "critical"
 
 
 def get_base64_image(image_path):

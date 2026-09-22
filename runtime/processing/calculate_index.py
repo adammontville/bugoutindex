@@ -15,42 +15,21 @@ Manages the top-level score calculation.
 import importlib
 import csv
 import os
+import sys
 from datetime import datetime
+from pathlib import Path
 
-# Define the metrics to fetch
-metric_names = [
-    "inflation_rate",
-    "incident_rate",
-    "unemployment_rate",
-    "debt_to_gdp_ratio",
-    "homelessness_rate",
-    "trust_in_government",
-]
+# This module is sometimes executed as a script with cwd = runtime/.
+_RUNTIME_DIR = Path(__file__).resolve().parents[1]
+_REPO_ROOT = _RUNTIME_DIR.parent
+for _path in (str(_REPO_ROOT), str(_RUNTIME_DIR)):
+    if _path not in sys.path:
+        sys.path.insert(0, _path)
 
-def normalize_metric(raw_value, min_value, max_value, inverse=False):
-    """Normalize a raw value to a 0-100 scale. Inverts if needed."""
-    if max_value == min_value:
-        return 0  # Avoid division by zero
-    norm_score = (1 - ((raw_value - min_value) / (max_value - min_value))) * 100
-    return 100 - norm_score if inverse else norm_score  # Invert for stability metrics
-
-def calculate_category_score(metrics, metric_ranges, weights):
-    """Calculate the weighted score for a category."""
-    total_score = 0
-    total_weight = 0
-    for metric, value in metrics.items():
-        # Extract the numeric value for scoring
-        if isinstance(value, dict):
-            value = list(value.values())[0]  # Extract the first numeric value
-        min_value, max_value = metric_ranges[metric]
-        weight = weights[metric]
-
-        # Invert normalization for trust_in_government (higher trust = higher BOI)
-        inverse = metric == "trust_in_government"
-
-        total_score += normalize_metric(value, min_value, max_value, inverse) * weight
-        total_weight += weight
-    return total_score / total_weight if total_weight > 0 else 0
+from runtime.processing.formula import (  # noqa: E402
+    CORE_METRICS as metric_names,
+    calculate_category_score,
+)
 
 
 def log_bugout_index(bugout_index, metrics, file_path="data/historical_bugout_index.csv"):
@@ -82,26 +61,6 @@ for metric in metric_names:
         print(f"Error fetching {metric}: {str(e)}")
 
 
-# Ranges for normalization
-metric_ranges = {
-    "inflation_rate": (-10, 15),
-    "incident_rate": (500, 8000),
-    "unemployment_rate": (0, 25),
-    "debt_to_gdp_ratio": (0, 200),
-    "homelessness_rate": (0, 0.5),
-    "trust_in_government": (0, 80),
-}
-
-# Define weights for BOI calculation
-weights = {
-    "inflation_rate": 0.15,
-    "incident_rate": 0.12,
-    "unemployment_rate": 0.12,
-    "debt_to_gdp_ratio": 0.12,
-    "homelessness_rate": 0.09,
-    "trust_in_government": 0.12,
-}
-
-# Calculate overall score
-overall_score = calculate_category_score(metrics, metric_ranges, weights)
+# Calculate overall score with the shared v1.0.0 formula.
+overall_score = calculate_category_score(metrics)
 log_bugout_index(overall_score, metrics)

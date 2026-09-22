@@ -3,10 +3,11 @@
 **Version**: 1.0.0  
 **Effective Date**: January 1, 2025  
 
-> **Authoritative implementation:** `runtime/publish/weekly_run.py`
+> **Authoritative implementation:** `runtime/processing/formula.py`
 > (`CORE_METRICS`, `METRIC_RANGES`, `WEIGHTS`, `normalize`, `compute_index`, `interpret`).
-> This document describes what that publisher already does. It does not define a
-> separate formula.
+> The weekly publisher (`runtime/publish/weekly_run.py`) and the Streamlit
+> simulator import that module. This document describes what the publisher
+> already does. It does not define a separate formula.
 
 ---
 

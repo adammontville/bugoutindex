@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>BugOut Index — Methodology</title>
-  <meta name="description" content="The BugOut Index — a weekly, data-driven measure of U.S. societal stability combining economic, crime, and governance indicators into a single 0–100 score.">
+  <meta name="description" content="The BugOut Index — a weekly directional reading of how hard six published U.S. statistics are pressing, relative to fixed endpoints. Not a forecast.">
   <link rel="stylesheet" href="./assets/style.css">
 </head>
 <body>
@@ -22,9 +22,12 @@
 
 <h2 style="margin-top:0">Methodology — v1.0.0</h2>
 <p style="max-width:70ch;color:var(--muted)">
-  The BugOut Index aggregates six normalized metrics into a single weighted score on a 0–100 scale,
-  where higher values indicate greater societal stability. This page describes how the current
-  week's number was produced.
+  The BugOut Index is a directional stress and stability reading. Six published metrics
+  are placed between fixed endpoints and combined into one weighted 0–100 score. Higher
+  means those inputs sit closer to the stable end of the ranges. The number shows how hard
+  current published conditions are pressing. It is not a forecast, and it is not an
+  instruction to bug out. This page describes how the current week's number was produced.
+  Methodology version is v1.0.0.
 </p>
 
 <div class="section-title"><h3>1. Inputs and weights</h3></div>
@@ -117,13 +120,17 @@
 <pre class="json">BOI = Σ (normalized_i × weight_i) / Σ weight_i</pre>
 
 <div class="section-title"><h3>4. Risk bands</h3></div>
+<p style="max-width:70ch;color:var(--muted)">
+  These four bands and cutoffs are methodology v1.0.0.
+  They locate where today’s score sits. They do not forecast a crisis, and they are not a siren.
+</p>
 <table class="hx">
   <thead><tr><th>Range</th><th>Band</th><th>Interpretation</th></tr></thead>
   <tbody>
     <tr><td>70 – 100</td><td>High Stability</td><td>Low risk — focus on long-term planning.</td></tr>
     <tr><td>55 – 69.99</td><td>Moderate Stability</td><td>Warning signs — monitor trends; prepare contingencies.</td></tr>
-    <tr><td>40 – 54.99</td><td>Low Stability</td><td>Heightened risk — initiate preparedness measures.</td></tr>
-    <tr><td>Below 40</td><td>Critical Instability</td><td>Collapse likely — activate bug-out plans.</td></tr>
+    <tr><td>40 – 54.99</td><td>Low Stability</td><td>Heightened risk — take this reading seriously. Conditions are pressing harder than in Moderate.</td></tr>
+    <tr><td>Below 40</td><td>Critical Instability</td><td>Collapse Likely — severe pressure on the published inputs. Not an instruction to bug out.</td></tr>
   </tbody>
 </table>
 
@@ -131,13 +138,14 @@
 <ul style="max-width:70ch;color:var(--muted);line-height:1.7">
   <li><strong>Freshness mismatch.</strong> Inflation, unemployment, and debt-to-GDP update monthly or quarterly; the Edelman trust score updates annually; homelessness is annual (HUD PIT). The BOI is recomputed weekly but will only move when underlying data publishes.</li>
   <li><strong>National scope.</strong> Crime and homelessness figures are national averages or approximations; local conditions vary substantially.</li>
-  <li><strong>Not a forecast.</strong> The BOI describes current observed conditions relative to chosen thresholds, not future outcomes.</li>
+  <li><strong>Not a forecast, and not a bug-out order.</strong> The index is a directional reading of published statistics relative to fixed endpoints. It shows how hard those conditions are pressing now. It does not say what happens next, and a lower band is not an instruction to leave.</li>
+  <li><strong>Not a historical crisis siren.</strong> Do not judge the index mainly by whether it would have flipped in every past recession. A mechanical FRED replay of methodology v1.0.0 — inflation, unemployment, and debt-to-GDP only, with crime, homelessness, and trust excluded or held constant and labeled — is in the source repository (<a href="https://github.com/adammontville/bugoutindex/blob/main/runtime/backtest/README.md">results at a glance</a>). It is not a full six-metric historical BugOut Index. In that replay, a Great Recession–shaped path stays in Moderate Stability, which is consistent with “2008 should not have been bug-out level.” A COVID-scale unemployment spike moves toward Low Stability, which is closer to “take this seriously.”</li>
   <li><strong>Labor utilization is not in the score.</strong> The homepage charts prime-age employment-population ratio (FRED LNS12300060) and prime-age participation (FRED LNS11300060) as a shadow series. They are not in the BugOut Index and they have no weight. Replacing headline unemployment would be a versioned change after a backtest.</li>
   <li><strong>Threshold sensitivity.</strong> Because the index is built on fixed normalization ranges, slow drift inside a range will not move the score — the thresholds are calibrated to reflect historically extreme conditions at the endpoints.</li>
 </ul>
 
 <div class="section-title"><h3>6. Reproducibility</h3></div>
-<p>Every weekly run commits the raw inputs, the computed normalized scores, and the final index to this repository. The code that produced this page is open source; you can recompute any historical week by checking out that commit and re-running <code>runtime/publish/weekly_run.py</code>.</p>
+<p>Every weekly run commits the raw inputs, the computed normalized scores, and the final index. Those committed files are the record of that week. The code that produced this page is open source. Rerunning <code>runtime/publish/weekly_run.py</code> fetches the latest observations, so it does not rebuild a past week’s score. Methodology version is v1.0.0.</p>
 
     <footer>
       <div>

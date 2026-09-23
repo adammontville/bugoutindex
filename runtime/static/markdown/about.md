@@ -1,5 +1,5 @@
 ## **What is the BugOut Index?**
-The **BugOut Index (BOI)** is a measure of **societal stability**, combining key economic, crime, and governance indicators into a **single numerical score**. This index is designed to provide a **weekly assessment of risk levels**, helping individuals, policymakers, and analysts understand **shifts in stability** over time.
+The **BugOut Index (BOI)** is a **directional reading of stress and stability**. It places six published economic, crime, and governance statistics between fixed endpoints and combines them into a **single 0–100 score**. Higher means those conditions are less stressed. The number is recomputed **weekly**. It shows how hard the published inputs are pressing. It is not a forecast, and it is not an instruction to bug out.
 
 ---
 
@@ -11,7 +11,7 @@ The **BugOut Index (BOI)** is a measure of **societal stability**, combining key
 | **40–54.99**    | Low Stability (Heightened Risk) |
 | **Below 40**    | Critical Instability (Collapse Likely) |
 
-A **higher BOI score** indicates **greater societal stability**, while a **lower score** signals **growing risks or breakdowns in critical systems**.
+A **higher score** means the published inputs are **less stressed**. A **lower score** means they are **pressing harder**.
 
 ---
 
@@ -31,10 +31,10 @@ Unlike other indices that focus **only on the economy or crime**, the **BugOut I
 - How does **public trust in institutions** affect stability?
 - Are certain regions seeing **worsening conditions over time**?
 
-This index provides **a clear and quantifiable measure of risk**, helping:
-- **Individuals** make informed relocation or investment decisions.
-- **Businesses** assess stability for operational planning.
-- **Policymakers** identify early warning signs of potential crises.
+The number is a reading of those published conditions. It does not say when to relocate, and it does not forecast a crisis.
+
+- **Individuals** can see whether the six inputs are more or less stressed than the fixed endpoints.
+- **Anyone reading the weekly page** sees the same score, with companions kept beside it and out of the calculation.
 
 ---
 
@@ -53,10 +53,10 @@ Each metric is **normalized** to a common scale and **weighted** based on its im
 ---
 
 ## **How to Use the BugOut Index**
-The BOI is designed for **practical application**, whether you are an individual, a business leader, or a policymaker. Here are a few examples:
-- **Personal Preparedness:** If the BOI score is dropping, you may want to assess risks in your community.
-- **Business Decisions:** Companies operating in high-risk regions can use the BOI to inform long-term planning.
-- **Policy Planning:** Governments can use BOI trends to **identify early warning signs** and take corrective action.
+Read the weekly score as pressure on the six published inputs.
+- A move toward **Low Stability** is a reason to take the reading seriously.
+- A path that stays in **Moderate Stability** is not, by itself, a bug-out signal.
+- Markets, the short-term pulse, and labor utilization are companions. They are not in the score.
 
 ---
 
@@ -70,18 +70,18 @@ If you have feedback or suggestions, feel free to reach out!
 
 ## **Establishing Risk Thresholds for the BugOut Index**  
 
-The BugOut Index (BOI) is designed to provide a meaningful, data-driven assessment of societal stability, allowing for clear interpretation of risks based on multiple key indicators. To ensure the BOI serves as a **practical guide for decision-making**, we have established four risk categories matching the weekly publisher:  
+The BugOut Index (BOI) is a reading of published conditions against fixed endpoints. Four risk categories match the weekly publisher:  
 
 - **High Stability (70–100)**  
 - **Moderate Stability (55–69.99)**  
 - **Low Stability (40–54.99)**  
 - **Critical Instability (below 40)**  
 
-These thresholds are designed to reflect **gradual shifts in societal conditions**, avoiding premature alarm while ensuring that warning signs are recognized early enough for action.  
+These thresholds describe gradual pressure on the published inputs. A Moderate reading is not a bug-out signal. A move toward Low is the point where the reading asks to be taken seriously.  
 
 In setting these ranges, we considered a variety of factors, including **historical trends in economic and social stability, the distribution of past BOI scores, and the relative weight of different contributing metrics**. A threshold for **High Stability** at **70 and above** ensures that only societies with strong economic indicators, low crime, and high trust in governance achieve this rating. **Moderate Stability (55–69.99)** reflects societies where risks are emerging—there may be rising inflation, declining institutional trust, or early signs of crime trends worsening, but the overall framework remains intact.  
 
-As risks escalate, the BOI enters **Low Stability (40–54.99),** a range that captures societies experiencing **sustained economic hardship, public unrest, rising crime, and institutional failure at multiple levels**. This is the critical transition period where nations, states, or regions may begin seeing **systemic instability**. Below this, **Critical Instability (<40)** represents conditions that **strongly indicate imminent collapse or severe societal distress**—for example, when crime and unemployment reach historic highs, inflation devalues the currency at extreme rates, and trust in government erodes to the point of mass noncompliance or rebellion.  
+As the published inputs press harder, the BOI can enter **Low Stability (40–54.99)**. That band means take the reading seriously. Below this, **Critical Instability (<40)** means the published inputs sit far toward the unstable ends of their fixed ranges. That is a reading of how hard conditions are. It is not a forecast of collapse, and it is not an instruction to bug out.  
 
 Each of these thresholds is shaped by the **relative importance of different metrics** within the BOI.  
 
@@ -91,4 +91,4 @@ Each of these thresholds is shaped by the **relative importance of different met
 
 These relative weights ensure that while no single factor dominates the BOI, trends in multiple areas must converge before a society shifts into a new risk category.  
 
-By structuring the thresholds this way, the BOI remains a **sensitive yet reliable tool** for understanding and forecasting societal stability. It does not react **too aggressively to short-term fluctuations**, but it also ensures that **prolonged negative trends are recognized and appropriately categorized**. These thresholds provide both **awareness and clarity**, offering individuals, policymakers, and analysts a **practical scale for interpreting risk and planning accordingly**.
+By structuring the thresholds this way, the BOI stays a slow reading of published conditions. It is not a forecast of societal stability. It does not react to every short-term fluctuation, and a move that lasts long enough to shift the published inputs can change the band. The four ranges are a scale for how hard those inputs are pressing.

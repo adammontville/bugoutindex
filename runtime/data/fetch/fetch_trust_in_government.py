@@ -8,46 +8,44 @@
 #
 # For proprietary or commercial use, please contact: your-email@example.com
 """
-Module Description:
-Provides data related to trust in government.
-"""
-import os
-import pandas as pd
+Trust in government from the annual checklist.
 
-_HERE = os.path.dirname(os.path.abspath(__file__))
-_DATA_DIR = os.path.abspath(os.path.join(_HERE, ".."))
+The live input is the ``trust_in_government`` row in
+``runtime/data/annual_inputs.csv``. ``runtime/data/edelman-trust-barometer-us.csv``
+is a historical archive. A new year column in that file does not change
+the score. See ``runtime/data/ANNUAL_INPUTS.md``.
+"""
+
+from .annual_inputs import AnnualInputError, load_annual_row
 
 
 def fetch():
-    """Fetch the most recent Trust in Government score from the Edelman dataset."""
-    candidates = [
-        os.path.join(_DATA_DIR, "edelman-trust-barometer-us.csv"),
-        "data/edelman-trust-barometer-us.csv",
-        "runtime/data/edelman-trust-barometer-us.csv",
-    ]
-    file_path = next((p for p in candidates if os.path.exists(p)), candidates[0])
-
+    """Return the checklist trust score, or fail with no invented date."""
     try:
-        df = pd.read_csv(file_path)
-        df.columns = df.columns.str.strip().str.lower()
-        government_row = df[df["institution"].str.lower() == "government"]
-        # Pick the most recent year column present in the dataset.
-        year_cols = [c for c in df.columns if c.isdigit()]
-        latest_year = max(year_cols)
-        trust_score = government_row[latest_year].values[0]
-        return {
-            "status": "success",
-            "fetched_at": latest_year,
-            "provenance": {"kind": "annual", "year": str(latest_year)},
-            "data": {"trust_in_government": round(float(trust_score), 2)},
-        }
-    except KeyError as e:
-        return {"status": "error", "message": f"Column missing: {str(e)}"}
-    except Exception as e:
-        return {"status": "error", "message": str(e)}
+        row = load_annual_row("trust_in_government")
+    except AnnualInputError as exc:
+        return _failure(str(exc))
 
-# def fetch():
-#     """Fetch the latest Trust in Government data."""
-#     print("Fetching Trust in Government...")
-#     # Data is manually updated from Edelman Trust Barometer (see https://www.edelman.com/trust/25years)
-#     return {"status": "success", "fetched_at": "2025-01-01T00:00:00Z", "data": {"trust": 2.00}}
+    return {
+        "status": "success",
+        # Survey year only. Do not turn this into YYYY-MM-DD.
+        "fetched_at": row["observation_date"],
+        "provenance": {
+            "kind": "annual",
+            "year": row["observation_date"],
+            "observation_period": row["observation_period"],
+            "source": row["source"],
+            "source_url": row["source_url"],
+            "reviewed_at": row["reviewed_at"],
+        },
+        "data": {"trust_in_government": round(row["value"], 2)},
+    }
+
+
+def _failure(message: str) -> dict:
+    return {
+        "status": "error",
+        "message": message,
+        "fetched_at": None,
+        "data": {},
+    }

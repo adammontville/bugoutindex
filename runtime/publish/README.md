@@ -40,7 +40,9 @@ The Action runs `weekly_run.py`, which:
    versus the previous history row. It does not call a language model.
    Core and pulse tiles show observation dates and ages. Crime uses the
    local file's value month (not a placeholder timestamp). Homelessness
-   is labeled as a manual annual input. OECD business confidence is
+   and trust come from `runtime/data/annual_inputs.csv` (see
+   `runtime/data/ANNUAL_INPUTS.md`). Homelessness is labeled as a manual
+   annual input. OECD business confidence is
    marked stale when its observation is more than 365 days before the
    publication date.
 8. Commits and pushes the results to `main`.
@@ -75,8 +77,8 @@ python -m http.server 8765 --directory docs
 | incident_rate | `fetch_incident_rate` | Real-Time Crime Index (local CSV) |
 | unemployment_rate | `fetch_unemployment_rate` | FRED `UNRATE` |
 | debt_to_gdp_ratio | `fetch_debt_to_gdp_ratio` | FRED `GFDEGDQ188S` |
-| homelessness_rate | `fetch_homelessness_rate` | HUD AHAR (hardcoded annual) |
-| trust_in_government | `fetch_trust_in_government` | Edelman Trust Barometer (local CSV) |
+| homelessness_rate | `fetch_homelessness_rate` | HUD AHAR row in `runtime/data/annual_inputs.csv` |
+| trust_in_government | `fetch_trust_in_government` | Edelman year row in `runtime/data/annual_inputs.csv` |
 | gold / silver / DXY | `fetch_markets` | gold-api.com + FRED `DTWEXBGS` |
 | pulse indicators | `fetch_pulse` | FRED |
 

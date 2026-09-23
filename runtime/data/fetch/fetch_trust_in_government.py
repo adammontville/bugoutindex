@@ -30,6 +30,7 @@ def fetch():
         "status": "success",
         # Survey year only. Do not turn this into YYYY-MM-DD.
         "fetched_at": row["observation_date"],
+        "observation_date": row["observation_date"],
         "provenance": {
             "kind": "annual",
             "year": row["observation_date"],

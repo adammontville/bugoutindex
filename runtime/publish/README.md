@@ -32,7 +32,19 @@ The Action runs `weekly_run.py`, which:
    10y–2y Treasury spread (`T10Y2Y`), and VIX (`VIXCLS`).
 5. Appends a row to `runtime/data/weekly_bugout_index.csv`,
    `runtime/data/markets_history.csv`, and
-   `runtime/data/pulse_history.csv`.
+   `runtime/data/pulse_history.csv`. Each core raw value is stored next
+   to `{metric}_observation_date` (the period the number describes).
+   The same field is `observation_date` on each object in
+   `metrics` inside `docs/data/latest.json`. A later week that changes
+   the raw value and keeps that date is a revision; a different date is
+   a new observation period. The week note says so when both weeks have
+   a date. Rows written before this column existed were filled only
+   where that week's own snapshot still had an honest period (FRED
+   observation dates and the Edelman year, which those fetchers stored
+   in `source_fetched_at`). Crime and homelessness placeholder
+   timestamps were not copied; those cells stay blank except the
+   2026-09-19 row, which uses the file value-month end and the HUD
+   reference date already in that snapshot.
 6. Writes a snapshot to `docs/data/latest.json`.
 7. Renders `docs/index.html`, `docs/methodology.html`,
    `docs/history.html`, and `docs/revisions.html` via Jinja2 templates.
@@ -74,7 +86,7 @@ python -m http.server 8765 --directory docs
 | Metric | Module | Source |
 | --- | --- | --- |
 | inflation_rate | `fetch_inflation_rate` | FRED `CPIAUCSL` |
-| incident_rate | `fetch_incident_rate` | Real-Time Crime Index (local CSV) |
+| incident_rate | `fetch_incident_rate` | Real-Time Crime Index cleaned file (`AH-Datalytics/rtci` `docs/app_data/final_sample.csv` via raw.githubusercontent.com). Published input stays 2723.0; the file’s candidate rate is a diagnostic only. |
 | unemployment_rate | `fetch_unemployment_rate` | FRED `UNRATE` |
 | debt_to_gdp_ratio | `fetch_debt_to_gdp_ratio` | FRED `GFDEGDQ188S` |
 | homelessness_rate | `fetch_homelessness_rate` | HUD AHAR row in `runtime/data/annual_inputs.csv` |
@@ -130,4 +142,8 @@ The workflow requires one repository secret:
 A legacy `runtime/data/historical_bugout_index.csv` file stores earlier
 daily runs in a different schema (values stringified as Python dicts).
 The new pipeline writes to `runtime/data/weekly_bugout_index.csv` with a
-flat schema and does not modify the legacy file.
+flat schema and does not modify the legacy file. Core columns are the
+publication `date`, `bugout_index`, then each raw value immediately
+followed by `{metric}_observation_date`, then the `{metric}_normalized`
+scores. Blank observation dates mean the period was not recorded, not
+that it equals the publication date.

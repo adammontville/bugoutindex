@@ -44,6 +44,8 @@ def fetch():
         return {
             "status": "success",
             "fetched_at": current_date,
+            # FRED observation date of the latest CPI month. Not the publish date.
+            "observation_date": current_date,
             "data": {"inflation_rate": inflation_rate},
         }
     except RetryError as exc:

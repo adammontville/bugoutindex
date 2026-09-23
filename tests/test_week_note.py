@@ -214,6 +214,7 @@ def test_tile_ages_use_real_anchors():
         publication,
     )
     assert "September 2024" in crime["text"]
+    assert "crime file through December 2024" in crime["text"]
     assert "December 2024" in crime["text"]
     assert "2025-02-19" in crime["text"]
     assert f"{_days(publication, '2024-09-30')} days since 2024-09-30" in crime["text"]
@@ -272,11 +273,14 @@ def test_week_note_when_inflation_and_the_index_move():
     assert unexplained_numerals(note, snapshot) == []
     assert "moved from 57.15 on 2026-09-05 to 57.11, a change of -0.04 points" in text
     assert "Inflation changed from 3.303856050706308 to 3.353016322755652" in text
+    # Prior row has no observation date, so this move is not called a revision.
+    assert "revised" not in text.lower()
     assert "observed 2026-08-01" in text
     unchanged = next(sentence for sentence in note if sentence.startswith("Unchanged core inputs"))
     for name in ("unemployment", "debt-to-GDP", "crime", "homelessness", "trust in government"):
         assert name in unchanged
     assert "manual, last set 2024 HUD AHAR" in unchanged
+    assert "crime file through December 2024" in unchanged
     assert "not inputs to the BugOut Index score" in note[-1]
     assert "2025-01-01T00:00:00Z" not in text
     assert any("stale" in sentence for sentence in note)

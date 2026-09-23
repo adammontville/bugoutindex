@@ -64,7 +64,7 @@ Trust is the exception. The code sets `inverse=True`, which replaces that result
 | Input | What is actually fetched | Endpoints in code | Raw weight | Series / file |
 | --- | --- | --- | --- | --- |
 | Inflation | CPI-U year-over-year, computed in the fetcher from FRED `CPIAUCSL` | −10% to 15% | 0.15 | `fetch_inflation_rate.py` |
-| Crime | Unweighted mean of agency rates: (12-month violent + 12-month property) / population × 100,000 | 500 to 8,000 per 100k | 0.12 | Local `runtime/data/final_sample.csv` via `fetch_incident_rate.py` |
+| Crime | Unweighted mean of agency rates: (12-month violent + 12-month property) / population × 100,000 | 500 to 8,000 per 100k | 0.12 | RTCI cleaned file via `fetch_incident_rate.py`. Published input locked at 2723.0; file candidate is diagnostic only |
 | Unemployment | Latest FRED `UNRATE` | 0% to 25% | 0.12 | `fetch_unemployment_rate.py` |
 | Debt-to-GDP | Latest FRED `GFDEGDQ188S` | 0% to 200% | 0.12 | `fetch_debt_to_gdp_ratio.py` |
 | Homelessness | Checklist row `0.23` (HUD reference date `2024-01-01`) | 0% to 0.5% of population | 0.09 | `runtime/data/annual_inputs.csv` via `fetch_homelessness_rate.py` |
@@ -161,7 +161,7 @@ These are product constraints, not just style notes:
 ### Known limitations (from the code and the data, not from theory)
 
 - **Freshness.** CPI and unemployment are monthly. Debt-to-GDP is quarterly. Edelman is annual. Homelessness is a manual annual checklist row. The job still runs every week. The methodology page states this. The homepage does not say which tiles are stale.
-- **Crime is frozen in the published series.** Every weekly row, and the March 2025 daily file before that, stores incident rate **2723.0**. The CSV’s newest month is November 2024 and its “Last Updated” field is 19 February 2025. `fetched_at` is the string `2025-01-01T00:00:00Z`, not the file date. The weekly job does not refresh the file. `runtime/util/download_crime_rate_data.py` is not called, and it downloads a GitHub **blob HTML page** (`.../blob/development/data/final_sample.csv`), not a raw CSV. The site’s source link points at `jacobkap/real_time_crime_index`; the downloader points at `AH-Datalytics/rtci`.
+- **Crime’s published input is still 2723.0.** Every weekly row through 19 September 2026 stores incident rate **2723.0**. The weekly job now downloads the cleaned RTCI file from `AH-Datalytics/rtci` (`docs/app_data/final_sample.csv` on `main`, via `raw.githubusercontent.com`). A non-CSV body fails the crime fetcher, and the run refuses to publish. The file’s calendar max month is stored on the snapshot. The unweighted candidate and a population-weighted alternative are diagnostic fields and are not inputs to `compute_index`. Accepting a number other than 2723.0 is a separate reviewed revision. The public source link is https://realtimecrimeindex.com/ (repository https://github.com/AH-Datalytics/rtci). `jacobkap/real_time_crime_index` is not a download target.
 - **Crime is an unweighted agency mean**, not a population-weighted national total. Small agencies count as much as large ones. The crime essay says this is an average across reporting agencies. Coverage is the Real-Time Crime Index sample, not the whole country.
 - **Homelessness updates only when the annual checklist changes.** The published value is 0.23 from the 2024 HUD point-in-time count (reference date `2024-01-01`). `fetch_homelessness_rate.py` reads `runtime/data/annual_inputs.csv`. It does not invent a fetch timestamp. The once-a-year steps are in `runtime/data/ANNUAL_INPUTS.md`.
 - **Trust updates only when the annual checklist changes.** The published value is 41 for Edelman survey year 2025. Adding a year column to `runtime/data/edelman-trust-barometer-us.csv` does not change the score. The observation recorded for trust is the year only.
@@ -234,7 +234,7 @@ The legacy daily file `runtime/data/historical_bugout_index.csv` (stringified Py
 | --- | --- | --- | --- |
 | Inflation, unemployment | Monthly (BLS, via FRED) | Refetched every Friday. Score moves when the latest print changes | No observation date in the CSV. Revisions and new months look alike |
 | Debt-to-GDP | Quarterly | Refetched every Friday | Same. June 2026 shows a same-quarter revision moving the index |
-| Crime | RTCI file, roughly monthly when maintained | Same local file every week. Value stuck at 2,723 | File ends November 2024. Downloader is not wired and requests HTML |
+| Crime | RTCI file, roughly monthly when maintained | Weekly download of the AH-Datalytics cleaned file. Published input stays 2,723 | Candidate rate is diagnostic only until a reviewed revision |
 | Homelessness | HUD annual point-in-time | Checklist row 0.23 until a person edits it | The weekly job does not look for a newer AHAR |
 | Trust | Edelman annual | Checklist row 41 for survey year 2025 | The weekly job does not take the newest archive year |
 | Gold, silver, broad dollar | Daily / hourly | New row every publish. These move | Not in the score, which is correct for v1. No sentence explaining the move |
@@ -263,7 +263,7 @@ The product tension: people can see a new page every Friday, but the headline of
 
 - **A serious reader cannot tell which document is the methodology.** Following `METRICS.md` changes both the level and the band of the current score. Following the trust essay changes trust’s contribution by about 25 points of normalized score.
 - **Three copies of the formula** (`weekly_run.py`, `calculate_index.py`, `normalize.py` / `scoring_v1.py`) plus a third trust formula in an essay. They match on today’s in-range inputs except for clamping. They will not stay matched if someone edits one of them.
-- **Stale inputs can still look successful.** Crime returns success from a local file that the weekly job does not re-download. Homelessness and trust return success from the annual checklist, which is the maintained input, and they do not invent a `2025-01-01T00:00:00Z` fetch time. Incubating fetchers return `status: success` with sample data. A future change that “turns on” those modules would publish fiction.
+- **Stale inputs can still look successful.** Crime returns success when the RTCI download is readable, while the published input stays 2723.0. Homelessness and trust return success from the annual checklist, and they do not invent a `2025-01-01T00:00:00Z` fetch time. Incubating fetchers return `status: success` with sample data. A future change that “turns on” those modules would publish fiction.
 - **The recompute sentence overclaims.** Past weeks cannot be regenerated by rerunning fetchers.
 - **The scoring test does not run,** so a formula edit would not be caught.
 - **No alert beyond a red GitHub Action.** A refused publish leaves last week’s site up, which is safe, and it does so quietly unless someone watches the Actions tab.
@@ -364,7 +364,7 @@ These raise data quality and prepare a real methodology version. They still do n
 
 - **Outcome:** The weekly job can download the RTCI file from a raw URL, record the file’s max month, and fail the crime fetcher if the file is unreadable. Do not let a bad download return success. Compute the candidate rate (and a population-weighted alternative) into the JSON as **diagnostic fields** that are not inputs to `compute_index`, until the PM accepts a data revision.
 - **Effort:** M.
-- **Dependencies:** Confirm which RTCI repository is canonical (`jacobkap/real_time_crime_index` vs `AH-Datalytics/rtci`). A change to the 2,723 input is a published revision, even if the formula version stays 1.0.0, and should be explained in that week’s note.
+- **Dependencies:** Canonical source is **AH-Datalytics/rtci** (https://realtimecrimeindex.com/). `jacobkap/real_time_crime_index` is not a download target. A change to the 2,723 input is a published revision, even if the formula version stays 1.0.0, and should be explained in that week’s note.
 - **Success:** The site can say “crime file through {month}”. A broken download does not publish a new index. The headline stays  on 2,723 until an explicit, reviewed switch.
 
 **9. Annual manual inputs get a checklist, not a silent constant**

@@ -28,9 +28,10 @@ def fetch():
 
     return {
         "status": "success",
-        # Empty on purpose. The HUD reference date is provenance.reference_date.
+        # Empty on purpose. The HUD reference date is observation_date.
         # reviewed_at is the date a person wrote, not a fetch clock.
         "fetched_at": None,
+        "observation_date": row["observation_date"],
         "provenance": {
             "kind": "manual",
             "last_set": row["source"],

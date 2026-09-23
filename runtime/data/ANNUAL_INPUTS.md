@@ -51,3 +51,7 @@ Write a date. Do not write a clock time, and do not write `2025-01-01T00:00:00Z`
 - Homelessness keeps `fetched_at` empty. The HUD reference date stays on `observation_date` / provenance `reference_date`.
 - Trust sets `fetched_at` to the survey year from the row (`2025`). It does not invent a month, a day, or a fetch timestamp.
 - `reviewed_at` is copied from the cell into provenance. The fetcher does not substitute the run time.
+
+## Future work
+
+Whether a public series can update these two inputs more often than once a year is tracked in issue [#81](https://github.com/adammontville/bugoutindex/issues/81). That research does not change the live score.

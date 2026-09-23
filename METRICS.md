@@ -153,8 +153,8 @@ Four risk bands match `interpret()` in the weekly publisher:
 |-------------|------|----------------|
 | **70.00–100.00** | **High Stability** | Low Risk — focus on long-term planning. |
 | **55.00–69.99** | **Moderate Stability** | Warning Signs — monitor trends; prepare contingencies. |
-| **40.00–54.99** | **Low Stability** | Heightened Risk — keep preparedness in mind. |
-| **Below 40** | **Critical Instability** | Collapse Likely — activate bug-out plans at your discretion. |
+| **40.00–54.99** | **Low Stability** | Heightened Risk — take this reading seriously. Conditions are pressing harder than in Moderate. |
+| **Below 40** | **Critical Instability** | Collapse Likely — severe pressure on the published inputs. Not an instruction to bug out. |
 
 Band wording and thresholds are unchanged from the live site. Recalibrating how “calm” Moderate feels is deferred to an explicit later methodology version.
 

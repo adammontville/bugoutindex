@@ -4,6 +4,24 @@ Mechanical replay of the locked methodology on historical FRED levels. This is t
 
 Every index in the output is `runtime.processing.formula.compute_index`: the v1.0.0 endpoints, weights, trust inversion, 0–100 clamp, and divide-by-sum-of-weights. On the 19 September 2026 inputs that function still returns **57.11**.
 
+## Results at a glance
+
+Checked-in fixture, FRED vintage **2026-09-23**. Bands are the v1.0.0 bands applied to `replay_index`. Neither `replay_index` is the published six-metric BugOut Index.
+
+In this vintage the Great Recession unemployment peak is **10.0%** (October 2009), not ~12%.
+
+### 2020 window (Jan–Dec 2020)
+
+- **Partial:** index range **45.51–60.48**. Bands: Moderate 5 months, Low 7 months. April 2020 (unemployment 14.8) is **45.51 Low**. December 2020 is **55.01 Moderate**.
+- **Held constant** (crime, homelessness, and trust pinned to the published 2723 / 0.23 / 41): range **51.67–59.78**. Bands: Moderate 8 months, Low 4 months. April is **51.67 Low**. December is **56.82 Moderate**.
+
+### 2008 window (Dec 2007–Dec 2009)
+
+- **Partial:** **55.17–64.40**. All **25** months are Moderate. October 2009 (unemployment 10.0) is **59.72 Moderate**. December 2009 is **55.17 Moderate**.
+- **Held constant:** **56.90–61.90**. All **25** months are Moderate. October 2009 is **59.37 Moderate**. December 2009 is **56.90 Moderate**.
+
+The formula moves into Low Stability under COVID-scale unemployment. Through a Great Recession–shaped FRED shock it stays Moderate when crime, homelessness, and trust are excluded or held at the 2026 baselines. That is useful for calibration. It is not a full historical BugOut Index.
+
 ## What is historical
 
 | Input | Series | How the row is built |

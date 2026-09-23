@@ -272,6 +272,17 @@ PULSE_LABELS = {
     "vix": ("VIX (Volatility)", "index", "VIXCLS"),
 }
 
+# Companion only. IDs match runtime/data/fetch/fetch_labor_shadow.py SERIES.
+# Not in CORE_METRICS and not passed to compute_index.
+LABOR_SHADOW_LABELS = {
+    "prime_age_epop": ("Prime-age employment-population ratio", "%", "LNS12300060"),
+    "prime_age_lfpr": ("Prime-age labor force participation", "%", "LNS11300060"),
+}
+LABOR_SHADOW_COLORS = {
+    "prime_age_epop": "#2563eb",
+    "prime_age_lfpr": "#b45309",
+}
+
 
 def _fmt(val, unit: str = "", digits: int = 2) -> str:
     if val is None:
@@ -293,6 +304,50 @@ def _pct_delta(current, previous) -> Optional[float]:
         return (c - p) / p * 100
     except (TypeError, ValueError):
         return None
+
+
+def _labor_chart_svg(labor: Dict[str, Any]) -> str:
+    """Monthly FRED points. The x-axis is the observation date, not the publish week."""
+    observations = (labor or {}).get("observations") or {}
+    by_key: Dict[str, Dict[str, float]] = {}
+    dates: List[str] = []
+    seen = set()
+    for key in LABOR_SHADOW_LABELS:
+        points: Dict[str, float] = {}
+        for row in observations.get(key) or []:
+            if not isinstance(row, dict):
+                continue
+            day = row.get("date")
+            value = row.get("value")
+            if not day or value is None:
+                continue
+            try:
+                points[str(day)] = float(value)
+            except (TypeError, ValueError):
+                continue
+        by_key[key] = points
+        for day in points:
+            if day not in seen:
+                seen.add(day)
+                dates.append(day)
+    dates.sort()
+    if not dates:
+        return ""
+    series = []
+    for key, (label, _unit, _sid) in LABOR_SHADOW_LABELS.items():
+        points = by_key.get(key) or {}
+        series.append({
+            "label": label,
+            "color": LABOR_SHADOW_COLORS[key],
+            "values": [points.get(day) for day in dates],
+        })
+    return multiline_chart_svg(
+        series=series,
+        x_labels=[day[:7] for day in dates],
+        title="Prime-age (25–54) percent — not in the BugOut Index",
+        y_unit="%",
+        y_digits=1,
+    )
 
 
 def _series(history: list, key: str) -> list:
@@ -386,6 +441,27 @@ def render_site(snapshot: Dict[str, Any]) -> None:
             "sparkline": sparkline_svg(series),
         })
 
+    labor = snapshot.get("labor_shadow") or {}
+    labor_dates = labor.get("dates") or {}
+    labor_values = labor.get("values") or {}
+    labor_history = snapshot.get("history", {}).get("labor_shadow", []) or []
+    labor_tiles = []
+    for key, (label, unit, sid) in LABOR_SHADOW_LABELS.items():
+        age = describe_pulse_age(
+            labor_dates.get(key),
+            snapshot.get("publication_date"),
+            flat=series_is_flat(_series(labor_history, key)),
+        )
+        labor_tiles.append({
+            "label": label,
+            "unit": unit,
+            "value": labor_values.get(key),
+            "age_text": age["text"],
+            "stale": age["stale"],
+            "source_id": sid,
+            "source_url": f"https://fred.stlouisfed.org/series/{sid}",
+        })
+
     # Week-over-week BOI delta
     boi_delta = None
     if len(boi_series) >= 2 and boi_series[-1] is not None and boi_series[-2] is not None:
@@ -398,6 +474,9 @@ def render_site(snapshot: Dict[str, Any]) -> None:
         "metrics": metrics_vm,
         "markets": market_tiles,
         "pulse": pulse_tiles,
+        "labor_tiles": labor_tiles,
+        "labor_chart": _labor_chart_svg(labor),
+        "labor_reused_from": labor.get("reused_from"),
         "history_count": len(boi_history),
         "week_note": build_week_note(snapshot),
     }
@@ -406,6 +485,7 @@ def render_site(snapshot: Dict[str, Any]) -> None:
     (DOCS / "methodology.html").write_text(env.get_template("methodology.html.j2").render(**ctx))
     (DOCS / "history.html").write_text(env.get_template("history.html.j2").render(
         boi_history=boi_history, markets_history=markets_history, pulse_history=pulse_history,
+        labor_history=labor_history, labor_labels=LABOR_SHADOW_LABELS,
         metric_labels=METRIC_LABELS, pulse_labels=PULSE_LABELS, snapshot=snapshot,
     ))
 

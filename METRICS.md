@@ -192,7 +192,7 @@ You can find detailed documentation for these incubating metrics in the **[incub
 - [Grid Outages](./incubating/grid_outages.md)
 - [Natural Disaster Frequency](./incubating/natural_disaster_frequency.md)
 - [Government Authoritarianism Index](./incubating/Government_Authoritarianism_Index.md) — incubating; distinct from the core Edelman **Trust in Government** metric already in the score
-- [Labor Utilization](./incubating/boi-labor-utilization-incubating.md) — proposed companion / possible future replacement for headline unemployment; not in v1.0.0
+- [Labor Utilization](./incubating/boi-labor-utilization-incubating.md) — prime-age EPOP (`LNS12300060`) and participation (`LNS11300060`) are shown on the weekly site as a shadow series and are not in v1.0.0; the composite formula is still incubating and needs a backtest before any promotion
 
 ### Companion Measures (non-core, no BOI weight)
 - [AI Discontinuity Watch (AIDW)](./incubating/boi-ai-discontinuity-watch-incubating.md) — optional watch level; does not change the BOI score.

@@ -1,5 +1,18 @@
 # Labor Utilization Metric for the BugOut Index
 
+## Shadow series now on the site
+
+The weekly publisher shows two FRED series as a shadow companion. They are labeled **not in the BugOut Index**, they have **no weight**, and they are not inputs to `compute_index` or `CORE_METRICS`.
+
+| Series | FRED ID | What it is |
+| --- | --- | --- |
+| Prime-age employment-population ratio | `LNS12300060` | BLS Current Population Survey, ages 25–54, seasonally adjusted, percent |
+| Prime-age labor force participation | `LNS11300060` | BLS Current Population Survey, ages 25–54, seasonally adjusted, percent |
+
+`LNS12300060` is the standard public prime-age employment-population series (the base component below). `LNS11300060` is the matching prime-age participation rate (the supporting component below). The not-seasonally-adjusted twins are not used.
+
+The composite formula, normalization ranges, and participation penalty described in the rest of this note are **not** implemented. A backtest through the Great Recession, the post-2008 participation decline, and the COVID shock is still required before any v1.1 promotion that would replace headline unemployment.
+
 ## Purpose
 
 This document proposes an incubating direction for the BugOut Index (BOI): replacing or superseding the current headline unemployment metric with a more complete labor-market measure that accounts for both unemployment and labor-force exit behavior.

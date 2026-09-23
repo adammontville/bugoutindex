@@ -8,7 +8,9 @@ Responsibilities:
     1. Shim `streamlit.secrets` so existing fetchers work without a
        Streamlit runtime (reading FRED_API_KEY from env vars instead).
     2. Fetch all six core BOI metrics and compute the weighted index.
-    3. Fetch metals (gold, silver, DXY) and the short-term economic pulse.
+    3. Fetch metals (gold, silver, DXY), the short-term economic pulse,
+       and the labor-utilization shadow series (not an index input;
+       a shadow failure does not refuse the publish).
     4. Append a flat row to the weekly history CSVs.
     5. Emit a single `docs/data/latest.json` snapshot consumed by the
        static-site renderer.
@@ -118,6 +120,70 @@ def fetch_pulse() -> Dict[str, Any]:
     return mod.fetch()
 
 
+def fetch_labor_shadow() -> Dict[str, Any]:
+    """Prime-age EPOP and participation. Not an index input.
+
+    A raised exception becomes ``status: error`` so the publish can continue.
+    """
+    sys.path.insert(0, str(REPO_ROOT))
+    try:
+        mod = importlib.import_module("runtime.data.fetch.fetch_labor_shadow")
+        return mod.fetch()
+    except Exception as exc:  # noqa: BLE001
+        return {
+            "status": "error",
+            "in_bugout_index": False,
+            "message": f"labor shadow fetch raised: {exc}",
+            "series_ids": {},
+            "values": {},
+            "dates": {},
+            "observations": {},
+            "errors": [f"labor shadow fetch raised: {exc}"],
+        }
+
+
+def _labor_has_value(block: Dict[str, Any]) -> bool:
+    values = block.get("values") or {}
+    return any(isinstance(value, (int, float)) and not isinstance(value, bool) for value in values.values())
+
+
+def _read_previous_snapshot() -> Dict[str, Any]:
+    path = DOCS_DATA / "latest.json"
+    try:
+        if path.exists():
+            loaded = json.loads(path.read_text())
+            if isinstance(loaded, dict):
+                return loaded
+    except Exception as exc:  # noqa: BLE001
+        print(f"[weekly_run] could not read prior snapshot: {exc}", file=sys.stderr)
+    return {}
+
+
+def _resolve_labor_shadow(payload: Dict[str, Any]) -> Dict[str, Any]:
+    """Keep a failed shadow fetch from blanking a series we already published.
+
+    Carried-forward observation dates stay the FRED dates on the previous
+    block. Nothing here writes the current clock.
+    """
+    block = dict(payload or {})
+    block["in_bugout_index"] = False
+    if block.get("status") in ("success", "partial") and _labor_has_value(block):
+        return block
+    previous = _read_previous_snapshot()
+    prior = previous.get("labor_shadow") or {}
+    if isinstance(prior, dict) and _labor_has_value(prior):
+        carried = dict(prior)
+        carried["in_bugout_index"] = False
+        carried["status"] = "reused"
+        carried["reused_from"] = previous.get("publication_date")
+        carried["current_status"] = block.get("status")
+        message = block.get("message") or "; ".join(block.get("errors") or [])
+        if message:
+            carried["current_message"] = message
+        return carried
+    return block
+
+
 def fetch_revisions() -> Dict[str, Any]:
     """
     Pull PAYEMS + UNRATE revision history from ALFRED.
@@ -158,9 +224,29 @@ def core_history_row(run_date: str, boi: Dict[str, Any],
     return row
 
 
+def _append_labor_shadow(run_date: str, labor_shadow: Dict[str, Any]) -> None:
+    """One weekly row. Observation-date cells are FRED dates or blank."""
+    mod = importlib.import_module("runtime.data.fetch.fetch_labor_shadow")
+    keys = list(mod.SERIES)
+    values = labor_shadow.get("values") or {}
+    dates = labor_shadow.get("dates") or {}
+    if not any(isinstance(values.get(key), (int, float)) and not isinstance(values.get(key), bool) for key in keys):
+        return
+    headers = ["date"]
+    row: Dict[str, Any] = {"date": run_date}
+    for key in keys:
+        headers.append(key)
+        headers.append(f"{key}_observation_date")
+        value = values.get(key)
+        row[key] = "" if value is None else value
+        row[f"{key}_observation_date"] = dates.get(key) or ""
+    _append_row(DATA_DIR / "labor_shadow_history.csv", headers, row)
+
+
 def append_history(run_date: str, boi: Dict[str, Any],
                    markets: Dict[str, Any], pulse: Dict[str, Any],
-                   core: Dict[str, Dict[str, Any]] | None = None) -> None:
+                   core: Dict[str, Dict[str, Any]] | None = None,
+                   labor_shadow: Dict[str, Any] | None = None) -> None:
     # Flat core metrics history (replaces the old dict-stringified CSV going forward).
     boi_path = DATA_DIR / "weekly_bugout_index.csv"
     # Old files gain the observation-date columns with blank cells. Dates are
@@ -188,6 +274,9 @@ def append_history(run_date: str, boi: Dict[str, Any],
                  "vix"]
     _append_row(DATA_DIR / "pulse_history.csv", p_headers, {"date": run_date, **p_data})
 
+    if labor_shadow is not None:
+        _append_labor_shadow(run_date, labor_shadow)
+
 
 def _metric_snapshot(metric: str, scored: Dict[str, Any], payload: Dict[str, Any]) -> Dict[str, Any]:
     """Copy the scored inputs plus dating metadata. Provenance is not an input."""
@@ -210,9 +299,10 @@ def _metric_snapshot(metric: str, scored: Dict[str, Any], payload: Dict[str, Any
 def build_snapshot(run_date: str, boi: Dict[str, Any],
                    core: Dict[str, Dict[str, Any]],
                    markets: Dict[str, Any],
-                   pulse: Dict[str, Any]) -> Dict[str, Any]:
+                   pulse: Dict[str, Any],
+                   labor_shadow: Dict[str, Any] | None = None) -> Dict[str, Any]:
     band = interpret(boi["index"])
-    return {
+    snapshot = {
         "schema_version": 1,
         "methodology_version": "1.0.0",
         "generated_at_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
@@ -235,6 +325,11 @@ def build_snapshot(run_date: str, boi: Dict[str, Any],
             "dates": pulse.get("dates", {}),
         },
     }
+    if labor_shadow is not None:
+        block = dict(labor_shadow)
+        block["in_bugout_index"] = False
+        snapshot["labor_shadow"] = block
+    return snapshot
 
 
 def publication_date_for(now: datetime | None = None) -> str:
@@ -313,7 +408,8 @@ def main() -> int:
         print(f"[weekly_run] revisions: {revisions.get('message') or revisions.get('status')}",
               file=sys.stderr)
 
-    # Hard-fail if any non-core fetcher returned no usable data at all.
+    # Hard-fail if markets or the pulse returned no usable data at all.
+    # The labor shadow is a companion: its failure must not refuse the publish.
     hard_failures = []
     if markets.get("status") == "error":
         hard_failures.append("markets fully failed")
@@ -325,6 +421,21 @@ def main() -> int:
         print(f"REFUSING TO PUBLISH: {'; '.join(hard_failures)}", file=sys.stderr)
         return EXIT_MARKETS_OR_PULSE_REFUSED
 
+    print("[weekly_run] fetching labor utilization shadow (not in the index)…")
+    labor_shadow = fetch_labor_shadow()
+    if labor_shadow.get("status") not in ("success", "partial"):
+        print(
+            "[weekly_run] labor shadow failed (publishing anyway): "
+            f"{labor_shadow.get('message') or labor_shadow.get('errors')}",
+            file=sys.stderr,
+        )
+    elif labor_shadow.get("errors"):
+        print(
+            f"[weekly_run] labor shadow partial (publishing anyway): {labor_shadow['errors']}",
+            file=sys.stderr,
+        )
+    labor_shadow = _resolve_labor_shadow(labor_shadow)
+
     # Soft-warn if any partial failures occurred (some pulse items missing, etc.).
     partial_warnings = _summarize_failures(core, markets, pulse)
     if partial_warnings:
@@ -333,9 +444,9 @@ def main() -> int:
             print(f"  - {line}", file=sys.stderr)
 
     print("[weekly_run] appending history…")
-    append_history(run_date, boi, markets, pulse, core)
+    append_history(run_date, boi, markets, pulse, core, labor_shadow)
 
-    snapshot = build_snapshot(run_date, boi, core, markets, pulse)
+    snapshot = build_snapshot(run_date, boi, core, markets, pulse, labor_shadow)
 
     # Carry the previous revisions payload forward if this week's fetch failed.
     if revisions.get("status") == "success":
@@ -364,6 +475,7 @@ def main() -> int:
         "bugout_index": load_history(DATA_DIR / "weekly_bugout_index.csv"),
         "markets": load_history(DATA_DIR / "markets_history.csv"),
         "pulse": load_history(DATA_DIR / "pulse_history.csv"),
+        "labor_shadow": load_history(DATA_DIR / "labor_shadow_history.csv"),
     }
 
     DOCS_DATA.mkdir(parents=True, exist_ok=True)

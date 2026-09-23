@@ -103,6 +103,35 @@
   {% endfor %}
 </div>
 
+<div class="section-title">
+  <h3>Labor utilization — shadow series</h3>
+  <span class="hint">Not in the BugOut Index. No weight. Prime-age (25–54) employment-population ratio and labor-force participation, monthly and seasonally adjusted, from BLS via FRED.</span>
+</div>
+<p class="rev-callout">
+  These readings are companions only. They are not in the BugOut Index and they have no weight.
+  Replacing headline unemployment still requires a backtest.
+  {% if labor_reused_from %}
+  This week’s fetch failed; values are carried forward from the {{ labor_reused_from }} publish. The dates below are the FRED observation dates.
+  {% endif %}
+</p>
+<div class="grid labor">
+  {% for tile in labor_tiles %}
+  <div class="tile{% if tile.stale %} stale{% endif %}">
+    <div class="k">{{ tile.label }}{% if tile.stale %} <span class="badge-stale">Stale</span>{% endif %}</div>
+    <div class="v">{{ tile.value|fmt(tile.unit, 1) }}</div>
+    <div class="meta">
+      <span><a href="{{ tile.source_url }}">FRED {{ tile.source_id }}</a></span>
+      <span>not in the BugOut Index</span>
+    </div>
+    <div class="age">{{ tile.age_text }}</div>
+  </div>
+  {% endfor %}
+</div>
+{% if labor_chart %}
+<div class="chart-card">{{ labor_chart|safe }}</div>
+<p class="chart-caption">Each point is a FRED observation month, not a BugOut Index publication week. Not in the BugOut Index.</p>
+{% endif %}
+
 <div class="section-title"><h3>About this index</h3></div>
 <p style="max-width:70ch;color:var(--muted);">
   The BugOut Index is not a forecast or a prediction. It is a transparent, versioned composite score

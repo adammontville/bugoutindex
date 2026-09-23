@@ -25,9 +25,10 @@ Including this metric in the **BugOut Index** provides insight into the broader 
 ---
 
 ## **4. Acquisition Method**
-- The latest **homelessness rate** is sourced from **HUD's Annual Report**.
-- Since HUD does not provide a **real-time API**, the rate is **manually updated annually**.
-- The latest available value for **2024** is **0.23%**.
+- The weekly fetcher reads the `homelessness_rate` row of `runtime/data/annual_inputs.csv`.
+- HUD does not provide a real-time API. A person updates that row once a year, using the steps in `runtime/data/ANNUAL_INPUTS.md`.
+- The published value remains **0.23%** from the **2024** AHAR. The HUD reference date on that row is **2024-01-01**.
+- The weekly job copies `reviewed_at` from the row. It does not invent a fetch timestamp.
 
 ---
 

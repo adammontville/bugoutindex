@@ -35,7 +35,7 @@
         </mxCell>
 
         <!-- Data store -->
-        <mxCell id="c-data" value="&lt;b&gt;Committed data store&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:11px&quot;&gt;Container: files in git&lt;/font&gt;&lt;br&gt;&lt;br&gt;runtime/data/*.csv&#xa;docs/data/latest.json&#xa;Edelman CSV. HUD rate is a&#xa;fetcher constant, not a table.&#xa;Observation dates (PR #77)." style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=12;fillColor=#23a2d9;strokeColor=#0e7090;fontColor=#ffffff;align=center;" vertex="1" parent="1">
+        <mxCell id="c-data" value="&lt;b&gt;Committed data store&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:11px&quot;&gt;Container: files in git&lt;/font&gt;&lt;br&gt;&lt;br&gt;runtime/data/*.csv&#xa;docs/data/latest.json&#xa;annual_inputs.csv checklist&#xa;for HUD and Edelman.&#xa;Observation dates (PR #77)." style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=12;fillColor=#23a2d9;strokeColor=#0e7090;fontColor=#ffffff;align=center;" vertex="1" parent="1">
           <mxGeometry x="420" y="360" width="240" height="160" as="geometry"/>
         </mxCell>
 
@@ -119,7 +119,7 @@
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
 
-        <mxCell id="note" value="Crime: the weekly fetcher downloads the AH-Datalytics raw CSV and stores diagnostics. compute_index uses the locked 2723 rate until a reviewed revision. An unreadable download is a core failure and the job refuses to publish. Homelessness is a manual constant (fetched_at empty). Trust is the latest year column of the Edelman CSV, stored as a year only. ARCHITECTURE_AND_ROADMAP.md item 9 (a checklist table) is not implemented. UNKNOWN: exact GitHub Pages CDN edge nodes beyond standard Pages hosting." style="shape=note;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;align=left;verticalAlign=top;size=14;fontSize=11;" vertex="1" parent="1">
+        <mxCell id="note" value="Crime: the weekly fetcher downloads the AH-Datalytics raw CSV and stores diagnostics. compute_index uses the locked 2723 rate until a reviewed revision. An unreadable download is a core failure and the job refuses to publish. Homelessness and trust are rows in runtime/data/annual_inputs.csv. Homelessness observation_date is the HUD reference date and fetched_at stays empty. Trust observation_date is the Edelman survey year only. The Edelman CSV is an archive. UNKNOWN: exact GitHub Pages CDN edge nodes beyond standard Pages hosting." style="shape=note;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;align=left;verticalAlign=top;size=14;fontSize=11;" vertex="1" parent="1">
           <mxGeometry x="80" y="690" width="1280" height="140" as="geometry"/>
         </mxCell>
       </root>

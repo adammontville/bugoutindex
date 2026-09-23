@@ -26,9 +26,10 @@ A high level of trust indicates **strong institutional stability**, while low tr
 ---
 
 ## **4. Acquisition Method**
-- The **latest trust score** is retrieved from **Edelman’s dataset**.
-- The fetcher script extracts **the latest available year** for the "Government" category.
-- The score is then **stored locally** and used in BugOut Index calculations.
+- The weekly fetcher reads the `trust_in_government` row of `runtime/data/annual_inputs.csv`.
+- The published value remains **41** for Edelman survey year **2025**. The observation is that year only. The row does not store a month or day.
+- `runtime/data/edelman-trust-barometer-us.csv` is a historical archive. A new year column in that file does not change the score.
+- A person updates the checklist row once a year, using the steps in `runtime/data/ANNUAL_INPUTS.md`. The weekly job copies `reviewed_at` from the row and does not invent a fetch timestamp.
 
 ---
 

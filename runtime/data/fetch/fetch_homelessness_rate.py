@@ -9,29 +9,45 @@
 # For proprietary or commercial use, please contact: your-email@example.com
 
 """
-Module Description:
-<Add a description of this module here>
+Homelessness rate from the annual checklist.
+
+The value, the HUD reference date, and the review date are cells in
+``runtime/data/annual_inputs.csv``. There is no HUD API call. See
+``runtime/data/ANNUAL_INPUTS.md``.
 """
 
-
-# Manual annual input from the 2024 HUD Annual Homeless Assessment Report,
-# Part 1 (January point-in-time count). There is no HUD API call. Do not
-# invent a fetch timestamp. See runtime/static/markdown/homeless_rate.md.
-HOMELESSNESS_RATE = 0.23
-PROVENANCE = {
-    "kind": "manual",
-    "last_set": "2024 HUD AHAR",
-    "observation_period": "January 2024 point-in-time count",
-    "reference_date": "2024-01-01",
-}
+from .annual_inputs import AnnualInputError, load_annual_row
 
 
 def fetch():
-    """Return the manually maintained homelessness rate."""
+    """Return the checklist homelessness rate, or fail with no invented date."""
+    try:
+        row = load_annual_row("homelessness_rate")
+    except AnnualInputError as exc:
+        return _failure(str(exc))
+
     return {
         "status": "success",
+        # Empty on purpose. The HUD reference date is observation_date.
+        # reviewed_at is the date a person wrote, not a fetch clock.
         "fetched_at": None,
-        "observation_date": PROVENANCE["reference_date"],
-        "provenance": dict(PROVENANCE),
-        "data": {"homelessness_rate": HOMELESSNESS_RATE},
+        "observation_date": row["observation_date"],
+        "provenance": {
+            "kind": "manual",
+            "last_set": row["source"],
+            "observation_period": row["observation_period"],
+            "reference_date": row["observation_date"],
+            "source_url": row["source_url"],
+            "reviewed_at": row["reviewed_at"],
+        },
+        "data": {"homelessness_rate": row["value"]},
+    }
+
+
+def _failure(message: str) -> dict:
+    return {
+        "status": "error",
+        "message": message,
+        "fetched_at": None,
+        "data": {},
     }

@@ -22,4 +22,4 @@ The written review of the same system is [ARCHITECTURE_AND_ROADMAP.md](../../ARC
 
 - No secrets are on the diagrams. `FRED_API_KEY` is named only as a GitHub Actions secret; the value is not drawn.
 - An **UNKNOWN** label means that relationship was not invented. If the repository does not show an edge, it is not drawn as a fact.
-- HUD homelessness is a constant in the fetcher. Edelman trust is a committed CSV. There is no annual checklist table in the repo.
+- HUD homelessness and Edelman trust are annual checklist rows in `runtime/data/annual_inputs.csv`. The weekly job reads that table and does not invent a newer value or a fetch timestamp. See `runtime/data/ANNUAL_INPUTS.md`.

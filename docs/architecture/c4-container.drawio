@@ -20,7 +20,7 @@
         </mxCell>
 
         <!-- weekly_run -->
-        <mxCell id="c-weekly" value="&lt;b&gt;weekly_run publisher&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:11px&quot;&gt;Container: Python module&lt;/font&gt;&lt;br&gt;&lt;br&gt;runtime/publish/weekly_run.py&#xa;Orchestrates fetch → score →&#xa;append history → JSON → render.&#xa;Fail-closed: core failure (exit 2)&#xa;or markets/pulse error (exit 3).&#xa;Revisions failure still publishes." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#23a2d9;strokeColor=#0e7090;fontColor=#ffffff;align=center;verticalAlign=middle;" vertex="1" parent="1">
+        <mxCell id="c-weekly" value="&lt;b&gt;weekly_run publisher&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:11px&quot;&gt;Container: Python module&lt;/font&gt;&lt;br&gt;&lt;br&gt;runtime/publish/weekly_run.py&#xa;Orchestrates fetch → score →&#xa;append history → JSON → render.&#xa;Fail-closed: core failure (exit 2)&#xa;or markets/pulse error (exit 3).&#xa;Revisions or labor-shadow failure&#xa;still publishes." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#23a2d9;strokeColor=#0e7090;fontColor=#ffffff;align=center;verticalAlign=middle;" vertex="1" parent="1">
           <mxGeometry x="370" y="130" width="280" height="175" as="geometry"/>
         </mxCell>
 
@@ -30,7 +30,7 @@
         </mxCell>
 
         <!-- Fetchers -->
-        <mxCell id="c-fetch" value="&lt;b&gt;Data fetchers&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:11px&quot;&gt;Container: Python modules&lt;/font&gt;&lt;br&gt;&lt;br&gt;runtime/data/fetch/*&#xa;Core: inflation, crime, unemployment,&#xa;debt, homelessness, trust.&#xa;Companions: markets, pulse, revisions.&#xa;HTTP retries via http_retry." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#23a2d9;strokeColor=#0e7090;fontColor=#ffffff;align=center;verticalAlign=middle;" vertex="1" parent="1">
+        <mxCell id="c-fetch" value="&lt;b&gt;Data fetchers&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:11px&quot;&gt;Container: Python modules&lt;/font&gt;&lt;br&gt;&lt;br&gt;runtime/data/fetch/*&#xa;Core: inflation, crime, unemployment,&#xa;debt, homelessness, trust.&#xa;Companions: markets, pulse,&#xa;labor shadow, revisions.&#xa;HTTP retries via http_retry." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#23a2d9;strokeColor=#0e7090;fontColor=#ffffff;align=center;verticalAlign=middle;" vertex="1" parent="1">
           <mxGeometry x="80" y="360" width="280" height="160" as="geometry"/>
         </mxCell>
 

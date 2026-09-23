@@ -60,6 +60,7 @@ jobs:
           git add runtime/data/weekly_bugout_index.csv \
                   runtime/data/markets_history.csv \
                   runtime/data/pulse_history.csv \
+                  runtime/data/labor_shadow_history.csv \
                   docs/
           if git diff --cached --quiet; then
             echo "No changes to commit."

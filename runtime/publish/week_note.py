@@ -188,7 +188,7 @@ def build_week_note(snapshot: Dict[str, Any]) -> List[str]:
             "Core readings: " + "; ".join(_core_level_clauses(snapshot)) + ".",
             _pulse_level_sentence(snapshot),
             _market_level_sentence(snapshot),
-            _disclaimer(),
+            _disclaimer(snapshot),
         ]
         return sentences
 
@@ -236,7 +236,7 @@ def build_week_note(snapshot: Dict[str, Any]) -> List[str]:
         fetched_bit = f" (markets fetched {fetched})" if fetched else ""
         sentences.append(f"No market series moved{detail}{fetched_bit}.")
 
-    sentences.append(_disclaimer())
+    sentences.append(_disclaimer(snapshot))
     return sentences
 
 
@@ -256,7 +256,16 @@ def unexplained_numerals(sentences: Sequence[str], snapshot: Dict[str, Any]) -> 
 # ---------------------------------------------------------------- internals
 
 
-def _disclaimer() -> str:
+def _disclaimer(snapshot: Dict[str, Any]) -> str:
+    """Companions stay outside the score. Labor is named only when it is present."""
+    labor = snapshot.get("labor_shadow") or {}
+    values = labor.get("values") or {}
+    present = any(values.get(key) is not None for key in ("prime_age_epop", "prime_age_lfpr"))
+    if present:
+        return (
+            "Markets, the short-term pulse, and the labor-utilization shadow series "
+            "are not inputs to the BugOut Index score."
+        )
     return "Markets and the short-term pulse are not inputs to the BugOut Index score."
 
 

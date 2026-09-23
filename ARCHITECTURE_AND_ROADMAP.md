@@ -129,10 +129,11 @@ These are fetched and shown, and they do not enter `compute_index`:
 - **Markets:** spot gold and silver from gold-api.com, and the Fed’s broad dollar index, FRED `DTWEXBGS`. Not the ICE DXY. The fetcher says `DTWEXBGS` replaced the older broad index in 2020.
 - **Pulse:** initial jobless claims (`ICSA`), Michigan sentiment (`UMCSENT`), OECD U.S. business confidence (`BSCICP03USM665S`), the 10-year minus 2-year Treasury spread (`T10Y2Y`), and VIX (`VIXCLS`). The pulse module’s own comment still mentions NFIB; the code uses the OECD series because NFIB is not free on FRED.
 - **Revisions:** ALFRED vintages for nonfarm payrolls (`PAYEMS`) and a current-versus-pre-benchmark view of `UNRATE`. This page explains that labor headlines move after release. It does not revise the stored BugOut Index history.
+- **Labor utilization shadow:** prime-age (25–54) employment-population ratio (`LNS12300060`) and prime-age participation (`LNS11300060`), monthly BLS series via FRED. No weight. A failed fetch does not abort the publish. Not in `CORE_METRICS` or `compute_index`.
 
-Companion designs that are written down and **not** in the weekly job:
+Companion designs that are written down and **not** a core input:
 
-- **Labor Utilization** (`incubating/boi-labor-utilization-incubating.md`). Proposal to replace headline unemployment with a prime-age employment measure, only after a backtest. It is not listed in the incubating section of `METRICS.md`.
+- **Labor Utilization composite** (`incubating/boi-labor-utilization-incubating.md`). The two series above are on the site. The essay’s composite formula, which would replace headline unemployment, is still not in the score. A backtest is required before any v1.1 promotion.
 - **AI Discontinuity Watch** (`incubating/boi-ai-discontinuity-watch-incubating.md`, v0.1.0). An ordinal 0–5 watch level. The document says it must not receive a weight and must not change the BugOut Index. Not implemented in code.
 - Food prices, air quality, healthcare capacity, epidemics, grid outages, natural disasters, and a Government Authoritarianism Index. Essays in `incubating/`. The matching `fetch_*.py` files for food, air quality, healthcare, grid, and disasters **return hardcoded sample numbers and still report `status: success`**. The weekly job does not call them. `METRICS.md` links “Trust in Government” at the incubating Government Authoritarianism essay, which is a different idea from the Edelman series already in the core score.
 
@@ -198,7 +199,7 @@ local CSV/const ─┘         │            docs/data/latest.json
 | `.github/workflows/weekly-update.yml` | Scheduled job. Python 3.12. One secret, `FRED_API_KEY`. Commits data and `docs/` back to `main` as `bugout-bot` | Yes |
 | `runtime/publish/weekly_run.py` | Fetch, score, append history, write JSON, call the renderer. Exits 2 or 3 to refuse a bad publish | Yes |
 | `runtime/publish/render.py` plus `runtime/publish/templates/` | Static HTML. No JavaScript required. Pages: current, history, revisions, methodology | Yes |
-| `runtime/data/fetch/fetch_{inflation,unemployment,debt,incident,homelessness,trust,markets,pulse,revisions}.py` | Inputs | Yes, from the weekly job |
+| `runtime/data/fetch/fetch_{inflation,unemployment,debt,incident,homelessness,trust,markets,pulse,labor_shadow,revisions}.py` | Inputs | Yes, from the weekly job. `fetch_labor_shadow` is a companion and is not scored |
 | `runtime/util/http_retry.py` | Retries timeouts, connection errors, 408, 429, and 5xx. Backoff about 2s, 6s, 14s, 30s, 60s | Yes |
 | `runtime/util/secrets_compat.py` and a Streamlit shim inside `weekly_run.py` | `FRED_API_KEY` from the environment in CI, from Streamlit secrets otherwise | Yes |
 | `docs/CNAME` | Custom domain `www.bugoutindex.com` | Yes. Checked during this review: both hostnames serve the Pages site. `last-modified` on 22 September 2026 was the 19 September publish |
@@ -212,8 +213,8 @@ Dependencies (`runtime/requirements.txt`): Streamlit, pytest, requests, python-d
 1. Cron `30 23 * * 5` starts the workflow. That is 23:30 UTC Friday, which the workflow comment describes as 18:30 America/Chicago during daylight time, after the U.S. equity close and away from the old 03:00 UTC Saturday slot that collided with FRED maintenance. `workflow_dispatch` can start it by hand.
 2. The job checks out `main` with `fetch-depth: 1`, installs dependencies, and runs `python -m runtime.publish.weekly_run` with `FRED_API_KEY`.
 3. Core fetchers run. Any core failure aborts before history is appended (exit 2).
-4. Markets, pulse, and revisions run. Markets or pulse returning `status: error` abort the publish (exit 3). A **partial** pulse (some series missing) is logged and the site still publishes.
-5. One row is appended to `weekly_bugout_index.csv`, `markets_history.csv`, and `pulse_history.csv`. The same calendar date can be appended twice; nothing in `_append_row` replaces an existing date.
+4. Markets, pulse, and revisions run. Markets or pulse returning `status: error` abort the publish (exit 3). A **partial** pulse (some series missing) is logged and the site still publishes. The labor-utilization shadow fetch runs only after that check. Its failure does not abort the publish; when a previous shadow block exists, it is carried forward with its FRED observation dates.
+5. One row is appended to `weekly_bugout_index.csv`, `markets_history.csv`, and `pulse_history.csv`, and, when the shadow series has a value, to `labor_shadow_history.csv`. The same calendar date can be appended twice; nothing in `_append_row` replaces an existing date.
 6. `docs/data/latest.json` is rewritten. If the revisions fetch fails, the previous snapshot’s revisions block is copied forward and marked `reused_from`.
 7. HTML and `docs/assets/style.css` are rendered. History charts use the last 52 rows.
 8. The workflow commits those paths and pushes to `main`. GitHub Pages then rebuilds. A recent pages deploy finished in under a minute.
@@ -281,7 +282,7 @@ Treated as a backlog inventory, not as commitments.
 | Source | Idea | Already true? |
 | --- | --- | --- |
 | `about.md` | State/regional scores; grid and food security; more frequent updates | No |
-| `incubating/boi-labor-utilization-incubating.md` | Replace unemployment with prime-age labor utilization after a backtest | No. Best-specified core change in the repo |
+| `incubating/boi-labor-utilization-incubating.md` | Replace unemployment with prime-age labor utilization after a backtest | Shadow series is fetched (`LNS12300060`, `LNS11300060`). The composite is not in the score |
 | `incubating/boi-ai-discontinuity-watch-incubating.md` | Separate 0–5 AI watch, never inside the score | No |
 | Other `incubating/*.md` | Food CPI, AQI, healthcare, epidemics, grid, disasters, authoritarianism | Essays only. Several fetchers are stubs that claim success |
 | Issue #53 | Volatility multiplier on *interpretation*, capped near 10%, not on the stored score | No. VIX and sentiment are already on the page as context |
@@ -380,6 +381,7 @@ These raise data quality and prepare a real methodology version. They still do n
 - **Effort:** M.
 - **Dependencies:** The construction in the incubating essay. FRED series IDs chosen in that implementation, not in this document.
 - **Success:** For at least one month the shadow series is visible, sourced, and absent from `compute_index`. The incubating doc’s backtest is still required before any v1.1 promotion.
+- **Status:** Shipped as a companion. The weekly job fetches FRED `LNS12300060` (prime-age employment-population ratio, ages 25–54, seasonally adjusted) and `LNS11300060` (prime-age participation). They are charted and labeled not in the BugOut Index. They are not in `CORE_METRICS` or `compute_index`. A full fetch failure does not abort the publish. The composite formula in the incubating essay is not implemented. The backtest is still required before any v1.1 promotion.
 
 **11. A backtest harness, not a new score**
 

@@ -172,6 +172,8 @@ Band wording and thresholds are unchanged from the live site. Recalibrating how 
 
 The BugOutIndex uses a versioning system to ensure transparency as the methodology evolves. Historical scores can be recalculated using past versions.
 
+A mechanical replay of v1.0.0 on historical FRED inflation, unemployment, and debt-to-GDP lives in [`runtime/backtest/`](./runtime/backtest/README.md). It is not a new methodology version. Crime, homelessness, and trust are excluded or held at the published 19 September 2026 baselines and labeled; they are not filled in from a guessed history.
+
 BugOutIndex is dual-licensed:
 - **AGPL-3.0** for open-source use.
 - A **commercial license** for proprietary use. Contact [adam.w.montville@gmail.com](mailto:adam.w.montville@gmail.com) for details.

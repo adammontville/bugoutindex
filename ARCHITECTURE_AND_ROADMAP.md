@@ -157,7 +157,7 @@ These are product constraints, not just style notes:
 | History | `runtime/data/weekly_bugout_index.csv` stores raw and normalized values | It does **not** store each input’s observation date, so a revision and a new print look the same. In June 2026 debt printed 122.57, then 122.77, then 122.59 while unemployment was unchanged. That pattern is a revision of the same quarter, and it moved the index by a few hundredths |
 | Recompute claim | Methodology page says check out a commit and rerun `weekly_run.py` | **Not true for past weeks.** Fetchers request the latest FRED observation, not the vintage that existed on that Friday. Rerunning today overwrites history with today’s latest. The committed CSV and JSON are the record |
 | Automated tests | `runtime/util/test_http_retry.py`: 5 tests, passing in this review | `tests/test_scoring.py` does not collect. It imports `normalize_metric` from `runtime.processing`, and that package’s `__init__.py` is empty. `runtime/pytest.ini` points `testpaths` at `tests`, which is not where this file lives |
-| Backtest | Not implemented | Open issue #55 asks for Depression, WWII, 1970s, and 2008 reconstructions. No harness, no page |
+| Backtest | `runtime/backtest/` replays v1.0.0 on historical FRED inflation, unemployment, and debt-to-GDP for the 2008 and 2020 windows. Crime, homelessness, and trust are excluded or held constant and labeled | Not a crisis essay. Issue #55 still asks for Depression, WWII, the 1970s, population-adjusted crime, and a page |
 
 ### Known limitations (from the code and the data, not from theory)
 
@@ -290,7 +290,7 @@ Treated as a backlog inventory, not as commitments.
 | Issue #48 | Credit-card delinquency, FRED `DRCCLACBS`, quarterly, not in the score | No |
 | Issue #49 | Civil unrest feed | No source code |
 | Issue #33, `bank_failures.csv` | Failed-bank list as a signal | File only, through Jan 2025 |
-| Issue #55 | Historical crisis backtest and a page about it | No |
+| Issue #55 | Historical crisis backtest and a page about it | Harness only (`runtime/backtest/`). No essay page |
 | Issue #58 | Trend chart of the index and of each metric | **Partly done** on the static site (sparklines and history). The issue targeted the Streamlit dashboard |
 | Issues #42, #44, #51, #52 | Current-events feed, twice daily, via xAI or OpenAI, plus images | #42 closed as a design; #51 and #52 still open. Not built |
 | Issues #45, #46, #54 | Monetization, distribution, book list | Business ideas. Domain already exists |
@@ -389,6 +389,7 @@ These raise data quality and prepare a real methodology version. They still do n
 - **Effort:** L for a full crisis narrative; M for the FRED-only mechanical replay.
 - **Dependencies:** Item 4 (one formula). Item 1 (agreement on the 0.72 rule), because the backtest is meaningless if the formula is still disputed.
 - **Success:** The harness reproduces 57.11 on the 19 September inputs, and it produces a time series for the three FRED core series over 2008 and 2020 with the missing three inputs explicitly excluded or held constant and labeled.
+- **Status:** Mechanical replay shipped in `runtime/backtest/`. It calls `runtime.processing.formula.compute_index` (v1.0.0 endpoints, weights, trust inversion, clamp, and divide-by-sum-of-weights). Recorded FRED fixtures cover CPIAUCSL year-over-year inflation, UNRATE, and GFDEGDQ188S for December 2007–December 2009 and calendar 2020. Partial mode drops crime, homelessness, and trust and shrinks the denominator. Held-constant mode pins them at the published 19 September 2026 baselines (2723 / 0.23 / 41) and labels those columns `held_constant`. The live weekly score is unchanged. Issue #55's historical essay is still open.
 
 **12. Retire the second app in the docs, even if the code stays**
 

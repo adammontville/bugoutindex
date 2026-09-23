@@ -38,6 +38,8 @@ def fetch():
         return {
             "status": "success",
             "fetched_at": latest_year,
+            # Survey year only. Do not invent a month or day.
+            "observation_date": str(latest_year),
             "provenance": {"kind": "annual", "year": str(latest_year)},
             "data": {"trust_in_government": round(float(trust_score), 2)},
         }

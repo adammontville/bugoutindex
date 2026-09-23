@@ -199,11 +199,13 @@ def fetch(csv_text: Optional[str] = None, csv_path: Optional[str] = None):
         frame["Last Updated"].tolist() if "Last Updated" in frame.columns else [],
     )
     provenance["source_url"] = source_url
-    # No observation timestamp: the rate's vintage is the file month.
-    # The locked number below is the index input. Diagnostics are not.
+    # Observation date is the last day of the month the locked rate describes.
+    # Diagnostics are not the index input. fetched_at stays empty: this is a
+    # file vintage, not a clock time.
     return {
         "status": "success",
         "fetched_at": None,
+        "observation_date": provenance.get("value_month_end"),
         "provenance": provenance,
         "diagnostics": diagnostics,
         "data": {

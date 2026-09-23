@@ -31,6 +31,7 @@ def fetch():
     return {
         "status": "success",
         "fetched_at": None,
+        "observation_date": PROVENANCE["reference_date"],
         "provenance": dict(PROVENANCE),
         "data": {"homelessness_rate": HOMELESSNESS_RATE},
     }

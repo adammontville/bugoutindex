@@ -75,6 +75,13 @@ from runtime.publish.failure_notice import (  # noqa: E402
     EXIT_CORE_REFUSED,
     EXIT_MARKETS_OR_PULSE_REFUSED,
 )
+from runtime.publish.observation_dates import (  # noqa: E402
+    blank_observation_dates,
+    ensure_csv_schema,
+    observation_column,
+    observation_date_for,
+    weekly_boi_headers,
+)
 
 CORE_METRICS = _formula.CORE_METRICS
 METRIC_RANGES = _formula.METRIC_RANGES
@@ -136,15 +143,31 @@ def _append_row(csv_path: Path, headers: list, row: dict) -> None:
         w.writerow(row)
 
 
+def core_history_row(run_date: str, boi: Dict[str, Any],
+                     core: Dict[str, Dict[str, Any]]) -> Dict[str, Any]:
+    """One weekly index row: raw value, observation date, then normalized score.
+
+    Missing observation dates are blank. They are not guessed.
+    """
+    row: Dict[str, Any] = {"date": run_date, "bugout_index": boi["index"]}
+    for metric in CORE_METRICS:
+        row[metric] = boi["metrics"][metric]["raw"]
+        observed = observation_date_for(metric, core.get(metric) or {})
+        row[observation_column(metric)] = observed or ""
+        row[f"{metric}_normalized"] = boi["metrics"][metric]["normalized"]
+    return row
+
+
 def append_history(run_date: str, boi: Dict[str, Any],
-                   markets: Dict[str, Any], pulse: Dict[str, Any]) -> None:
+                   markets: Dict[str, Any], pulse: Dict[str, Any],
+                   core: Dict[str, Dict[str, Any]] | None = None) -> None:
     # Flat core metrics history (replaces the old dict-stringified CSV going forward).
     boi_path = DATA_DIR / "weekly_bugout_index.csv"
-    boi_headers = ["date", "bugout_index"] + CORE_METRICS + [f"{m}_normalized" for m in CORE_METRICS]
-    boi_row: Dict[str, Any] = {"date": run_date, "bugout_index": boi["index"]}
-    for m in CORE_METRICS:
-        boi_row[m] = boi["metrics"][m]["raw"]
-        boi_row[f"{m}_normalized"] = boi["metrics"][m]["normalized"]
+    # Old files gain the observation-date columns with blank cells. Dates are
+    # not backfilled here; see observation_dates.apply_known_dates.
+    ensure_csv_schema(boi_path)
+    boi_headers = weekly_boi_headers()
+    boi_row = core_history_row(run_date, boi, core or {})
     _append_row(boi_path, boi_headers, boi_row)
 
     # Markets history.
@@ -166,10 +189,11 @@ def append_history(run_date: str, boi: Dict[str, Any],
     _append_row(DATA_DIR / "pulse_history.csv", p_headers, {"date": run_date, **p_data})
 
 
-def _metric_snapshot(scored: Dict[str, Any], payload: Dict[str, Any]) -> Dict[str, Any]:
+def _metric_snapshot(metric: str, scored: Dict[str, Any], payload: Dict[str, Any]) -> Dict[str, Any]:
     """Copy the scored inputs plus dating metadata. Provenance is not an input."""
     block: Dict[str, Any] = {
         **scored,
+        "observation_date": observation_date_for(metric, payload),
         "source_fetched_at": payload.get("fetched_at"),
         "status": payload.get("status"),
     }
@@ -196,7 +220,7 @@ def build_snapshot(run_date: str, boi: Dict[str, Any],
         "bugout_index": boi["index"],
         "interpretation": band,
         "metrics": {
-            m: _metric_snapshot(boi["metrics"][m], core.get(m, {}))
+            m: _metric_snapshot(m, boi["metrics"][m], core.get(m, {}))
             for m in CORE_METRICS
         },
         "markets": {
@@ -232,8 +256,9 @@ def publication_date_for(now: datetime | None = None) -> str:
 def load_history(path: Path, limit: int = 52) -> list:
     if not path.exists():
         return []
-    with path.open() as f:
+    with path.open(newline="") as f:
         rows = list(csv.DictReader(f))
+    rows = blank_observation_dates(rows)
     return rows[-limit:]
 
 
@@ -308,7 +333,7 @@ def main() -> int:
             print(f"  - {line}", file=sys.stderr)
 
     print("[weekly_run] appending history…")
-    append_history(run_date, boi, markets, pulse)
+    append_history(run_date, boi, markets, pulse, core)
 
     snapshot = build_snapshot(run_date, boi, core, markets, pulse)
 

@@ -1,5 +1,9 @@
 **Disclaimer**: This metric is part of the "Incubating" section of the BugOutIndex and is under development. Content is experimental, subject to change, and not finalized. Redistribution or use without explicit permission is prohibited.
 
+**Status: PARKED from near-term build** (Adam Montville, 2026-09-23). The essay stays. There is no fetcher work. This is a crisis overlay, not a weekly directional stress reading, and it is not in the BugOut Index.
+
+**Not Edelman trust.** The core score already includes Trust in Government from the Edelman Trust Barometer (survey percent, inverted on a 0–80 window). GAI is a different idea — restrictions during a crisis — and must not be read as that input, substituted for it, or given a weight beside it.
+
 # Government Authoritarianism Index (GAI)
 
 ## Description

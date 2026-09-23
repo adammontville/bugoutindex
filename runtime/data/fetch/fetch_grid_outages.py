@@ -1,19 +1,20 @@
 # BugOutIndex
-# Copyright (C) 2025 Your Name or Organization
-#
-# This file is dual-licensed under the AGPL-3.0 and a commercial license.
-#
-# You may use, modify, and distribute this software under the terms of the
-# GNU Affero General Public License v3.0 as published by the Free Software Foundation.
-#
-# For proprietary or commercial use, please contact: your-email@example.com
+# Copyright (C) 2025 Adam Montville
+# Dual-licensed under AGPL-3.0 and a commercial license.
+"""Grid-outages stub. Still incubating; no source has been chosen."""
+from __future__ import annotations
 
-"""
-Module Description:
-<Add a description of this module here>
-"""
+from .not_wired import refuse
+
+
 def fetch():
-    """Fetch the latest Grid Outages data."""
-    print("Fetching Grid Outages...")
-    # Simulate fetching data
-    return {"status": "success", "fetched_at": "2025-01-01T00:00:00Z", "data": {"hours": 12.3}}
+    """Refuse until a real public source is chosen and reviewed.
+
+    The exploration brief is ``incubating/grid_outages.md``. This module is
+    not on the weekly path and must not return a sample hour count.
+    """
+    refuse(
+        "fetch_grid_outages",
+        "Grid outages remain incubating until a real source is chosen "
+        "(incubating/grid_outages.md). No series is approved, and none is wired into the weekly job.",
+    )

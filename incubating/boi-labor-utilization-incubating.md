@@ -13,6 +13,8 @@ The weekly publisher shows two FRED series as a shadow companion. They are label
 
 The composite formula, normalization ranges, and participation penalty described in the rest of this note are **not** implemented. A backtest through the Great Recession, the post-2008 participation decline, and the COVID shock is still required before any v1.1 promotion that would replace headline unemployment.
 
+**Inventory lock (Adam Montville, 2026-09-23):** Keep-shadow. The prime-age series stay on the site. The composite stays incubating until that backtest exists. This note does not promote labor utilization into the score.
+
 ## Purpose
 
 This document proposes an incubating direction for the BugOut Index (BOI): replacing or superseding the current headline unemployment metric with a more complete labor-market measure that accounts for both unemployment and labor-force exit behavior.

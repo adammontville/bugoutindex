@@ -77,6 +77,7 @@ from runtime.publish.failure_notice import (  # noqa: E402
     EXIT_CORE_REFUSED,
     EXIT_MARKETS_OR_PULSE_REFUSED,
 )
+from runtime.util.redact import redact_secrets, scrub_published  # noqa: E402
 from runtime.publish.observation_dates import (  # noqa: E402
     blank_observation_dates,
     ensure_csv_schema,
@@ -103,8 +104,9 @@ def fetch_core_metrics() -> Dict[str, Dict[str, Any]]:
                 print(f"[warn] {metric}: {result}", file=sys.stderr)
             out[metric] = result
         except Exception as exc:  # noqa: BLE001
-            print(f"[error] fetch {metric}: {exc}", file=sys.stderr)
-            out[metric] = {"status": "error", "message": str(exc), "data": {}}
+            message = redact_secrets(str(exc))
+            print(f"[error] fetch {metric}: {message}", file=sys.stderr)
+            out[metric] = {"status": "error", "message": message, "data": {}}
     return out
 
 
@@ -121,7 +123,7 @@ def fetch_pulse() -> Dict[str, Any]:
 
 
 def _shadow_fetch_error(label: str, exc: Exception) -> Dict[str, Any]:
-    message = f"{label} fetch raised: {exc}"
+    message = redact_secrets(f"{label} fetch raised: {exc}")
     return {
         "status": "error",
         "in_bugout_index": False,
@@ -226,7 +228,7 @@ def fetch_revisions() -> Dict[str, Any]:
         mod = importlib.import_module("runtime.data.fetch.fetch_revisions")
         return mod.fetch()
     except Exception as exc:  # noqa: BLE001
-        return {"status": "error", "message": f"revisions fetch raised: {exc}"}
+        return {"status": "error", "message": redact_secrets(f"revisions fetch raised: {exc}")}
 
 
 def _append_row(csv_path: Path, headers: list, row: dict) -> None:
@@ -550,13 +552,17 @@ def main() -> int:
         "food_shadow": load_history(DATA_DIR / "food_shadow_history.csv"),
     }
 
+    # Shadow and revision failures are published on exit 0. Scrub the
+    # snapshot that both latest.json and the HTML are built from.
+    snapshot = scrub_published(snapshot)
     DOCS_DATA.mkdir(parents=True, exist_ok=True)
-    (DOCS_DATA / "latest.json").write_text(json.dumps(snapshot, indent=2, default=str))
+    published = redact_secrets(json.dumps(snapshot, indent=2, default=str))
+    (DOCS_DATA / "latest.json").write_text(published)
     print(f"[weekly_run] wrote {DOCS_DATA / 'latest.json'}")
 
-    # Also render the static site.
+    # Also render the static site from the same scrubbed payload.
     from runtime.publish.render import render_site  # lazy import
-    render_site(snapshot)
+    render_site(json.loads(published))
     print("[weekly_run] done.")
     return 0
 

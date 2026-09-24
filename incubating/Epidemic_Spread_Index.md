@@ -1,4 +1,7 @@
 **Disclaimer**: This metric is part of the "Incubating" section of the BugOutIndex and is under development. Content is experimental, subject to change, and not finalized. Redistribution or use without explicit permission is prohibited.
+
+**Status: PARKED from near-term build** (Adam Montville, 2026-09-23). The essay stays. There is no fetcher work. Epidemic spread is a crisis overlay, not a weekly directional stress reading, and it is not in the BugOut Index.
+
 # Epidemic Spread Index (ESI)
 
 ## Description

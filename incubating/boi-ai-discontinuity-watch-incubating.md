@@ -5,6 +5,8 @@
 **Version**: 0.1.0 (incubating)
 **Effective Date**: July 23, 2026
 
+**Inventory lock (Adam Montville, 2026-09-23):** Companion-only, with no weight, for as long as this watch exists. No near-term build. This essay stays unpublished unless the PM asks for a public watch page. Publishing a page would still not put AIDW in the score.
+
 ---
 
 ## Purpose
@@ -26,7 +28,7 @@ AIDW does **not** attempt to estimate a probability of AGI, a "years to AGI" fig
 - **BOI measures observed societal stability.** AIDW monitors evidence of an AI-driven technological discontinuity. They answer different questions and must be read separately.
 - **The one-number BOI philosophy is preserved.** AIDW is reported as a distinct, clearly labeled watch level next to BOI, never merged into it. If AI-driven stress on society becomes observable, it is expected to appear in BOI *through the existing core metrics*, not through AIDW.
 
-This document adds a non-core cross-reference under "Future Metrics in Development" so the measure is discoverable, consistent with how other incubating documents are listed. It changes no core weights and no existing metric files' methodology.
+`METRICS.md` lists AIDW under the incubating inventory as a companion with no weight. That cross-reference does not change core weights or any existing metric's methodology.
 
 ## Operational Distinctions
 

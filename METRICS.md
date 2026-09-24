@@ -180,21 +180,33 @@ BugOutIndex is dual-licensed:
 
 For more information, see the [LICENSE](./LICENSE.md) file.
 
-## Future Metrics in Development
+## Future metrics (incubating inventory)
 
-The BugOutIndex team is actively exploring additional metrics to expand the scoring system. These metrics are currently in the "incubating" phase and are **not** part of the core scoring methodology.
+Nothing in this section is part of the v1.0.0 score. Companions stay outside the score unless an explicit, versioned methodology change says otherwise. The index is a directional stress reading of published statistics, not a historical bug-out siren.
 
-You can find detailed documentation for these incubating metrics in the **[incubating folder](./incubating/)**.
+The inventory below is the cut locked by Adam Montville on 2026-09-23. It does not add a series to the weekly publisher.
 
-### Incubating Metrics
-- [Food Price Index](./incubating/food_price_index.md)
-- [Air Quality Index](./incubating/air_quality_index.md)
-- [Healthcare Capacity](./incubating/healthcare_capacity.md)
-- [Epidemic Spread Index](./incubating/Epidemic_Spread_Index.md)
-- [Grid Outages](./incubating/grid_outages.md)
-- [Natural Disaster Frequency](./incubating/natural_disaster_frequency.md)
-- [Government Authoritarianism Index](./incubating/Government_Authoritarianism_Index.md) — incubating; distinct from the core Edelman **Trust in Government** metric already in the score
-- [Labor Utilization](./incubating/boi-labor-utilization-incubating.md) — prime-age EPOP (`LNS12300060`) and participation (`LNS11300060`) are shown on the weekly site as a shadow series and are not in v1.0.0; the composite formula is still incubating and needs a backtest before any promotion
+### Keep-shadow — Labor utilization
+- [Labor Utilization](./incubating/boi-labor-utilization-incubating.md) — prime-age EPOP (`LNS12300060`) and participation (`LNS11300060`) stay on the weekly site as a shadow series. They are not in v1.0.0. The composite formula stays incubating. A backtest is still required before any v1.1 promotion into the score.
 
-### Companion Measures (non-core, no BOI weight)
-- [AI Discontinuity Watch (AIDW)](./incubating/boi-ai-discontinuity-watch-incubating.md) — optional watch level; does not change the BOI score.
+### Next companion candidate — Food prices
+- [Food Price Index](./incubating/food_price_index.md) — the next incubating idea worth a **real** fetcher, as a companion only. The fetcher is not implemented here. The stub fails closed (`NOT_WIRED`) and is not on the weekly path. Not in the score.
+
+### Still incubating — Grid outages / energy
+- [Grid Outages](./incubating/grid_outages.md) — kept incubating on purpose (not archived). The note is a theoretical exploration: why grid stress matters now, which public measures are worth researching, and whether any of them would improve a directional weekly reading. No source has been chosen. No weight. The stub fails closed. The weekly job does not call it.
+
+### Keep incubating, no near-term build — AI Discontinuity Watch
+- [AI Discontinuity Watch (AIDW)](./incubating/boi-ai-discontinuity-watch-incubating.md) — companion-only, with no weight, including if it is ever shown publicly. The essay stays. It stays unpublished unless the PM asks for a public watch page. It does not change the BOI score.
+
+### Parked — essays stay, no build
+Crisis overlays, not weekly directional stress. No fetcher work.
+
+- [Epidemic Spread Index](./incubating/Epidemic_Spread_Index.md) — parked from near-term build. The essay stays in `incubating/`.
+- [Government Authoritarianism Index](./incubating/Government_Authoritarianism_Index.md) — parked from near-term build. The essay stays in `incubating/`. This is **not** the core Edelman **Trust in Government** metric already in the score.
+
+### Parked / archived — off the active list
+Thin essays and sample-data stubs. Moved to [`incubating/parked/`](./incubating/parked/README.md). Not presented as in-development work. Matching fetchers fail closed and are not called by the weekly job.
+
+- [Air Quality Index](./incubating/parked/air_quality_index.md)
+- [Healthcare Capacity](./incubating/parked/healthcare_capacity.md)
+- [Natural Disaster Frequency](./incubating/parked/natural_disaster_frequency.md)

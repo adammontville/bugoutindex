@@ -1,8 +1,8 @@
 # BugOut Index — architecture review and roadmap
 
 **Audience:** Product Manager  
-**Status:** Living architecture record. Shipped publisher, formula, companion, and backtest work is described as merged. Later sections still include open proposals. This document does not change the score, the bands, or the weekly job.  
-**Reviewed against:** repository `main` as of the 2026-09-19 weekly publish (score **57.11**), with later notes for work merged after that publish.  
+**Status:** Living architecture record. Shipped publisher, formula, companion, and backtest work is described as merged. Later sections still include open proposals. The incubating-metrics inventory was locked by Adam Montville on 2026-09-23 (see Later). This document does not change the score, the bands, or the weekly job.  
+**Reviewed against:** repository `main` as of the 2026-09-19 weekly publish (score **57.11**), with later notes for work merged after that publish.
 **Live site:** [https://www.bugoutindex.com/](https://www.bugoutindex.com/) (GitHub Pages; `bugoutindex.com` redirects there). The same build is at [https://adammontville.github.io/bugoutindex/](https://adammontville.github.io/bugoutindex/).
 
 Effort sizes used below:
@@ -146,11 +146,14 @@ These are fetched and shown, and they do not enter `compute_index`:
 - **Revisions:** ALFRED vintages for nonfarm payrolls (`PAYEMS`) and a current-versus-pre-benchmark view of `UNRATE`. This page explains that labor headlines move after release. It does not revise the stored BugOut Index history.
 - **Labor utilization shadow:** prime-age (25–54) employment-population ratio (`LNS12300060`) and prime-age participation (`LNS11300060`), monthly BLS series via FRED. No weight. A failed fetch does not abort the publish. Not in `CORE_METRICS` or `compute_index`.
 
-Companion designs that are written down and **not** a core input:
+Companion designs that are written down and **not** a core input. The inventory decision is the 2026-09-23 cut under Later. `METRICS.md` lists the same cut. Companions stay outside the score unless a later methodology version says otherwise.
 
-- **Labor Utilization composite** (`incubating/boi-labor-utilization-incubating.md`). The two series above are on the site. The essay’s composite formula, which would replace headline unemployment, is still not in the score. A backtest is required before any v1.1 promotion.
-- **AI Discontinuity Watch** (`incubating/boi-ai-discontinuity-watch-incubating.md`, v0.1.0). An ordinal 0–5 watch level. The document says it must not receive a weight and must not change the BugOut Index. Not implemented in code.
-- Food prices, air quality, healthcare capacity, epidemics, grid outages, natural disasters, and a Government Authoritarianism Index. Essays in `incubating/`. The matching `fetch_*.py` files for food, air quality, healthcare, grid, and disasters **return hardcoded sample numbers and still report `status: success`**. The weekly job does not call them. `METRICS.md` links “Trust in Government” at the incubating Government Authoritarianism essay, which is a different idea from the Edelman series already in the core score.
+- **Labor Utilization composite** (`incubating/boi-labor-utilization-incubating.md`). **Keep-shadow.** The two series above are on the site. The essay’s composite formula, which would replace headline unemployment, is still not in the score. A backtest is required before any v1.1 promotion.
+- **AI Discontinuity Watch** (`incubating/boi-ai-discontinuity-watch-incubating.md`, v0.1.0). An ordinal 0–5 watch level. Companion-only, no weight, and it must not change the BugOut Index. The essay stays unpublished unless the PM asks for a public watch page. Not implemented in code. No near-term build.
+- **Food prices** (`incubating/food_price_index.md`). Next companion candidate. Not in the score. The stub fetcher fails closed (`NOT_WIRED`) until a follow-up implements a real series. The weekly job does not call it.
+- **Grid outages / energy** (`incubating/grid_outages.md`). Still incubating, on purpose. The note is a theoretical exploration of candidate public measures and usefulness criteria. No series has been chosen. The stub fetcher fails closed. The weekly job does not call it.
+- **Epidemic Spread** and the **Government Authoritarianism Index**. Essays stay in `incubating/`. They are crisis overlays, not weekly directional stress, and there is no near-term build. GAI is not the Edelman trust series already in the core score.
+- **Air quality, healthcare capacity, and natural disaster frequency.** Parked. Essays live in `incubating/parked/`. Their stub fetchers fail closed and are not on the weekly path.
 
 `runtime/data/bank_failures.csv` is an FDIC-style closure list through January 2025. Nothing in the publisher reads it (open issue #33).
 
@@ -279,7 +282,7 @@ The product tension: people can see a new page every Friday, but the headline of
 
 - **A serious reader cannot tell which document is the methodology.** Following `METRICS.md` changes both the level and the band of the current score. Following the trust essay changes trust’s contribution by about 25 points of normalized score.
 - **Three copies of the formula** (`weekly_run.py`, `calculate_index.py`, `normalize.py` / `scoring_v1.py`) plus a third trust formula in an essay. They match on today’s in-range inputs except for clamping. They will not stay matched if someone edits one of them.
-- **Stale inputs can still look successful.** Crime returns success when the RTCI download is readable, while the published input stays 2723.0. Homelessness and trust return success from the annual checklist, and they do not invent a `2025-01-01T00:00:00Z` fetch time. Incubating fetchers return `status: success` with sample data. A future change that “turns on” those modules would publish fiction.
+- **Stale inputs can still look successful.** Crime returns success when the RTCI download is readable, while the published input stays 2723.0. Homelessness and trust return success from the annual checklist, and they do not invent a `2025-01-01T00:00:00Z` fetch time. Air quality, healthcare, disasters, grid, and food used to return `status: success` with sample numbers. They now raise `NOT_WIRED` and are not called by the weekly job. A future companion has to bring a real source; it cannot flip a stub back to fiction.
 - **The recompute sentence overclaims.** Past weeks cannot be regenerated by rerunning fetchers.
 - **The scoring test does not run,** so a formula edit would not be caught.
 - **No alert beyond a red GitHub Action.** A refused publish leaves last week’s site up, which is safe, and it does so quietly unless someone watches the Actions tab.
@@ -299,7 +302,7 @@ Treated as a backlog inventory, not as commitments.
 | `about.md` | State/regional scores; grid and food security; more frequent updates | No |
 | `incubating/boi-labor-utilization-incubating.md` | Replace unemployment with prime-age labor utilization after a backtest | Shadow series is fetched (`LNS12300060`, `LNS11300060`). The composite is not in the score |
 | `incubating/boi-ai-discontinuity-watch-incubating.md` | Separate 0–5 AI watch, never inside the score | No |
-| Other `incubating/*.md` | Food CPI, AQI, healthcare, epidemics, grid, disasters, authoritarianism | Essays only. Several fetchers are stubs that claim success |
+| Other `incubating/*.md` | Food CPI, AQI, healthcare, epidemics, grid, disasters, authoritarianism | **Cut locked 2026-09-23.** Food is the next companion candidate (stub fail-closed; fetcher not built). Grid stays incubating as a theory brief (stub fail-closed; no weekly wiring). Epidemic spread and GAI stay as essays, no build. AQI, healthcare, and disasters are parked under `incubating/parked/`. |
 | Issue #53 | Volatility multiplier on *interpretation*, capped near 10%, not on the stored score | No. VIX and sentiment are already on the page as context |
 | Issues #47, #50 | VIX and Michigan sentiment as companions | **Fetched already**, as pulse, not as their own modules |
 | Issue #48 | Credit-card delinquency, FRED `DRCCLACBS`, quarterly, not in the score | No |
@@ -417,6 +420,19 @@ These raise data quality and prepare a real methodology version. They still do n
 
 Do these only after the Now items and the backtest. Several are already written as incubating ideas; they are later because they change meaning, coverage, or operating burden.
 
+#### Locked incubating-metrics cut (Adam Montville, 2026-09-23)
+
+This is the inventory decision. It does not change v1.0.0 math, bands, weights, `CORE_METRICS`, or the weekly publisher’s core path. The index stays a directional stress reading of published statistics, not a historical bug-out siren. Companions stay outside the score unless a later, explicit methodology version says otherwise.
+
+| Decision | Item | What is true after this cut |
+| --- | --- | --- |
+| Keep-shadow | Labor utilization | Prime-age EPOP (`LNS12300060`) and LFPR (`LNS11300060`) stay on the site with no weight. The composite formula stays incubating. A backtest is still required before any v1.1 promotion into the score. |
+| Next companion candidate | Food prices | Next incubating idea worth a real fetcher, as a companion only, not inside the score. The stub no longer returns fictional success. The fetcher itself is a follow-up. |
+| Keep incubating, no near-term build | AI Discontinuity Watch | Companion-only, no weight. The essay stays. It stays unpublished unless the PM asks for a public watch page. |
+| Park, essays stay, no build | Epidemic Spread; Government Authoritarianism Index | Crisis overlays, not weekly directional stress. No fetcher work. GAI is not Edelman trust and must not be confused with the core trust input. |
+| Archive / park | Air quality, healthcare capacity, natural disaster frequency | Essays moved to `incubating/parked/`. Off the active in-development list. Stub fetchers fail closed (`NOT_WIRED`) and are not called by the weekly job. |
+| Keep incubating (do not archive) | Grid outages / energy | Theoretical exploration in `incubating/grid_outages.md`: why it matters (grid stress, the data-center / AI load debate, and energy geopolitics as context only), candidate public measures, usefulness criteria for a directional weekly reading, and the path theory → source feasibility → shadow companion (no weight) → only then any v1.x weight discussion. Not in the score. No production series has been chosen. The stub fails closed. No weekly wiring. |
+
 **13. Methodology v1.1, only with a version bump**
 
 - **Outcome:** At most one labor change (headline unemployment vs the shadow labor-utilization series), plus an explicit decision that weights sum to 1.00 or stay relative. Old JSON remains `methodology_version: 1.0.0`. The site can show both during a transition.
@@ -431,12 +447,13 @@ Do these only after the Now items and the backtest. Several are already written 
 - **Dependencies:** The week-note pattern from item 3, so these do not look like secret inputs.
 - **Success:** The gauge’s number is bit-for-bit the same the week these ship. Each new tile has a source link and a date.
 
-**15. Food prices as the first incubating metric worth a real fetcher**
+**15. Food prices as the next companion candidate**
 
-- **Outcome:** A FRED or BLS food CPI year-over-year, shown as not in the index. The stub `fetch_food_price_index.py` stops returning a fake success if anyone calls it.
-- **Effort:** M.
+- **Outcome:** A FRED or BLS food CPI year-over-year, shown as not in the index. The real fetcher and the site tile are a follow-up. This cut locks that food is next, and it stops the stub from returning a fake success.
+- **Effort:** M for the real fetcher and tile.
 - **Dependencies:** Item 4’s rule that only `CORE_METRICS` enter the score.
-- **Success:** Food inflation on the page with a source and a date. `compute_index` unchanged. The other stub fetchers either raise a clear “not implemented” or are deleted so they cannot return success.
+- **Success:** Food inflation on the page with a source and a date. `compute_index` unchanged.
+- **Status (2026-09-23):** Locked as the next companion candidate, not a core input. `fetch_food_price_index.py` raises `NOT_WIRED` instead of returning sample success. No site tile and no live series in this change. The weekly job does not call it. Parked stubs (air quality, healthcare, disasters) and the still-incubating grid stub fail closed the same way. Grid is not archived; its exploration brief is `incubating/grid_outages.md`.
 
 **16. Geographic scores**
 
@@ -458,6 +475,7 @@ Do these only after the Now items and the backtest. Several are already written 
 - **Effort:** M for a static page. Ongoing human time after that, which is the actual cost.
 - **Dependencies:** The incubating doc’s own rule: retrospective checks against past milestones before it is treated as more than a draft.
 - **Success:** The homepage, if it links the watch, says the watch is not the BugOut Index. Changing the watch level does not change  the gauge.
+- **Status (2026-09-23):** Unpublished. Companion-only, no weight, including if a page is ever added. Do not build a public watch page unless the PM asks.
 
 Distribution and monetization (issues #45 and #46) are not engineering items. The domain and the weekly page already cover the “have a site” step in #46. A newsletter would reuse the factual week note from item 3.
 
@@ -505,7 +523,7 @@ Operating rules if a call is ever added to the Action:
 9. **Business confidence.** Remove the 2024-dated OECD series from the pulse, or replace it with a series that still updates?
 10. **Issues #59–#67.** Close them as unrelated to this product?
 11. **Volatility multiplier.** Confirm it must never scale the number on the gauge. A separate stress readout can wait.
-12. **AIDW.** Do you want a public watch page in the next build cycle, or should it stay an unpublished incubating note?
+12. **AIDW.** Do you want a public watch page in the next build cycle, or should it stay an unpublished incubating note? **Locked 2026-09-23:** stay an unpublished incubating note unless the PM asks for a public watch page. Companion-only, no weight, either way.
 
 ---
 

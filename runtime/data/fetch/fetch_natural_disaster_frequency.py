@@ -1,19 +1,15 @@
 # BugOutIndex
-# Copyright (C) 2025 Your Name or Organization
-#
-# This file is dual-licensed under the AGPL-3.0 and a commercial license.
-#
-# You may use, modify, and distribute this software under the terms of the
-# GNU Affero General Public License v3.0 as published by the Free Software Foundation.
-#
-# For proprietary or commercial use, please contact: your-email@example.com
+# Copyright (C) 2025 Adam Montville
+# Dual-licensed under AGPL-3.0 and a commercial license.
+"""Parked natural-disaster stub. Not a BugOut Index input."""
+from __future__ import annotations
 
-"""
-Module Description:
-<Add a description of this module here>
-"""
+from .not_wired import refuse
+
+
 def fetch():
-    """Fetch the latest Natural Disaster Frequency data."""
-    print("Fetching Natural Disaster Frequency...")
-    # Simulate fetching data
-    return {"status": "success", "fetched_at": "2025-01-01T00:00:00Z", "data": {"frequency": 7}}
+    """Refuse. Natural-disaster frequency is parked and has no wired source."""
+    refuse(
+        "fetch_natural_disaster_frequency",
+        "Natural disaster frequency is parked (incubating/parked/natural_disaster_frequency.md), not an active incubating build.",
+    )

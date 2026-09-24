@@ -17,18 +17,19 @@ import json
 from datetime import datetime, timedelta
 import os
 
+# Parked or not-yet-sourced stubs are intentionally absent. Calling them raises
+# NotWiredError (see runtime/data/fetch/not_wired.py). Do not re-add:
+#   air_quality_index, healthcare_capacity, natural_disaster_frequency (parked),
+#   grid_outages (incubating; no source chosen),
+#   food_price_index (next companion candidate; real fetcher is a follow-up).
+# This legacy cache is not the weekly publisher.
 FETCH_INTERVALS = {
     "inflation_rate": 30,
     "crime_rate": 90,
-    "air_quality_index": 7,
     "unemployment_rate": 30,
     "debt_to_gdp_ratio": 90,
     "homelessness_rate": 90,
     "trust_in_government": 365,
-    "grid_outages": 30,
-    "food_price_index": 30,
-    "healthcare_capacity": 30,
-    "natural_disaster_frequency": 30
 }
 
 METADATA_FILE = "data/cache/last_fetched.json"
@@ -60,10 +61,16 @@ def main():
             try:
                 module = importlib.import_module(f"fetch.fetch_{metric}")
                 result = module.fetch()
-                if result["status"] == "success":
+                if result.get("status") == "success":
                     metadata[metric] = result["fetched_at"]
             except ModuleNotFoundError:
                 print(f"Fetch logic for {metric} not implemented.")
+            except Exception as exc:
+                # A NOT_WIRED stub must not abort the other metrics and must
+                # not be stored as a successful fetch. Other failures still abort.
+                if exc.__class__.__name__ != "NotWiredError":
+                    raise
+                print(f"{metric} is NOT_WIRED and was not cached: {exc}")
 
     save_metadata(metadata)
 

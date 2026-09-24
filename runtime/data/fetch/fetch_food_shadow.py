@@ -30,6 +30,7 @@ from decimal import Decimal, ROUND_HALF_UP, InvalidOperation
 from typing import Dict, List, Optional
 
 from runtime.util.http_retry import RetryError, get_with_retry
+from runtime.util.redact import redact_secrets
 from runtime.util.secrets_compat import get_secret
 
 FRED_URL = "https://api.stlouisfed.org/fred/series/observations"
@@ -198,10 +199,10 @@ def fetch() -> dict:
                 errors.append(f"{name}: no observations")
         except RetryError as exc:
             parsed[name] = []
-            errors.append(f"{name}: FRED unreachable: {exc}")
+            errors.append(redact_secrets(f"{name}: FRED unreachable: {exc}"))
         except Exception as exc:  # noqa: BLE001
             parsed[name] = []
-            errors.append(f"{name}: {exc}")
+            errors.append(redact_secrets(f"{name}: {exc}"))
     return assemble(parsed, errors)
 
 

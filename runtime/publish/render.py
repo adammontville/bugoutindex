@@ -283,6 +283,16 @@ LABOR_SHADOW_COLORS = {
     "prime_age_lfpr": "#b45309",
 }
 
+# Companion only. IDs match runtime/data/fetch/fetch_food_shadow.py SERIES.
+# Not in CORE_METRICS and not passed to compute_index.
+# The stored value is the 12-month percent change, not the index level.
+FOOD_SHADOW_LABELS = {
+    "food_cpi_yoy": ("Food CPI, year over year", "%", "CPIUFDNS"),
+}
+FOOD_SHADOW_COLORS = {
+    "food_cpi_yoy": "#0f766e",
+}
+
 
 def _fmt(val, unit: str = "", digits: int = 2) -> str:
     if val is None:
@@ -306,13 +316,19 @@ def _pct_delta(current, previous) -> Optional[float]:
         return None
 
 
-def _labor_chart_svg(labor: Dict[str, Any]) -> str:
+def _shadow_chart_svg(
+    shadow: Dict[str, Any],
+    labels: Dict[str, tuple],
+    colors: Dict[str, str],
+    title: str,
+    y_digits: int = 1,
+) -> str:
     """Monthly FRED points. The x-axis is the observation date, not the publish week."""
-    observations = (labor or {}).get("observations") or {}
+    observations = (shadow or {}).get("observations") or {}
     by_key: Dict[str, Dict[str, float]] = {}
     dates: List[str] = []
     seen = set()
-    for key in LABOR_SHADOW_LABELS:
+    for key in labels:
         points: Dict[str, float] = {}
         for row in observations.get(key) or []:
             if not isinstance(row, dict):
@@ -334,19 +350,37 @@ def _labor_chart_svg(labor: Dict[str, Any]) -> str:
     if not dates:
         return ""
     series = []
-    for key, (label, _unit, _sid) in LABOR_SHADOW_LABELS.items():
+    for key, (label, _unit, _sid) in labels.items():
         points = by_key.get(key) or {}
         series.append({
             "label": label,
-            "color": LABOR_SHADOW_COLORS[key],
+            "color": colors[key],
             "values": [points.get(day) for day in dates],
         })
     return multiline_chart_svg(
         series=series,
         x_labels=[day[:7] for day in dates],
-        title="Prime-age (25–54) percent — not in the BugOut Index",
+        title=title,
         y_unit="%",
-        y_digits=1,
+        y_digits=y_digits,
+    )
+
+
+def _labor_chart_svg(labor: Dict[str, Any]) -> str:
+    return _shadow_chart_svg(
+        labor,
+        LABOR_SHADOW_LABELS,
+        LABOR_SHADOW_COLORS,
+        "Prime-age (25–54) percent — not in the BugOut Index",
+    )
+
+
+def _food_chart_svg(food: Dict[str, Any]) -> str:
+    return _shadow_chart_svg(
+        food,
+        FOOD_SHADOW_LABELS,
+        FOOD_SHADOW_COLORS,
+        "Food CPI, 12-month percent change — not in the BugOut Index",
     )
 
 
@@ -462,6 +496,28 @@ def render_site(snapshot: Dict[str, Any]) -> None:
             "source_url": f"https://fred.stlouisfed.org/series/{sid}",
         })
 
+    food = snapshot.get("food_shadow") or {}
+    food_dates = food.get("dates") or {}
+    food_values = food.get("values") or {}
+    food_history = snapshot.get("history", {}).get("food_shadow", []) or []
+    food_tiles = []
+    for key, (label, unit, sid) in FOOD_SHADOW_LABELS.items():
+        age = describe_pulse_age(
+            food_dates.get(key),
+            snapshot.get("publication_date"),
+            flat=series_is_flat(_series(food_history, key)),
+        )
+        food_tiles.append({
+            "label": label,
+            "unit": unit,
+            "value": food_values.get(key),
+            "age_text": age["text"],
+            "stale": age["stale"],
+            "source_id": sid,
+            "source_url": f"https://fred.stlouisfed.org/series/{sid}",
+            "bls_series_id": (food.get("bls_series_ids") or {}).get(key) or "CUUR0000SAF1",
+        })
+
     # Week-over-week BOI delta
     boi_delta = None
     if len(boi_series) >= 2 and boi_series[-1] is not None and boi_series[-2] is not None:
@@ -477,6 +533,9 @@ def render_site(snapshot: Dict[str, Any]) -> None:
         "labor_tiles": labor_tiles,
         "labor_chart": _labor_chart_svg(labor),
         "labor_reused_from": labor.get("reused_from"),
+        "food_tiles": food_tiles,
+        "food_chart": _food_chart_svg(food),
+        "food_reused_from": food.get("reused_from"),
         "history_count": len(boi_history),
         "week_note": build_week_note(snapshot),
     }
@@ -486,6 +545,7 @@ def render_site(snapshot: Dict[str, Any]) -> None:
     (DOCS / "history.html").write_text(env.get_template("history.html.j2").render(
         boi_history=boi_history, markets_history=markets_history, pulse_history=pulse_history,
         labor_history=labor_history, labor_labels=LABOR_SHADOW_LABELS,
+        food_history=food_history, food_labels=FOOD_SHADOW_LABELS,
         metric_labels=METRIC_LABELS, pulse_labels=PULSE_LABELS, snapshot=snapshot,
     ))
 

@@ -189,8 +189,8 @@ The inventory below is the cut locked by Adam Montville on 2026-09-23. It does n
 ### Keep-shadow — Labor utilization
 - [Labor Utilization](./incubating/boi-labor-utilization-incubating.md) — prime-age EPOP (`LNS12300060`) and participation (`LNS11300060`) stay on the weekly site as a shadow series. They are not in v1.0.0. The composite formula stays incubating. A backtest is still required before any v1.1 promotion into the score.
 
-### Next companion candidate — Food prices
-- [Food Price Index](./incubating/food_price_index.md) — the next incubating idea worth a **real** fetcher, as a companion only. The fetcher is not implemented here. The stub fails closed (`NOT_WIRED`) and is not on the weekly path. Not in the score.
+### Keep-shadow — Food prices
+- [Food Price Index](./incubating/food_price_index.md) — food CPI year-over-year (FRED `CPIUFDNS`, BLS `CUUR0000SAF1`, not seasonally adjusted, 12-month percent change) is on the weekly site as a shadow series. It is not in v1.0.0. No weight. The draft 0–10% normalization is not applied. The old `fetch_food_price_index` stub stays fail-closed; the weekly job calls `fetch_food_shadow`.
 
 ### Still incubating — Grid outages / energy
 - [Grid Outages](./incubating/grid_outages.md) — kept incubating on purpose (not archived). The note is a theoretical exploration: why grid stress matters now, which public measures are worth researching, and whether any of them would improve a directional weekly reading. No source has been chosen. No weight. The stub fails closed. The weekly job does not call it.

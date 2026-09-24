@@ -102,4 +102,31 @@
 </table>
 </div>
 
+<div class="section-title"><h3>Food prices shadow series</h3></div>
+<p class="chart-caption">These rows are not in the BugOut Index. No weight. The week column is the publication date. Observed is the FRED observation date. The value is the 12-month percent change in food CPI.</p>
+<div style="overflow-x:auto">
+<table class="hx">
+  <thead>
+    <tr>
+      <th>Date</th>
+      {% for key, tup in food_labels.items() %}
+        <th>{{ tup[0] }}</th>
+        <th>Observed</th>
+      {% endfor %}
+    </tr>
+  </thead>
+  <tbody>
+    {% for row in food_history|reverse %}
+      <tr>
+        <td>{{ row.date }}</td>
+        {% for key, tup in food_labels.items() %}
+          <td>{{ row[key] or '—' }}</td>
+          <td>{{ row[key ~ '_observation_date'] or '—' }}</td>
+        {% endfor %}
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+
 {% endblock %}

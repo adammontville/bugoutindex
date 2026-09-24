@@ -12,7 +12,7 @@ The **BugOutIndex** is a directional reading of U.S. stress and stability. It pl
 **Architecture and roadmap:** See [`ARCHITECTURE_AND_ROADMAP.md`](./ARCHITECTURE_AND_ROADMAP.md) for how the score is produced, where the docs disagree, and the decided product framing. That document does not change the calculation.
 
 ## **How It Works**
-1. **Six published inputs**: inflation, crime, unemployment, debt-to-GDP, homelessness, and trust in government. Markets, the short-term pulse, and labor utilization are companions. They are not in the score.
+1. **Six published inputs**: inflation, crime, unemployment, debt-to-GDP, homelessness, and trust in government. Markets, the short-term pulse, labor utilization, and food prices are companions. They are not in the score.
 2. **Scoring**: Each of the six is normalized between fixed endpoints, weighted, and aggregated into one 0–100 score (methodology 1.0.0). Higher is more stable.
 3. **What the score is for**: a weekly reading of pressure in those statistics. It does not say when to leave.
 

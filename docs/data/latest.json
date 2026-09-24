@@ -1734,6 +1734,180 @@
         "prime_age_lfpr": "83.4",
         "prime_age_lfpr_observation_date": "2026-08-01"
       }
+    ],
+    "food_shadow": [
+      {
+        "date": "2026-09-19",
+        "food_cpi_yoy": "2.7",
+        "food_cpi_yoy_observation_date": "2026-08-01"
+      }
     ]
+  },
+  "food_shadow": {
+    "status": "success",
+    "in_bugout_index": false,
+    "series_ids": {
+      "food_cpi_yoy": "CPIUFDNS"
+    },
+    "bls_series_ids": {
+      "food_cpi_yoy": "CUUR0000SAF1"
+    },
+    "reading": "12-month percent change",
+    "seasonal_adjustment": "not seasonally adjusted",
+    "values": {
+      "food_cpi_yoy": 2.7
+    },
+    "dates": {
+      "food_cpi_yoy": "2026-08-01"
+    },
+    "observations": {
+      "food_cpi_yoy": [
+        {
+          "date": "2023-08-01",
+          "value": 4.3
+        },
+        {
+          "date": "2023-09-01",
+          "value": 3.7
+        },
+        {
+          "date": "2023-10-01",
+          "value": 3.3
+        },
+        {
+          "date": "2023-11-01",
+          "value": 2.9
+        },
+        {
+          "date": "2023-12-01",
+          "value": 2.7
+        },
+        {
+          "date": "2024-01-01",
+          "value": 2.6
+        },
+        {
+          "date": "2024-02-01",
+          "value": 2.2
+        },
+        {
+          "date": "2024-03-01",
+          "value": 2.2
+        },
+        {
+          "date": "2024-04-01",
+          "value": 2.2
+        },
+        {
+          "date": "2024-05-01",
+          "value": 2.1
+        },
+        {
+          "date": "2024-06-01",
+          "value": 2.2
+        },
+        {
+          "date": "2024-07-01",
+          "value": 2.2
+        },
+        {
+          "date": "2024-08-01",
+          "value": 2.1
+        },
+        {
+          "date": "2024-09-01",
+          "value": 2.3
+        },
+        {
+          "date": "2024-10-01",
+          "value": 2.1
+        },
+        {
+          "date": "2024-11-01",
+          "value": 2.4
+        },
+        {
+          "date": "2024-12-01",
+          "value": 2.5
+        },
+        {
+          "date": "2025-01-01",
+          "value": 2.5
+        },
+        {
+          "date": "2025-02-01",
+          "value": 2.6
+        },
+        {
+          "date": "2025-03-01",
+          "value": 3.0
+        },
+        {
+          "date": "2025-04-01",
+          "value": 2.8
+        },
+        {
+          "date": "2025-05-01",
+          "value": 2.9
+        },
+        {
+          "date": "2025-06-01",
+          "value": 3.0
+        },
+        {
+          "date": "2025-07-01",
+          "value": 2.9
+        },
+        {
+          "date": "2025-08-01",
+          "value": 3.2
+        },
+        {
+          "date": "2025-09-01",
+          "value": 3.1
+        },
+        {
+          "date": "2025-11-01",
+          "value": 2.6
+        },
+        {
+          "date": "2025-12-01",
+          "value": 3.1
+        },
+        {
+          "date": "2026-01-01",
+          "value": 2.9
+        },
+        {
+          "date": "2026-02-01",
+          "value": 3.1
+        },
+        {
+          "date": "2026-03-01",
+          "value": 2.7
+        },
+        {
+          "date": "2026-04-01",
+          "value": 3.2
+        },
+        {
+          "date": "2026-05-01",
+          "value": 3.1
+        },
+        {
+          "date": "2026-06-01",
+          "value": 3.0
+        },
+        {
+          "date": "2026-07-01",
+          "value": 3.0
+        },
+        {
+          "date": "2026-08-01",
+          "value": 2.7
+        }
+      ]
+    },
+    "errors": []
   }
 }

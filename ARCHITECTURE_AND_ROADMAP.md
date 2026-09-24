@@ -145,12 +145,13 @@ These are fetched and shown, and they do not enter `compute_index`:
 - **Pulse:** initial jobless claims (`ICSA`), Michigan sentiment (`UMCSENT`), OECD U.S. business confidence (`BSCICP03USM665S`), the 10-year minus 2-year Treasury spread (`T10Y2Y`), and VIX (`VIXCLS`). The pulse module’s own comment still mentions NFIB; the code uses the OECD series because NFIB is not free on FRED.
 - **Revisions:** ALFRED vintages for nonfarm payrolls (`PAYEMS`) and a current-versus-pre-benchmark view of `UNRATE`. This page explains that labor headlines move after release. It does not revise the stored BugOut Index history.
 - **Labor utilization shadow:** prime-age (25–54) employment-population ratio (`LNS12300060`) and prime-age participation (`LNS11300060`), monthly BLS series via FRED. No weight. A failed fetch does not abort the publish. Not in `CORE_METRICS` or `compute_index`.
+- **Food-price shadow:** 12-month percent change in food CPI, FRED `CPIUFDNS` (BLS `CUUR0000SAF1`, not seasonally adjusted). No weight. A failed fetch does not abort the publish. Not in `CORE_METRICS` or `compute_index`. The draft 0–10% normalization in the incubating note is not applied.
 
 Companion designs that are written down and **not** a core input. The inventory decision is the 2026-09-23 cut under Later. `METRICS.md` lists the same cut. Companions stay outside the score unless a later methodology version says otherwise.
 
 - **Labor Utilization composite** (`incubating/boi-labor-utilization-incubating.md`). **Keep-shadow.** The two series above are on the site. The essay’s composite formula, which would replace headline unemployment, is still not in the score. A backtest is required before any v1.1 promotion.
 - **AI Discontinuity Watch** (`incubating/boi-ai-discontinuity-watch-incubating.md`, v0.1.0). An ordinal 0–5 watch level. Companion-only, no weight, and it must not change the BugOut Index. The essay stays unpublished unless the PM asks for a public watch page. Not implemented in code. No near-term build.
-- **Food prices** (`incubating/food_price_index.md`). Next companion candidate. Not in the score. The stub fetcher fails closed (`NOT_WIRED`) until a follow-up implements a real series. The weekly job does not call it.
+- **Food prices** (`incubating/food_price_index.md`). The 12-month food CPI change is on the site as a shadow series (FRED `CPIUFDNS`). Not in the score. The draft 0–10% normalization is not applied. The old stub `fetch_food_price_index` stays fail-closed; the weekly job calls `fetch_food_shadow`.
 - **Grid outages / energy** (`incubating/grid_outages.md`). Still incubating, on purpose. The note is a theoretical exploration of candidate public measures and usefulness criteria. No series has been chosen. The stub fetcher fails closed. The weekly job does not call it.
 - **Epidemic Spread** and the **Government Authoritarianism Index**. Essays stay in `incubating/`. They are crisis overlays, not weekly directional stress, and there is no near-term build. GAI is not the Edelman trust series already in the core score.
 - **Air quality, healthcare capacity, and natural disaster frequency.** Parked. Essays live in `incubating/parked/`. Their stub fetchers fail closed and are not on the weekly path.
@@ -217,7 +218,7 @@ local CSV/const ─┘         │            docs/data/latest.json
 | `.github/workflows/weekly-update.yml` | Scheduled job. Python 3.12. One secret, `FRED_API_KEY`. Commits data and `docs/` back to `main` as `bugout-bot` | Yes |
 | `runtime/publish/weekly_run.py` | Fetch, score, append history, write JSON, call the renderer. Exits 2 or 3 to refuse a bad publish | Yes |
 | `runtime/publish/render.py` plus `runtime/publish/templates/` | Static HTML. No JavaScript required. Pages: current, history, revisions, methodology | Yes |
-| `runtime/data/fetch/fetch_{inflation,unemployment,debt,incident,homelessness,trust,markets,pulse,labor_shadow,revisions}.py` | Inputs | Yes, from the weekly job. `fetch_labor_shadow` is a companion and is not scored |
+| `runtime/data/fetch/fetch_{inflation,unemployment,debt,incident,homelessness,trust,markets,pulse,labor_shadow,food_shadow,revisions}.py` | Inputs | Yes, from the weekly job. `fetch_labor_shadow` and `fetch_food_shadow` are companions and are not scored |
 | `runtime/util/http_retry.py` | Retries timeouts, connection errors, 408, 429, and 5xx. Backoff about 2s, 6s, 14s, 30s, 60s | Yes |
 | `runtime/util/secrets_compat.py` and a Streamlit shim inside `weekly_run.py` | `FRED_API_KEY` from the environment in CI, from Streamlit secrets otherwise | Yes |
 | `docs/CNAME` | Custom domain `www.bugoutindex.com` | Yes. Checked during this review: both hostnames serve the Pages site. `last-modified` on 22 September 2026 was the 19 September publish |
@@ -231,8 +232,8 @@ Dependencies (`runtime/requirements.txt`): Streamlit, pytest, requests, python-d
 1. Cron `30 23 * * 5` starts the workflow. That is 23:30 UTC Friday, which the workflow comment describes as 18:30 America/Chicago during daylight time, after the U.S. equity close and away from the old 03:00 UTC Saturday slot that collided with FRED maintenance. `workflow_dispatch` can start it by hand.
 2. The job checks out `main` with `fetch-depth: 1`, installs dependencies, and runs `python -m runtime.publish.weekly_run` with `FRED_API_KEY`.
 3. Core fetchers run. Any core failure aborts before history is appended (exit 2).
-4. Markets, pulse, and revisions run. Markets or pulse returning `status: error` abort the publish (exit 3). A **partial** pulse (some series missing) is logged and the site still publishes. The labor-utilization shadow fetch runs only after that check. Its failure does not abort the publish; when a previous shadow block exists, it is carried forward with its FRED observation dates.
-5. One row is appended to `weekly_bugout_index.csv`, `markets_history.csv`, and `pulse_history.csv`, and, when the shadow series has a value, to `labor_shadow_history.csv`. The same calendar date can be appended twice; nothing in `_append_row` replaces an existing date.
+4. Markets, pulse, and revisions run. Markets or pulse returning `status: error` abort the publish (exit 3). A **partial** pulse (some series missing) is logged and the site still publishes. The labor-utilization and food-price shadow fetches run only after that check. A failure of either does not abort the publish; when a previous shadow block exists, it is carried forward with its FRED observation dates.
+5. One row is appended to `weekly_bugout_index.csv`, `markets_history.csv`, and `pulse_history.csv`, and, when a shadow series has a value, to `labor_shadow_history.csv` and `food_shadow_history.csv`. The same calendar date can be appended twice; nothing in `_append_row` replaces an existing date.
 6. `docs/data/latest.json` is rewritten. If the revisions fetch fails, the previous snapshot’s revisions block is copied forward and marked `reused_from`.
 7. HTML and `docs/assets/style.css` are rendered. History charts use the last 52 rows.
 8. The workflow commits those paths and pushes to `main`. GitHub Pages then rebuilds. A recent pages deploy finished in under a minute.
@@ -282,7 +283,7 @@ The product tension: people can see a new page every Friday, but the headline of
 
 - **A serious reader cannot tell which document is the methodology.** Following `METRICS.md` changes both the level and the band of the current score. Following the trust essay changes trust’s contribution by about 25 points of normalized score.
 - **Three copies of the formula** (`weekly_run.py`, `calculate_index.py`, `normalize.py` / `scoring_v1.py`) plus a third trust formula in an essay. They match on today’s in-range inputs except for clamping. They will not stay matched if someone edits one of them.
-- **Stale inputs can still look successful.** Crime returns success when the RTCI download is readable, while the published input stays 2723.0. Homelessness and trust return success from the annual checklist, and they do not invent a `2025-01-01T00:00:00Z` fetch time. Air quality, healthcare, disasters, grid, and food used to return `status: success` with sample numbers. They now raise `NOT_WIRED` and are not called by the weekly job. A future companion has to bring a real source; it cannot flip a stub back to fiction.
+- **Stale inputs can still look successful.** Crime returns success when the RTCI download is readable, while the published input stays 2723.0. Homelessness and trust return success from the annual checklist, and they do not invent a `2025-01-01T00:00:00Z` fetch time. Air quality, healthcare, disasters, and grid used to return `status: success` with sample numbers. They now raise `NOT_WIRED` and are not called by the weekly job. The old food stub still raises `NOT_WIRED`; the weekly companion is `fetch_food_shadow`. A future companion has to bring a real source; it cannot flip a stub back to fiction.
 - **The recompute sentence overclaims.** Past weeks cannot be regenerated by rerunning fetchers.
 - **The scoring test does not run,** so a formula edit would not be caught.
 - **No alert beyond a red GitHub Action.** A refused publish leaves last week’s site up, which is safe, and it does so quietly unless someone watches the Actions tab.
@@ -302,7 +303,8 @@ Treated as a backlog inventory, not as commitments.
 | `about.md` | State/regional scores; grid and food security; more frequent updates | No |
 | `incubating/boi-labor-utilization-incubating.md` | Replace unemployment with prime-age labor utilization after a backtest | Shadow series is fetched (`LNS12300060`, `LNS11300060`). The composite is not in the score |
 | `incubating/boi-ai-discontinuity-watch-incubating.md` | Separate 0–5 AI watch, never inside the score | No |
-| Other `incubating/*.md` | Food CPI, AQI, healthcare, epidemics, grid, disasters, authoritarianism | **Cut locked 2026-09-23.** Food is the next companion candidate (stub fail-closed; fetcher not built). Grid stays incubating as a theory brief (stub fail-closed; no weekly wiring). Epidemic spread and GAI stay as essays, no build. AQI, healthcare, and disasters are parked under `incubating/parked/`. |
+| `incubating/food_price_index.md` | Food CPI as a companion | Shadow series is fetched (`CPIUFDNS` 12-month percent change). Not in the score. The draft 0–10% normalization is not applied |
+| Other `incubating/*.md` | AQI, healthcare, epidemics, grid, disasters, authoritarianism | **Cut locked 2026-09-23.** Grid stays incubating as a theory brief (stub fail-closed; no weekly wiring). Epidemic spread and GAI stay as essays, no build. AQI, healthcare, and disasters are parked under `incubating/parked/`. |
 | Issue #53 | Volatility multiplier on *interpretation*, capped near 10%, not on the stored score | No. VIX and sentiment are already on the page as context |
 | Issues #47, #50 | VIX and Michigan sentiment as companions | **Fetched already**, as pulse, not as their own modules |
 | Issue #48 | Credit-card delinquency, FRED `DRCCLACBS`, quarterly, not in the score | No |
@@ -427,7 +429,7 @@ This is the inventory decision. It does not change v1.0.0 math, bands, weights, 
 | Decision | Item | What is true after this cut |
 | --- | --- | --- |
 | Keep-shadow | Labor utilization | Prime-age EPOP (`LNS12300060`) and LFPR (`LNS11300060`) stay on the site with no weight. The composite formula stays incubating. A backtest is still required before any v1.1 promotion into the score. |
-| Next companion candidate | Food prices | Next incubating idea worth a real fetcher, as a companion only, not inside the score. The stub no longer returns fictional success. The fetcher itself is a follow-up. |
+| Shipped companion; weight still incubating | Food prices | Weekly shadow: FRED `CPIUFDNS` 12-month percent change (BLS `CUUR0000SAF1`, not seasonally adjusted). On the site, no weight, not in `compute_index`. The old `fetch_food_price_index` stub stays fail-closed. The draft 0–10% normalization is not applied. |
 | Keep incubating, no near-term build | AI Discontinuity Watch | Companion-only, no weight. The essay stays. It stays unpublished unless the PM asks for a public watch page. |
 | Park, essays stay, no build | Epidemic Spread; Government Authoritarianism Index | Crisis overlays, not weekly directional stress. No fetcher work. GAI is not Edelman trust and must not be confused with the core trust input. |
 | Archive / park | Air quality, healthcare capacity, natural disaster frequency | Essays moved to `incubating/parked/`. Off the active in-development list. Stub fetchers fail closed (`NOT_WIRED`) and are not called by the weekly job. |
@@ -447,13 +449,13 @@ This is the inventory decision. It does not change v1.0.0 math, bands, weights, 
 - **Dependencies:** The week-note pattern from item 3, so these do not look like secret inputs.
 - **Success:** The gauge’s number is bit-for-bit the same the week these ship. Each new tile has a source link and a date.
 
-**15. Food prices as the next companion candidate**
+**15. Food prices as a companion, still outside the score**
 
 - **Outcome:** A FRED or BLS food CPI year-over-year, shown as not in the index. The real fetcher and the site tile are a follow-up. This cut locks that food is next, and it stops the stub from returning a fake success.
 - **Effort:** M for the real fetcher and tile.
 - **Dependencies:** Item 4’s rule that only `CORE_METRICS` enter the score.
 - **Success:** Food inflation on the page with a source and a date. `compute_index` unchanged.
-- **Status (2026-09-23):** Locked as the next companion candidate, not a core input. `fetch_food_price_index.py` raises `NOT_WIRED` instead of returning sample success. No site tile and no live series in this change. The weekly job does not call it. Parked stubs (air quality, healthcare, disasters) and the still-incubating grid stub fail closed the same way. Grid is not archived; its exploration brief is `incubating/grid_outages.md`.
+- **Status:** Shipped as a companion. The weekly job fetches FRED `CPIUFDNS` (CPI-U food, U.S. city average, not seasonally adjusted) and stores the 12-month percent change, rounded half-up to one decimal, which is the BLS public print for series `CUUR0000SAF1`. The seasonally adjusted index `CPIUFDSL` is not used. The series is charted and labeled not in the BugOut Index. It is not in `CORE_METRICS` or `compute_index`. A full fetch failure does not abort the publish. The draft 0–10% normalization in the incubating note is not applied. `fetch_food_price_index.py` still raises `NOT_WIRED` and is not on the weekly path. Parked stubs (air quality, healthcare, disasters) and the still-incubating grid stub fail closed the same way. Grid is not archived; its exploration brief is `incubating/grid_outages.md`.
 
 **16. Geographic scores**
 

@@ -11,6 +11,17 @@ Every Friday at 23:30 UTC, GitHub Actions runs this pipeline. The cron in
 standard time (CST, UTC−6). `workflow_dispatch` can start the same job
 by hand.
 
+The job installs from the hashed lock `runtime/requirements.txt`
+(`pip install --require-hashes`). Direct dependencies stay in
+`runtime/requirements.in`. Actions are pinned to commit SHAs.
+
+Overlapping runs on one branch share
+`bugoutindex-weekly-publish-<branch>` (the Pages branch is
+`bugoutindex-weekly-publish-main`). `cancel-in-progress` is false, so a
+run that has started finishes its commit and push. A second run waits.
+If several are queued, GitHub keeps the newest and cancels the older
+queued runs. Two runs do not push that branch at the same time.
+
 `publication_date` is the America/Chicago calendar date when the run
 starts, not the UTC date. GitHub often starts the scheduled job after
 00:00 UTC Saturday; that start is still Friday evening in Chicago, so

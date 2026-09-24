@@ -20,6 +20,17 @@
     --card: #111827;
     --accent: #f3f4f6;
   }
+
+  /* Gauge score, caption, and dial ticks are SVG presentation attributes
+     (fill="#111" / fill="#6b7280"), so they ignore the tokens above.
+     Author fill overrides those attributes and follows the same dark palette.
+     Light mode is unchanged: the attributes stay in effect. */
+  .hero svg text {
+    fill: var(--muted);
+  }
+  .hero svg text[font-size="56"] {
+    fill: var(--ink);
+  }
 }
 
 * { box-sizing: border-box; }

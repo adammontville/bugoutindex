@@ -76,14 +76,15 @@ header.site nav a:hover { color: var(--ink); }
 .grid.markets { grid-template-columns: repeat(3, 1fr); }
 .grid.pulse   { grid-template-columns: repeat(5, 1fr); }
 .grid.labor   { grid-template-columns: repeat(2, 1fr); }
+.grid.food    { grid-template-columns: repeat(2, 1fr); }
 @media (max-width: 820px) {
   .section-title { flex-direction: column; align-items: flex-start; gap: 6px; }
   .grid.metrics { grid-template-columns: repeat(2, 1fr); }
   .grid.pulse   { grid-template-columns: repeat(2, 1fr); }
-  .grid.labor   { grid-template-columns: 1fr; }
+  .grid.labor, .grid.food { grid-template-columns: 1fr; }
 }
 @media (max-width: 520px) {
-  .grid.metrics, .grid.markets, .grid.pulse, .grid.labor { grid-template-columns: 1fr; }
+  .grid.metrics, .grid.markets, .grid.pulse, .grid.labor, .grid.food { grid-template-columns: 1fr; }
 }
 
 .tile {

@@ -37,10 +37,17 @@ The Action runs `weekly_run.py`, which:
    partial shadow fetch does not refuse the publish. When the fetch
    fails and the previous snapshot has the series, that block is
    carried forward and its FRED observation dates are kept.
-6. Appends a row to `runtime/data/weekly_bugout_index.csv`,
+6. Fetches the food-price shadow series from FRED: the 12-month
+   percent change in food CPI (`CPIUFDNS`, BLS `CUUR0000SAF1`, not
+   seasonally adjusted). It is not an index input. A failed fetch
+   does not refuse the publish. When the fetch fails and the previous
+   snapshot has the series, that block is carried forward and its
+   FRED observation date is kept.
+7. Appends a row to `runtime/data/weekly_bugout_index.csv`,
    `runtime/data/markets_history.csv`,
-   `runtime/data/pulse_history.csv`, and, when the shadow series has
-   a value, `runtime/data/labor_shadow_history.csv`. Each core raw value is stored next
+   `runtime/data/pulse_history.csv`, and, when a shadow series has
+   a value, `runtime/data/labor_shadow_history.csv` and
+   `runtime/data/food_shadow_history.csv`. Each core raw value is stored next
    to `{metric}_observation_date` (the period the number describes).
    The same field is `observation_date` on each object in
    `metrics` inside `docs/data/latest.json`. A later week that changes
@@ -53,8 +60,8 @@ The Action runs `weekly_run.py`, which:
    timestamps were not copied; those cells stay blank except the
    2026-09-19 row, which uses the file value-month end and the HUD
    reference date already in that snapshot.
-7. Writes a snapshot to `docs/data/latest.json`.
-8. Renders `docs/index.html`, `docs/methodology.html`,
+8. Writes a snapshot to `docs/data/latest.json`.
+9. Renders `docs/index.html`, `docs/methodology.html`,
    `docs/history.html`, and `docs/revisions.html` via Jinja2 templates.
    The homepage week note is built in `week_note.py` from this snapshot
    versus the previous history row. It does not call a language model.
@@ -64,9 +71,9 @@ The Action runs `weekly_run.py`, which:
    `runtime/data/ANNUAL_INPUTS.md`). Homelessness is labeled as a manual
    annual input. OECD business confidence is
    marked stale when its observation is more than 365 days before the
-   publication date. The labor shadow tiles use the same age line.
+   publication date. The labor and food shadow tiles use the same age line.
    They are labeled not in the BugOut Index.
-9. Commits and pushes the results to `main`.
+10. Commits and pushes the results to `main`.
 
 GitHub Pages is configured to serve the `/docs` directory on `main`.
 
@@ -103,6 +110,7 @@ python -m http.server 8765 --directory docs
 | gold / silver / DXY | `fetch_markets` | gold-api.com + FRED `DTWEXBGS` |
 | pulse indicators | `fetch_pulse` | FRED |
 | labor utilization shadow | `fetch_labor_shadow` | FRED `LNS12300060` (prime-age EPOP, 25–54) and `LNS11300060` (prime-age participation). Not in the index. Failure does not abort the publish. |
+| food price shadow | `fetch_food_shadow` | FRED `CPIUFDNS` (BLS `CUUR0000SAF1`), food CPI 12-month percent change, not seasonally adjusted. Not in the index. Failure does not abort the publish. |
 
 ## Methodology freshness
 
@@ -115,8 +123,8 @@ week over week.
 ## When a Friday publish fails
 
 `weekly_run.py` exits **2** when a core metric did not succeed, and exits
-**3** when markets or the pulse failed completely. A labor-shadow failure
-is not exit 3; the index still publishes. Either exit happens
+**3** when markets or the pulse failed completely. A labor-shadow or
+food-shadow failure is not exit 3; the index still publishes. Either exit happens
 before history, `docs/data/latest.json`, or HTML is written. Any other
 non-zero exit is a crash. The workflow records that code, then fails the
 job. The commit step does not run, so GitHub Pages keeps serving the last

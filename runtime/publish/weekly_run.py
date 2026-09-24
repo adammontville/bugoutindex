@@ -9,8 +9,8 @@ Responsibilities:
        Streamlit runtime (reading FRED_API_KEY from env vars instead).
     2. Fetch all six core BOI metrics and compute the weighted index.
     3. Fetch metals (gold, silver, DXY), the short-term economic pulse,
-       and the labor-utilization shadow series (not an index input;
-       a shadow failure does not refuse the publish).
+       the labor-utilization shadow series, and the food-price shadow
+       series (not index inputs; a shadow failure does not refuse the publish).
     4. Append a flat row to the weekly history CSVs.
     5. Emit a single `docs/data/latest.json` snapshot consumed by the
        static-site renderer.
@@ -120,6 +120,20 @@ def fetch_pulse() -> Dict[str, Any]:
     return mod.fetch()
 
 
+def _shadow_fetch_error(label: str, exc: Exception) -> Dict[str, Any]:
+    message = f"{label} fetch raised: {exc}"
+    return {
+        "status": "error",
+        "in_bugout_index": False,
+        "message": message,
+        "series_ids": {},
+        "values": {},
+        "dates": {},
+        "observations": {},
+        "errors": [message],
+    }
+
+
 def fetch_labor_shadow() -> Dict[str, Any]:
     """Prime-age EPOP and participation. Not an index input.
 
@@ -130,21 +144,29 @@ def fetch_labor_shadow() -> Dict[str, Any]:
         mod = importlib.import_module("runtime.data.fetch.fetch_labor_shadow")
         return mod.fetch()
     except Exception as exc:  # noqa: BLE001
-        return {
-            "status": "error",
-            "in_bugout_index": False,
-            "message": f"labor shadow fetch raised: {exc}",
-            "series_ids": {},
-            "values": {},
-            "dates": {},
-            "observations": {},
-            "errors": [f"labor shadow fetch raised: {exc}"],
-        }
+        return _shadow_fetch_error("labor shadow", exc)
+
+
+def fetch_food_shadow() -> Dict[str, Any]:
+    """Food CPI, 12-month percent change. Not an index input.
+
+    A raised exception becomes ``status: error`` so the publish can continue.
+    """
+    sys.path.insert(0, str(REPO_ROOT))
+    try:
+        mod = importlib.import_module("runtime.data.fetch.fetch_food_shadow")
+        return mod.fetch()
+    except Exception as exc:  # noqa: BLE001
+        return _shadow_fetch_error("food shadow", exc)
+
+
+def _shadow_has_value(block: Dict[str, Any]) -> bool:
+    values = block.get("values") or {}
+    return any(isinstance(value, (int, float)) and not isinstance(value, bool) for value in values.values())
 
 
 def _labor_has_value(block: Dict[str, Any]) -> bool:
-    values = block.get("values") or {}
-    return any(isinstance(value, (int, float)) and not isinstance(value, bool) for value in values.values())
+    return _shadow_has_value(block)
 
 
 def _read_previous_snapshot() -> Dict[str, Any]:
@@ -159,7 +181,7 @@ def _read_previous_snapshot() -> Dict[str, Any]:
     return {}
 
 
-def _resolve_labor_shadow(payload: Dict[str, Any]) -> Dict[str, Any]:
+def _resolve_shadow(payload: Dict[str, Any], block_key: str) -> Dict[str, Any]:
     """Keep a failed shadow fetch from blanking a series we already published.
 
     Carried-forward observation dates stay the FRED dates on the previous
@@ -167,11 +189,11 @@ def _resolve_labor_shadow(payload: Dict[str, Any]) -> Dict[str, Any]:
     """
     block = dict(payload or {})
     block["in_bugout_index"] = False
-    if block.get("status") in ("success", "partial") and _labor_has_value(block):
+    if block.get("status") in ("success", "partial") and _shadow_has_value(block):
         return block
     previous = _read_previous_snapshot()
-    prior = previous.get("labor_shadow") or {}
-    if isinstance(prior, dict) and _labor_has_value(prior):
+    prior = previous.get(block_key) or {}
+    if isinstance(prior, dict) and _shadow_has_value(prior):
         carried = dict(prior)
         carried["in_bugout_index"] = False
         carried["status"] = "reused"
@@ -182,6 +204,14 @@ def _resolve_labor_shadow(payload: Dict[str, Any]) -> Dict[str, Any]:
             carried["current_message"] = message
         return carried
     return block
+
+
+def _resolve_labor_shadow(payload: Dict[str, Any]) -> Dict[str, Any]:
+    return _resolve_shadow(payload, "labor_shadow")
+
+
+def _resolve_food_shadow(payload: Dict[str, Any]) -> Dict[str, Any]:
+    return _resolve_shadow(payload, "food_shadow")
 
 
 def fetch_revisions() -> Dict[str, Any]:
@@ -224,12 +254,12 @@ def core_history_row(run_date: str, boi: Dict[str, Any],
     return row
 
 
-def _append_labor_shadow(run_date: str, labor_shadow: Dict[str, Any]) -> None:
+def _append_shadow_row(csv_name: str, module_name: str, run_date: str, shadow: Dict[str, Any]) -> None:
     """One weekly row. Observation-date cells are FRED dates or blank."""
-    mod = importlib.import_module("runtime.data.fetch.fetch_labor_shadow")
+    mod = importlib.import_module(module_name)
     keys = list(mod.SERIES)
-    values = labor_shadow.get("values") or {}
-    dates = labor_shadow.get("dates") or {}
+    values = shadow.get("values") or {}
+    dates = shadow.get("dates") or {}
     if not any(isinstance(values.get(key), (int, float)) and not isinstance(values.get(key), bool) for key in keys):
         return
     headers = ["date"]
@@ -240,13 +270,32 @@ def _append_labor_shadow(run_date: str, labor_shadow: Dict[str, Any]) -> None:
         value = values.get(key)
         row[key] = "" if value is None else value
         row[f"{key}_observation_date"] = dates.get(key) or ""
-    _append_row(DATA_DIR / "labor_shadow_history.csv", headers, row)
+    _append_row(DATA_DIR / csv_name, headers, row)
+
+
+def _append_labor_shadow(run_date: str, labor_shadow: Dict[str, Any]) -> None:
+    _append_shadow_row(
+        "labor_shadow_history.csv",
+        "runtime.data.fetch.fetch_labor_shadow",
+        run_date,
+        labor_shadow,
+    )
+
+
+def _append_food_shadow(run_date: str, food_shadow: Dict[str, Any]) -> None:
+    _append_shadow_row(
+        "food_shadow_history.csv",
+        "runtime.data.fetch.fetch_food_shadow",
+        run_date,
+        food_shadow,
+    )
 
 
 def append_history(run_date: str, boi: Dict[str, Any],
                    markets: Dict[str, Any], pulse: Dict[str, Any],
                    core: Dict[str, Dict[str, Any]] | None = None,
-                   labor_shadow: Dict[str, Any] | None = None) -> None:
+                   labor_shadow: Dict[str, Any] | None = None,
+                   food_shadow: Dict[str, Any] | None = None) -> None:
     # Flat core metrics history (replaces the old dict-stringified CSV going forward).
     boi_path = DATA_DIR / "weekly_bugout_index.csv"
     # Old files gain the observation-date columns with blank cells. Dates are
@@ -276,6 +325,8 @@ def append_history(run_date: str, boi: Dict[str, Any],
 
     if labor_shadow is not None:
         _append_labor_shadow(run_date, labor_shadow)
+    if food_shadow is not None:
+        _append_food_shadow(run_date, food_shadow)
 
 
 def _metric_snapshot(metric: str, scored: Dict[str, Any], payload: Dict[str, Any]) -> Dict[str, Any]:
@@ -300,7 +351,8 @@ def build_snapshot(run_date: str, boi: Dict[str, Any],
                    core: Dict[str, Dict[str, Any]],
                    markets: Dict[str, Any],
                    pulse: Dict[str, Any],
-                   labor_shadow: Dict[str, Any] | None = None) -> Dict[str, Any]:
+                   labor_shadow: Dict[str, Any] | None = None,
+                   food_shadow: Dict[str, Any] | None = None) -> Dict[str, Any]:
     band = interpret(boi["index"])
     snapshot = {
         "schema_version": 1,
@@ -329,6 +381,10 @@ def build_snapshot(run_date: str, boi: Dict[str, Any],
         block = dict(labor_shadow)
         block["in_bugout_index"] = False
         snapshot["labor_shadow"] = block
+    if food_shadow is not None:
+        block = dict(food_shadow)
+        block["in_bugout_index"] = False
+        snapshot["food_shadow"] = block
     return snapshot
 
 
@@ -409,7 +465,7 @@ def main() -> int:
               file=sys.stderr)
 
     # Hard-fail if markets or the pulse returned no usable data at all.
-    # The labor shadow is a companion: its failure must not refuse the publish.
+    # Labor and food shadows are companions: their failure must not refuse the publish.
     hard_failures = []
     if markets.get("status") == "error":
         hard_failures.append("markets fully failed")
@@ -436,6 +492,21 @@ def main() -> int:
         )
     labor_shadow = _resolve_labor_shadow(labor_shadow)
 
+    print("[weekly_run] fetching food-price shadow (not in the index)…")
+    food_shadow = fetch_food_shadow()
+    if food_shadow.get("status") not in ("success", "partial"):
+        print(
+            "[weekly_run] food shadow failed (publishing anyway): "
+            f"{food_shadow.get('message') or food_shadow.get('errors')}",
+            file=sys.stderr,
+        )
+    elif food_shadow.get("errors"):
+        print(
+            f"[weekly_run] food shadow partial (publishing anyway): {food_shadow['errors']}",
+            file=sys.stderr,
+        )
+    food_shadow = _resolve_food_shadow(food_shadow)
+
     # Soft-warn if any partial failures occurred (some pulse items missing, etc.).
     partial_warnings = _summarize_failures(core, markets, pulse)
     if partial_warnings:
@@ -444,9 +515,9 @@ def main() -> int:
             print(f"  - {line}", file=sys.stderr)
 
     print("[weekly_run] appending history…")
-    append_history(run_date, boi, markets, pulse, core, labor_shadow)
+    append_history(run_date, boi, markets, pulse, core, labor_shadow, food_shadow)
 
-    snapshot = build_snapshot(run_date, boi, core, markets, pulse, labor_shadow)
+    snapshot = build_snapshot(run_date, boi, core, markets, pulse, labor_shadow, food_shadow)
 
     # Carry the previous revisions payload forward if this week's fetch failed.
     if revisions.get("status") == "success":
@@ -476,6 +547,7 @@ def main() -> int:
         "markets": load_history(DATA_DIR / "markets_history.csv"),
         "pulse": load_history(DATA_DIR / "pulse_history.csv"),
         "labor_shadow": load_history(DATA_DIR / "labor_shadow_history.csv"),
+        "food_shadow": load_history(DATA_DIR / "food_shadow_history.csv"),
     }
 
     DOCS_DATA.mkdir(parents=True, exist_ok=True)

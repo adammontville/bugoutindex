@@ -256,17 +256,28 @@ def unexplained_numerals(sentences: Sequence[str], snapshot: Dict[str, Any]) -> 
 # ---------------------------------------------------------------- internals
 
 
+def _shadow_present(snapshot: Dict[str, Any], block_key: str, names: Sequence[str]) -> bool:
+    values = (snapshot.get(block_key) or {}).get("values") or {}
+    return any(values.get(key) is not None for key in names)
+
+
 def _disclaimer(snapshot: Dict[str, Any]) -> str:
-    """Companions stay outside the score. Labor is named only when it is present."""
-    labor = snapshot.get("labor_shadow") or {}
-    values = labor.get("values") or {}
-    present = any(values.get(key) is not None for key in ("prime_age_epop", "prime_age_lfpr"))
-    if present:
-        return (
-            "Markets, the short-term pulse, and the labor-utilization shadow series "
-            "are not inputs to the BugOut Index score."
-        )
-    return "Markets and the short-term pulse are not inputs to the BugOut Index score."
+    """Companions stay outside the score. A shadow is named only when it is present."""
+    named = []
+    if _shadow_present(snapshot, "labor_shadow", ("prime_age_epop", "prime_age_lfpr")):
+        named.append("the labor-utilization shadow series")
+    if _shadow_present(snapshot, "food_shadow", ("food_cpi_yoy",)):
+        named.append("the food-price shadow series")
+    if not named:
+        return "Markets and the short-term pulse are not inputs to the BugOut Index score."
+    if len(named) == 1:
+        tail = f"and {named[0]}"
+    else:
+        tail = ", ".join(named[:-1]) + ", and " + named[-1]
+    return (
+        f"Markets, the short-term pulse, {tail} "
+        "are not inputs to the BugOut Index score."
+    )
 
 
 def _manual_age(provenance: dict, published: Optional[date]) -> str:

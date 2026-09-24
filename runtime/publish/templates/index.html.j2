@@ -132,6 +132,38 @@
 <p class="chart-caption">Each point is a FRED observation month, not a BugOut Index publication week. Not in the BugOut Index.</p>
 {% endif %}
 
+<div class="section-title">
+  <h3>Food prices — shadow series</h3>
+  <span class="hint">Not in the BugOut Index. No weight. Food CPI, 12-month percent change, not seasonally adjusted, from BLS via FRED.</span>
+</div>
+<p class="rev-callout">
+  This reading is a companion only. It is not in the BugOut Index and it has no weight.
+  The figure is the public 12-month change in food prices
+  (<a href="https://fred.stlouisfed.org/series/CPIUFDNS">FRED CPIUFDNS</a>,
+  BLS <a href="https://data.bls.gov/timeseries/CUUR0000SAF1?output_view=pct_12mths">CUUR0000SAF1</a>),
+  rounded to one decimal the way BLS prints that table. It is not a score.
+  {% if food_reused_from %}
+  This week’s fetch failed; the value is carried forward from the {{ food_reused_from }} publish. The date below is the FRED observation date.
+  {% endif %}
+</p>
+<div class="grid food">
+  {% for tile in food_tiles %}
+  <div class="tile{% if tile.stale %} stale{% endif %}">
+    <div class="k">{{ tile.label }}{% if tile.stale %} <span class="badge-stale">Stale</span>{% endif %}</div>
+    <div class="v">{{ tile.value|fmt(tile.unit, 1) }}</div>
+    <div class="meta">
+      <span><a href="{{ tile.source_url }}">FRED {{ tile.source_id }}</a></span>
+      <span>not in the BugOut Index</span>
+    </div>
+    <div class="age">{{ tile.age_text }}</div>
+  </div>
+  {% endfor %}
+</div>
+{% if food_chart %}
+<div class="chart-card">{{ food_chart|safe }}</div>
+<p class="chart-caption">Each point is a FRED observation month, not a BugOut Index publication week. Not in the BugOut Index.</p>
+{% endif %}
+
 <div class="section-title"><h3>About this index</h3></div>
 <p style="max-width:70ch;color:var(--muted);">
   The BugOut Index is a directional stress and stability reading
@@ -139,7 +171,7 @@
   fixed endpoints and combine into one 0–100 score. Higher means those conditions are
   less stressed. The number shows how hard the published inputs are pressing. It is not
   a forecast, and it is not an instruction to bug out.
-  Markets, the short-term pulse, and labor utilization on this page are companions.
+  Markets, the short-term pulse, labor utilization, and food prices on this page are companions.
   They are not in the score. Several inputs update monthly, quarterly, or once a year,
   so many weeks the number does not move.
   See <a href="./methodology.html">methodology</a> for the calculation, weights, and limits.

@@ -21,7 +21,7 @@ import os
 # NotWiredError (see runtime/data/fetch/not_wired.py). Do not re-add:
 #   air_quality_index, healthcare_capacity, natural_disaster_frequency (parked),
 #   grid_outages (incubating; no source chosen),
-#   food_price_index (next companion candidate; real fetcher is a follow-up).
+#   food_price_index (old stub; the weekly companion is fetch_food_shadow).
 # This legacy cache is not the weekly publisher.
 FETCH_INTERVALS = {
     "inflation_rate": 30,

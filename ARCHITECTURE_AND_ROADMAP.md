@@ -1,8 +1,8 @@
 # BugOut Index — architecture review and roadmap
 
 **Audience:** Product Manager  
-**Status:** Proposal for approval, except the incubating-metrics inventory, which Adam Montville locked on 2026-09-23 (see Later). This document does not change the score, the site, or the weekly job.  
-**Reviewed against:** repository `main` as of the 2026-09-19 weekly publish (score **57.11**).  
+**Status:** Living architecture record. Shipped publisher, formula, companion, and backtest work is described as merged. Later sections still include open proposals. The incubating-metrics inventory was locked by Adam Montville on 2026-09-23 (see Later). This document does not change the score, the bands, or the weekly job.  
+**Reviewed against:** repository `main` as of the 2026-09-19 weekly publish (score **57.11**), with later notes for work merged after that publish.
 **Live site:** [https://www.bugoutindex.com/](https://www.bugoutindex.com/) (GitHub Pages; `bugoutindex.com` redirects there). The same build is at [https://adammontville.github.io/bugoutindex/](https://adammontville.github.io/bugoutindex/).
 
 Effort sizes used below:
@@ -15,9 +15,24 @@ Effort sizes used below:
 
 ---
 
+## Product framing (decided)
+
+Decided with the v1.0.0 FRED replay ([#83](https://github.com/adammontville/bugoutindex/pull/83)). This note does not change the formula, the bands, the weights, or the live number.
+
+The BugOut Index is a **directional stress and stability reading**. It places six published statistics between fixed endpoints so a reader can see how hard those conditions are pressing. Higher is more stable. It is not a forecast and not a “bug out now” siren.
+
+It is not a historical crisis siren. Do not judge it mainly by whether the band would have flipped in every past recession. The product judgment aligned with that replay:
+
+- A **Great Recession–shaped** path that stays in **Moderate** is consistent with “2008 should not have been bug-out level.”
+- A **COVID-scale unemployment spike** that moves toward **Low** is closer to “take this seriously.”
+
+The replay is mechanical. It is not a full six-metric historical BugOut Index. Inflation, unemployment, and debt-to-GDP are historical FRED levels. Crime, homelessness, and trust are excluded or held constant and labeled as such. Figures are in the results-at-a-glance section of [`runtime/backtest/README.md`](runtime/backtest/README.md). `methodology_version` stays **1.0.0**. Markets, the short-term pulse, and labor utilization stay out of the score. Monthly, quarterly, and annual inputs, and the limit on rebuilding a past week by rerunning fetchers, are unchanged.
+
+---
+
 ## Executive summary
 
-The BugOut Index is a single 0–100 number for **current U.S. conditions**, not a forecast. Higher means more stable. The public site is a static page rebuilt once a week by GitHub Actions and served by GitHub Pages. The weekly job is cheap, automatic, and, since late April 2026, refuses to publish if a core input fails.
+The BugOut Index is a directional stress and stability reading for **current U.S. conditions**: published statistics relative to fixed endpoints. Higher means more stable. The decided framing is in the note above. The public site is a static page rebuilt once a week by GitHub Actions and served by GitHub Pages. The weekly job is cheap, automatic, and, since late April 2026, refuses to publish if a core input fails.
 
 The number itself is a weighted blend of six inputs: year-over-year CPI inflation, a violent-plus-property crime rate, the unemployment rate, federal debt-to-GDP, a homelessness rate, and Edelman trust in government. Each input is stretched onto 0–100 between fixed endpoints, then combined. On 19 September 2026 the published score was **57.11**, in the **Moderate Stability / Warning Signs** band (55–69.99).
 
@@ -35,7 +50,7 @@ Recommended sequence: make the methodology say what the code does, show how old 
 
 ### What the 0–100 score means
 
-The published index describes **where today’s U.S. readings sit between chosen endpoints**. It is not a probability of collapse and not a prediction. The public methodology page says this explicitly (`runtime/publish/templates/methodology.html.j2`). The homepage repeats it.
+The published index describes **where today’s U.S. readings sit between chosen endpoints**. It is a directional stress and stability reading: how hard those published conditions are pressing. It is not a forecast and not a bug-out order. The decided reading of the v1.0.0 FRED replay is in **Product framing (decided)** above. The public methodology page states the same limit (`runtime/publish/templates/methodology.html.j2`). The homepage repeats it.
 
 The publisher (`runtime/publish/weekly_run.py`, `interpret()`) uses four bands:
 
@@ -46,7 +61,7 @@ The publisher (`runtime/publish/weekly_run.py`, `interpret()`) uses four bands:
 | 40–54.99 | Low Stability | Heightened Risk |
 | Below 40 | Critical Instability | Collapse Likely |
 
-`METRICS.md` still lists six bands, including Critical Fragility (35–39.99), Critical Instability (25–34.99), and Systemic Collapse (below 25). **Nothing in the publisher uses those three lower bands.** `runtime/static/markdown/about.md` matches the four-band scale, and it also says the index is “calculated daily” from “real-time” sources. That sentence is out of date. The public site is weekly, and several inputs are annual.
+`METRICS.md` still lists six bands, including Critical Fragility (35–39.99), Critical Instability (25–34.99), and Systemic Collapse (below 25). **Nothing in the publisher uses those three lower bands.** `runtime/static/markdown/about.md` matches the four-band scale. The public site is weekly, and several inputs are annual.
 
 ### The six inputs, as the publisher computes them
 
@@ -146,7 +161,7 @@ Companion designs that are written down and **not** a core input. The inventory 
 
 These are product constraints, not just style notes:
 
-- The index is a description of published statistics relative to fixed endpoints, not a forecast (methodology page).
+- The index is a directional stress and stability reading of published statistics relative to fixed endpoints. It is not a forecast and not a bug-out or historical-crisis siren. The calibration check is the mechanical v1.0.0 FRED replay; results at a glance are in `runtime/backtest/README.md`. That replay is not a full six-metric historical index (methodology page; product-framing note).
 - One headline number. Extra signals stay beside it until a versioned methodology change (labor-utilization essay; AIDW essay; open issue #53, which says a volatility multiplier must not rewrite the core score).
 - Methodology versions are supposed to be explicit so old scores can be recomputed (`METRICS.md` version table: still only 1.0.0, dated both 1 January 2025 and 16 March 2025 in that same file).
 - Promotion of a new core input requires a historical check, not a conceptual argument (labor-utilization essay).
@@ -172,7 +187,7 @@ These are product constraints, not just style notes:
 - **OECD business confidence has not moved.** All 23 pulse rows store `98.96989`. The 19 September snapshot dates that series **2024-01-01**. The tile still appears next to weekly claims and VIX with no stale marker. Hypothesis: FRED no longer advances `BSCICP03USM665S`. The observation date is what the pipeline stored; this review did not call FRED.
 - **Deflation scores as healthier than low inflation.** −10% CPI maps to 100 and 15% maps to 0, in a straight line. A 2% print scores higher than a 4% print, and a −2% print scores higher than 2%. That is an explicit choice in `inflation_rate.md`. It is also a product question: deflation has been a crisis signal in other eras.
 - **National only.** No state or city score. `about.md` lists geographic breakdown as a future plan.
-- **Thresholds are fixed.** A slow move inside the window changes the score a little. A move past the endpoint does not, once clamped. The methodology page says the endpoints are meant to be historically extreme. This review found no backtest that shows they are.
+- **Thresholds are fixed.** A slow move inside the window changes the score a little. A move past the endpoint does not, once clamped. The methodology page says the endpoints are meant to be historically extreme. The FRED replay in `runtime/backtest/` does not show that for all six inputs: crime, homelessness, and trust are excluded or held constant and labeled. See the product-framing note.
 - **Two products still exist in the tree.** The public site is the static renderer. A Streamlit app (`runtime/main.py`, `runtime/pages/`) still reads the old daily CSV and a different trust essay. `runtime/util/deploy.sh` merges `main` into a `deployment` branch and has a commented Raspberry Pi SSH step. `origin/deployment` still exists. `DEVELOPER.md` tells a new contributor to run `presentation/dashboard.py` and to install `requirements.txt` from the repo root. The app entry is `runtime/main.py`, and requirements live at `runtime/requirements.txt`.
 
 ---
@@ -247,7 +262,7 @@ The legacy daily file `runtime/data/historical_bugout_index.csv` (stringified Py
 | OECD business confidence | Was monthly | Identical value, dated 2024-01-01, for the entire weekly history | Presented as a live pulse tile |
 | Payroll revisions | Monthly vintage history | Rebuilt each successful run | Strong grounding page. Easy to miss from the hero |
 | Written week note | — | Does not exist | The score can sit still for weeks with no explanation |
-| Issue #26 “define update cadence” | Closed March 2025 | The weekly job is the decision that replaced a daily Streamlit refresh | `about.md` still says daily |
+| Issue #26 “define update cadence” | Closed March 2025 | The weekly job is the decision that replaced a daily Streamlit refresh | `about.md` describes a weekly reading |
 
 The product tension: people can see a new page every Friday, but the headline often prints “+0.00”. Markets and claims did move on weeks the index did not. The page does not say that in prose.
 

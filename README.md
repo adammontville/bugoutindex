@@ -3,18 +3,18 @@
 
 # BugOutIndex
 
-The **BugOutIndex** is a societal stability scoring system designed to help individuals and communities anticipate critical points of instability. It turns published U.S. economic, crime, and governance statistics into a single score for current conditions.
+The **BugOutIndex** is a directional reading of U.S. stress and stability. It places six published statistics between fixed endpoints so a reader can see how hard those conditions are pressing. Higher is more stable. It is not a forecast, and it is not an instruction to bug out.
 
 **Live site:** <https://www.bugoutindex.com/> (also <https://adammontville.github.io/bugoutindex/>) — updated every Friday evening after US markets close.
 
 **Weekly pipeline:** See [`runtime/publish/README.md`](./runtime/publish/README.md) for how the automated weekly update works.
 
-**Architecture and roadmap:** See [`ARCHITECTURE_AND_ROADMAP.md`](./ARCHITECTURE_AND_ROADMAP.md) for how the score is produced, where the docs disagree, and a proposed Now / Next / Later plan. That document does not change the calculation.
+**Architecture and roadmap:** See [`ARCHITECTURE_AND_ROADMAP.md`](./ARCHITECTURE_AND_ROADMAP.md) for how the score is produced, where the docs disagree, and the decided product framing. That document does not change the calculation.
 
 ## **How It Works**
-1. **Metrics Analysis**: The published score uses six indicators: inflation, violent-plus-property crime, unemployment, debt-to-GDP, homelessness, and Edelman trust in government.
-2. **Scoring Methodology**: Each metric is normalized, weighted, and aggregated to produce a comprehensive stability score.
-3. **Actionable Insights**: The BugOutIndex helps users identify early warning signs of societal instability and make informed decisions about preparation or evacuation.
+1. **Six published inputs**: inflation, crime, unemployment, debt-to-GDP, homelessness, and trust in government. Markets, the short-term pulse, and labor utilization are companions. They are not in the score.
+2. **Scoring**: Each of the six is normalized between fixed endpoints, weighted, and aggregated into one 0–100 score (methodology 1.0.0). Higher is more stable.
+3. **What the score is for**: a weekly reading of pressure in those statistics. It does not say when to leave.
 
 For detailed information on the metrics and methodology, see the [Metrics Documentation](./METRICS.md).
 
@@ -38,4 +38,4 @@ By contributing to this project, you agree to license your contributions under b
 
 ---
 
-BugOutIndex aims to empower individuals with the tools they need to better understand and navigate societal challenges. Let’s build a more prepared future—together.
+The weekly site and the methodology page are the public description of the index.

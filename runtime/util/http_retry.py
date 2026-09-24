@@ -18,6 +18,8 @@ Behavior
 * Exponential backoff with jitter: ~2s, 6s, 14s, 30s, 60s.
 * 2xx returns immediately.
 * 4xx (other than 408/429) is treated as a real error and not retried.
+* Exception text and logs are scrubbed. Query credentials (the FRED
+  ``api_key``) and auth header values must not leave this function.
 """
 from __future__ import annotations
 
@@ -27,6 +29,8 @@ import time
 from typing import Any, Dict, Optional
 
 import requests
+
+from runtime.util.redact import redact_secrets, secret_values
 
 LOG = logging.getLogger("bugout.http_retry")
 
@@ -60,6 +64,12 @@ def get_with_retry(
     sess = session or requests
     last_exc: Optional[Exception] = None
     last_status: Optional[int] = None
+    secrets = secret_values(params, headers)
+
+    def _scrub(value: object) -> str:
+        return redact_secrets("" if value is None else str(value), secrets)
+
+    safe_url = _scrub(url)
 
     for attempt in range(1, max_attempts + 1):
         try:
@@ -70,25 +80,30 @@ def get_with_retry(
             if resp.status_code in retry_status and attempt < max_attempts:
                 LOG.warning(
                     "transient HTTP %s on %s (attempt %d/%d)",
-                    resp.status_code, url, attempt, max_attempts,
+                    resp.status_code, safe_url, attempt, max_attempts,
                 )
             else:
                 resp.raise_for_status()
         except (requests.ConnectionError, requests.Timeout) as exc:
             last_exc = exc
-            LOG.warning("network error on %s: %s (attempt %d/%d)",
-                        url, exc, attempt, max_attempts)
+            LOG.warning(
+                "network error on %s: %s (attempt %d/%d)",
+                safe_url, _scrub(exc), attempt, max_attempts,
+            )
         except requests.HTTPError as exc:
-            # Non-retryable 4xx: re-raise immediately.
+            # Non-retryable 4xx: re-raise immediately, without the raw
+            # requests error. That error's message includes response.url,
+            # and response.url includes the query string.
             if last_status is not None and last_status not in retry_status:
-                raise
+                raise requests.HTTPError(_scrub(exc)) from None
             last_exc = exc
 
         if attempt < max_attempts:
             sleep_s = backoff_base * (2 ** (attempt - 1)) + random.uniform(0, 1.5)
             time.sleep(sleep_s)
 
+    detail = _scrub(repr(last_exc)) if last_exc is not None else None
     raise RetryError(
-        f"GET {url} failed after {max_attempts} attempts "
-        f"(last_status={last_status}, last_exc={last_exc!r})"
+        f"GET {safe_url} failed after {max_attempts} attempts "
+        f"(last_status={last_status}, last_exc={detail})"
     )

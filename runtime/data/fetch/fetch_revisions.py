@@ -34,6 +34,7 @@ from pathlib import Path
 from typing import Dict, List, Optional
 
 from runtime.util.http_retry import get_with_retry, RetryError
+from runtime.util.redact import redact_secrets
 from runtime.util.secrets_compat import get_secret
 
 FRED_OBS_URL = "https://api.stlouisfed.org/fred/series/observations"
@@ -267,9 +268,9 @@ def fetch() -> dict:
         payems = build_payems_revisions(api_key)
         unrate = build_unrate_revisions(api_key)
     except RetryError as exc:
-        return {"status": "error", "message": f"ALFRED unreachable: {exc}"}
+        return {"status": "error", "message": redact_secrets(f"ALFRED unreachable: {exc}")}
     except Exception as exc:  # noqa: BLE001
-        return {"status": "error", "message": f"revision build failed: {exc}"}
+        return {"status": "error", "message": redact_secrets(f"revision build failed: {exc}")}
 
     return {
         "status": "success",

@@ -18,6 +18,10 @@ The Context diagram shows who uses the public site, the weekly software system, 
 
 The written review of the same system is [ARCHITECTURE_AND_ROADMAP.md](../../ARCHITECTURE_AND_ROADMAP.md) at the repository root. These diagrams do not replace that document.
 
+## Deferred sketch
+
+[Target architecture sketch (pipeline + static site)](target-architecture-sketch.md) is a later-consideration note. It is not started. It does not change these diagrams, the score, or the weekly job.
+
 ## Notes
 
 - No secrets are on the diagrams. `FRED_API_KEY` is named only as a GitHub Actions secret; the value is not drawn.

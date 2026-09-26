@@ -1,30 +1,53 @@
-# v2 candidate replay (hypothesis)
+# v2 candidate replay (hypothesis h2)
 
-This is a research note for methodology v2.0 planning. It is not a methodology version, and it is not the live BugOut Index.
+This is a research note for methodology v2.0 planning. It is not a methodology version, and it is not the live BugOut Index. The tables below are **hypothesis h2**. Hypothesis h1 was the previous labeled basket on this branch: food CPI year-over-year range 0 to 10, labor blend range 70 to 83, and weights CPI 0.22, food 0.14, labor 0.28, VIX 0.18, crime 0.18. h1 is not recomputed here. Its six comparison months are copied from that earlier replay so the two baskets can be read side by side.
 
 The published score stays the locked v1.0.0 formula. On the 19 September 2026 inputs that formula still returns **57.11 Moderate Stability**. Nothing in this replay is wired into `compute_index`, the weekly publisher, or `docs/data/latest.json`. Merging the branch does not publish to GitHub Pages.
 
 Read this file. You do not need to run the harness. The month-by-month numbers are in [`output/v2_candidate_monthly.csv`](output/v2_candidate_monthly.csv). Window ranges and band counts are in [`output/v2_candidate_summary.csv`](output/v2_candidate_summary.csv). A small chart of the same series is [`output/v2_candidate_chart.svg`](output/v2_candidate_chart.svg).
 
-v1 columns are `runtime.processing.formula.compute_index` (endpoints, weights, trust inversion, clamp, divide-by-sum-of-weights). v2 columns use `formula.normalize` and the same divide-by-sum rule on a **different basket**. Trial weights and ranges below are one hypothesis, chosen so the stress windows are visible. They are not a fitted contract.
+v1 columns are `runtime.processing.formula.compute_index` (endpoints, weights, trust inversion, clamp, divide-by-sum-of-weights). v2 columns use `formula.normalize` and the same divide-by-sum rule on a **different basket**. Trial weights and ranges below are hypothesis h2. They are not a fitted contract.
 
-## What the hypothesis basket is
+## What hypothesis h2 changes
+
+| Piece | h1 | h2 (this note) | Why h2 |
+| --- | --- | --- | --- |
+| Food CPI YoY range | 0 to 10 | −2 to 15 | The 0–10 draft clamped nine 2022–23 months at fully unstable and treated mild food deflation as fully stable. |
+| Labor blend range | 70 to 83 | 72 to 82 | October 2009 (blend about 77, UNRATE 10.0) scored too calm next to the VIX-timed October 2008 Low. A tighter band pulls that labor stress up. This is not a participation penalty. |
+| CPI / food / labor / VIX / crime weights | 0.22 / 0.14 / 0.28 / 0.18 / 0.18 | 0.20 / 0.14 / 0.30 / 0.16 / 0.20 | Nudge labor up and VIX down so the Great Recession window is less pure-VIX and the late-2009 unemployment era registers more. Crime stays in the same ballpark. |
+
+Headline CPI endpoints, the VIX range, the crime range, the labor blend formula (`0.70 × EPOP + 0.30 × LFPR`), and the crime trial rule are unchanged. Crime is still excluded when the RTCI month is absent. 2008 is not backfilled. The published crime input stays locked at 2723.
+
+### h1 versus h2 on six months
+
+h1 figures are the prior committed replay. h2 figures are this run. v1 held is the locked formula and does not change between hypotheses.
+
+| Month | h1 v2 | h1, crime off | h2 v2 | h2, crime off | v1 held |
+| --- | --- | --- | --- | --- | --- |
+| 2008-10-01 | 45.62 Low | 45.62 Low | 50.79 Low | 50.79 Low | 59.31 Moderate |
+| 2009-10-01 | 68.72 Moderate | 68.72 Moderate | 65.79 Moderate | 65.79 Moderate | 59.37 Moderate |
+| 2020-03-01 | 60.58 Moderate | 58.28 Moderate | 62.82 Moderate | 60.76 Moderate | 59.78 Moderate |
+| 2020-04-01 | 48.32 Low | 43.24 Low | 44.34 Low | 37.56 Critical | 51.67 Low |
+| 2022-06-01 | 52.87 Low | 48.85 Low | 59.19 Moderate | 56.19 Moderate | 55.56 Moderate |
+| 2026-08-01 | 74.51 High | 74.51 High | 77.28 High | 77.28 High | 57.11 Moderate |
+
+## What the h2 basket is
 
 | Trial input | Weight | Range | Direction | Where it comes from |
 | --- | --- | --- | --- | --- |
-| Headline CPI YoY (`CPIAUCSL`) | 0.22 | −10 to 15 | higher is less stable | Same construction as the live inflation fetcher. Endpoints are the v1.0.0 endpoints. |
-| Food CPI YoY (`CPIUFDNS`) | 0.14 | 0 to 10 | higher is less stable | Same one-decimal public print as `fetch_food_shadow`. Range is the incubating draft, which the live site does not apply. |
-| Labor blend | 0.28 | 70 to 83 | higher is more stable | `0.70 × LNS12300060 + 0.30 × LNS11300060`. A simple composite, not the incubating essay's unspecified participation penalty. |
-| VIX monthly mean (`VIXCLS`) | 0.18 | 10 to 65 | higher is less stable | Mean of daily closes in the calendar month. The month's maximum close is stored and not scored. |
-| Crime trial (RTCI) | 0.18 | 500 to 8,000 | higher is less stable | Unweighted agency mean, same construction as the crime diagnostic. v1 endpoints. Included only when that month is in the file. |
+| Headline CPI YoY (`CPIAUCSL`) | 0.20 | −10 to 15 | higher is less stable | Same construction as the live inflation fetcher. Endpoints are the v1.0.0 endpoints. Unchanged from h1. |
+| Food CPI YoY (`CPIUFDNS`) | 0.14 | −2 to 15 | higher is less stable | Same one-decimal public print as `fetch_food_shadow`. h2 range. The live site does not apply it. |
+| Labor blend | 0.30 | 72 to 82 | higher is more stable | `0.70 × LNS12300060 + 0.30 × LNS11300060`. A simple composite, not the incubating essay's unspecified participation penalty. h2 range. |
+| VIX monthly mean (`VIXCLS`) | 0.16 | 10 to 65 | higher is less stable | Mean of daily closes in the calendar month. The month's maximum close is stored and not scored. Range unchanged from h1. |
+| Crime trial (RTCI) | 0.20 | 500 to 8,000 | higher is less stable | Unweighted agency mean, same construction as the crime diagnostic. v1 endpoints. Included only when that month is in the file. |
 
-When an input is missing, its weight drops out and the denominator shrinks. The four non-crime weights sum to **0.82**. All five sum to **1.00**.
+When an input is missing, its weight drops out and the denominator shrinks. The four non-crime weights sum to **0.80**. All five sum to **1.00**.
 
 Demoted from the v2 primary, on purpose, so the side-by-side can be discussed:
 
 - **Debt-to-GDP** is out of the primary. The sensitivity `v2_if_debt_included` adds it back at the v1 raw weight **0.12** and the v1 endpoints (0 to 200).
 - **Homelessness** and **Edelman trust** are out of every v2 column. There is still no monthly history. The "if removed" columns are the locked formula with that held-constant input left out.
-- **UNRATE alone** is not the v2 labor input. `v2_if_unrate` puts headline unemployment back in the labor slot (v1 range 0 to 25, weight 0.28) so the composite can be compared with the series it would replace.
+- **UNRATE alone** is not the v2 labor input. `v2_if_unrate` puts headline unemployment back in the labor slot (v1 range 0 to 25, weight 0.30) so the composite can be compared with the series it would replace.
 - **`v2_if_epop_only`** uses prime-age EPOP alone (hypothesis range 68 to 82) instead of the 0.70/0.30 blend.
 - **`v2_if_crime_held`** pins crime at the locked published input **2723** and labels it held constant. That pin is the 19 September 2026 baseline (`published_2026-09-19`), not a 2008 or 2020 observation.
 
@@ -36,9 +59,9 @@ Bands on every column are the v1.0.0 bands from `interpret`: High ≥ 70, Modera
 
 | Window | v1 partial | v1 held | v2 candidate | v2, crime always off |
 | --- | --- | --- | --- | --- |
-| 2008 (Dec 2007–Dec 2009) | 55.17 (2009-12-01) to 64.40 (2008-12-01) | 56.90 (2009-12-01) to 61.90 (2008-12-01) | 45.62 (2008-10-01) to 70.29 (2009-08-01) | 45.62 (2008-10-01) to 70.29 (2009-08-01) |
-| 2020 (Jan–Dec) | 45.51 (2020-04-01) to 60.48 (2020-03-01) | 51.67 (2020-04-01) to 59.78 (2020-03-01) | 48.32 (2020-04-01) to 76.35 (2020-01-01) | 43.24 (2020-04-01) to 77.50 (2020-01-01) |
-| Recent (Jan 2022–Aug 2026) | 38.72 (2025-10-01) to 65.14 (2025-04-01) | 53.55 (2025-10-01) to 61.74 (2025-04-01) | 52.87 (2022-06-01) to 81.27 (2025-10-01) | 48.85 (2022-06-01) to 85.30 (2025-10-01) |
+| 2008 (Dec 2007–Dec 2009) | 55.17 (2009-12-01) to 64.40 (2008-12-01) | 56.90 (2009-12-01) to 61.90 (2008-12-01) | 50.79 (2008-10-01) to 70.26 (2008-05-01) | 50.79 (2008-10-01) to 70.26 (2008-05-01) |
+| 2020 (Jan–Dec) | 45.51 (2020-04-01) to 60.48 (2020-03-01) | 51.67 (2020-04-01) to 59.78 (2020-03-01) | 44.34 (2020-04-01) to 77.91 (2020-01-01) | 37.56 (2020-04-01) to 79.62 (2020-01-01) |
+| Recent (Jan 2022–Aug 2026) | 38.72 (2025-10-01) to 65.14 (2025-04-01) | 53.55 (2025-10-01) to 61.74 (2025-04-01) | 59.19 (2022-06-01) to 80.82 (2025-10-01) | 56.19 (2022-06-01) to 85.30 (2025-10-01) |
 
 Ranges are the lowest and highest scored month in that column. A blank month is not in the range. October 2025 is scored from whatever inputs exist that month, so it is inside these ranges and it is not a full-basket reading. See the recent-path section.
 
@@ -48,35 +71,35 @@ Band counts use the v1.0.0 thresholds on whatever number that column produced. A
 | --- | --- | --- | --- | --- | --- |
 | 2008 | v1_partial | 0 | 25 | 0 | 0 |
 | 2008 | v1_held | 0 | 25 | 0 | 0 |
-| 2008 | v2 | 1 | 21 | 3 | 0 |
-| 2008 | v2_without_crime | 1 | 21 | 3 | 0 |
+| 2008 | v2 | 1 | 22 | 2 | 0 |
+| 2008 | v2_without_crime | 1 | 22 | 2 | 0 |
 | 2020 | v1_partial | 0 | 5 | 7 | 0 |
 | 2020 | v1_held | 0 | 8 | 4 | 0 |
 | 2020 | v2 | 2 | 8 | 2 | 0 |
-| 2020 | v2_without_crime | 2 | 7 | 3 | 0 |
+| 2020 | v2_without_crime | 2 | 6 | 3 | 1 |
 | recent | v1_partial | 0 | 43 | 12 | 1 |
 | recent | v1_held | 0 | 55 | 1 | 0 |
-| recent | v2 | 39 | 12 | 5 | 0 |
-| recent | v2_without_crime | 38 | 8 | 10 | 0 |
+| recent | v2 | 41 | 15 | 0 | 0 |
+| recent | v2_without_crime | 41 | 15 | 0 | 0 |
 
 ### Key months
 
 | Month | Why it is here | v1 partial | v1 held | v2 candidate | v2, crime off | v2, UNRATE instead | v2, debt added |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 2007-12-01 | Great Recession window starts | 62.49 Moderate | 60.87 Moderate | 65.85 Moderate | 65.85 Moderate | 65.01 Moderate | 66.21 Moderate |
-| 2008-10-01 | VIX monthly mean jumps | 59.61 Moderate | 59.31 Moderate | 45.62 Low | 45.62 Low | 45.20 Low | 47.89 Low |
-| 2008-11-01 | VIX monthly-mean peak in this pull | 63.29 Moderate | 61.30 Moderate | 47.81 Low | 47.81 Low | 47.54 Low | 49.80 Low |
-| 2009-10-01 | UNRATE peak in the locked vintage (10.0) | 59.72 Moderate | 59.37 Moderate | 68.72 Moderate | 68.72 Moderate | 70.16 High | 67.35 Moderate |
-| 2009-12-01 | Great Recession window ends | 55.17 Moderate | 56.90 Moderate | 65.90 Moderate | 65.90 Moderate | 68.24 Moderate | 64.89 Moderate |
-| 2020-01-01 | Pre-COVID month | 59.76 Moderate | 59.39 Moderate | 76.35 High | 77.50 High | 75.87 High | 73.16 High |
-| 2020-03-01 | COVID VIX monthly-mean peak | 60.48 Moderate | 59.78 Moderate | 60.58 Moderate | 58.28 Moderate | 61.46 Moderate | 59.08 Moderate |
-| 2020-04-01 | COVID unemployment and prime-age EPOP trough | 45.51 Low | 51.67 Low | 48.32 Low | 43.24 Low | 54.01 Low | 46.75 Low |
-| 2020-12-01 | COVID window ends | 55.01 Moderate | 56.82 Moderate | 64.38 Moderate | 62.62 Moderate | 68.06 Moderate | 61.47 Moderate |
-| 2022-06-01 | Food CPI year-over-year above the 10% draft | 51.42 Low | 55.56 Moderate | 52.87 Low | 48.85 Low | 54.12 Low | 52.87 Low |
-| 2022-09-01 | Food CPI year-over-year high in this pull | 53.35 Low | 56.43 Moderate | 54.57 Low | 51.02 Low | 55.13 Moderate | 54.57 Low |
-| 2025-10-01 | BLS publication gap in this pull | 38.72 Critical | 53.55 Low | 81.27 High | 85.30 High | 81.27 High | 70.63 High |
-| 2026-04-01 | Last month in the RTCI trial file | 54.65 Low | 56.62 Moderate | 73.45 High | 72.23 High | 71.59 High | 69.73 Moderate |
-| 2026-08-01 | Latest headline CPI month; locked-score inputs | 55.55 Moderate | 57.11 Moderate | 74.51 High | 74.51 High | 73.37 High | 69.94 Moderate |
+| 2007-12-01 | Great Recession window starts | 62.49 Moderate | 60.87 Moderate | 69.75 Moderate | 69.75 Moderate | 67.05 Moderate | 69.61 Moderate |
+| 2008-10-01 | VIX monthly mean jumps | 59.61 Moderate | 59.31 Moderate | 50.79 Low | 50.79 Low | 49.36 Low | 52.43 Low |
+| 2008-11-01 | VIX monthly-mean peak in this pull | 63.29 Moderate | 61.30 Moderate | 52.40 Low | 52.40 Low | 51.31 Low | 53.83 Low |
+| 2009-10-01 | UNRATE peak in the locked vintage (10.0) | 59.72 Moderate | 59.37 Moderate | 65.79 Moderate | 65.79 Moderate | 68.60 Moderate | 64.77 Moderate |
+| 2009-12-01 | Great Recession window ends | 55.17 Moderate | 56.90 Moderate | 62.65 Moderate | 62.65 Moderate | 66.70 Moderate | 62.05 Moderate |
+| 2020-01-01 | Pre-COVID month | 59.76 Moderate | 59.39 Moderate | 77.91 High | 79.62 High | 75.54 High | 74.56 High |
+| 2020-03-01 | COVID VIX monthly-mean peak | 60.48 Moderate | 59.78 Moderate | 62.82 Moderate | 60.76 Moderate | 62.64 Moderate | 61.08 Moderate |
+| 2020-04-01 | COVID unemployment and prime-age EPOP trough | 45.51 Low | 51.67 Low | 44.34 Low | 37.56 Critical | 54.60 Low | 43.19 Low |
+| 2020-12-01 | COVID window ends | 55.01 Moderate | 56.82 Moderate | 64.40 Moderate | 62.39 Moderate | 68.93 Moderate | 61.48 Moderate |
+| 2022-06-01 | Food CPI year-over-year 10.4 (inside h2; a hard floor under h1) | 51.42 Low | 55.56 Moderate | 59.19 Moderate | 56.19 Moderate | 59.22 Moderate | 59.19 Moderate |
+| 2022-09-01 | Food CPI year-over-year high in this pull | 53.35 Low | 56.43 Moderate | 60.44 Moderate | 57.86 Moderate | 59.48 Moderate | 60.44 Moderate |
+| 2025-10-01 | BLS publication gap in this pull | 38.72 Critical | 53.55 Low | 80.82 High | 85.30 High | 80.82 High | 70.30 High |
+| 2026-04-01 | Last month in the RTCI trial file | 54.65 Low | 56.62 Moderate | 76.53 High | 75.91 High | 72.48 High | 72.48 High |
+| 2026-08-01 | Latest headline CPI month; locked-score inputs | 55.55 Moderate | 57.11 Moderate | 77.28 High | 77.28 High | 73.76 High | 72.25 High |
 
 ### Inputs behind those months
 
@@ -99,17 +122,17 @@ Band counts use the v1.0.0 thresholds on whatever number that column produced. A
 
 ### What the windows show
 
-**Great Recession window.** The locked partial replay (inflation, unemployment, debt only) runs 55.17 (2009-12-01) to 64.40 (2008-12-01). All 25 months are Moderate. Held-constant crime, homelessness, and trust keep that window Moderate as well (56.90 (2009-12-01) to 61.90 (2008-12-01)). The v2 candidate runs 45.62 (2008-10-01) to 70.29 (2009-08-01). The low is **October 2008 at 45.62 Low**, with a VIX monthly mean of 61.18. November is the VIX-mean peak at 62.67 (highest daily close 80.86) and scores **47.81 Low**, a bit higher than October because headline CPI had already cooled. The Low months are 2008-10-01 (45.62), 2008-11-01 (47.81), 2008-12-01 (52.21). October 2009, the UNRATE peak at 10.0, is v1 partial **59.72 Moderate** and v2 **68.72 Moderate**. This hypothesis times Great Recession stress on the volatility spike. It does not mark the later unemployment peak. There is no RTCI month in this window, so the v2 candidate and the crime-off series are the same path. No v2 month in that window is Critical. None of the locked partial months leave Moderate.
+**Great Recession window.** The locked partial replay (inflation, unemployment, debt only) runs 55.17 (2009-12-01) to 64.40 (2008-12-01). All 25 months are Moderate. Held-constant crime, homelessness, and trust keep that window Moderate as well (56.90 (2009-12-01) to 61.90 (2008-12-01)). The v2 candidate runs 50.79 (2008-10-01) to 70.26 (2008-05-01). The low is **October 2008 at 50.79 Low**, with a VIX monthly mean of 61.18. November is the VIX-mean peak at 62.67 (highest daily close 80.86) and scores **52.40 Low**, a bit higher than October because headline CPI had already cooled. The Low months are 2008-10-01 (50.79), 2008-11-01 (52.40). October 2009, the UNRATE peak at 10.0 and a labor blend of 77.25, is v1 partial **59.72 Moderate** and h2 **65.79 Moderate**. h1 scored October 2008 at 45.62 Low and October 2009 at 68.72 Moderate. October 2009 moved closer to October 2008 (15.00 points apart, versus 23.10 under h1). It is still Moderate, and October 2008 is still the lower score. The tighter labor band did not make late 2009 the window's trough. There is no RTCI month in this window, so the v2 candidate and the crime-off series are the same path. No v2 month in that window is Critical. None of the locked partial months leave Moderate.
 
-**COVID window.** Locked partial runs 45.51 (2020-04-01) to 60.48 (2020-03-01). April 2020 is **45.51 Low** partial and **51.67 Low** held constant (UNRATE 14.8, debt-to-GDP 132.66). Taking debt out of that held basket moves April to **55.27 Moderate**. Taking homelessness or trust out does not clear the Low band. Through the Great Recession window the held basket stays Moderate with or without debt, homelessness, or trust. The v2 candidate runs 48.32 (2020-04-01) to 76.35 (2020-01-01). March 2020, the VIX monthly-mean peak at 57.74 (highest daily close 82.69), scores **60.58 Moderate** because the labor blend is still 80.30. April, when prime-age EPOP is 69.6 and the blend is 72.66, scores **48.32 Low**. Replacing the blend with UNRATE that month scores **54.01 Low**. The trial crime rate that month is 2642.84, not 2723. Held-constant v1 for the whole year runs 51.67 (2020-04-01) to 59.78 (2020-03-01).
+**COVID window.** Locked partial runs 45.51 (2020-04-01) to 60.48 (2020-03-01). April 2020 is **45.51 Low** partial and **51.67 Low** held constant (UNRATE 14.8, debt-to-GDP 132.66). Taking debt out of that held basket moves April to **55.27 Moderate**. Taking homelessness or trust out does not clear the Low band. Through the Great Recession window the held basket stays Moderate with or without debt, homelessness, or trust. The v2 candidate runs 44.34 (2020-04-01) to 77.91 (2020-01-01). March 2020, the VIX monthly-mean peak at 57.74 (highest daily close 82.69), scores **62.82 Moderate** because the labor blend is still 80.30. April, when prime-age EPOP is 69.6 and the blend is 72.66, scores **44.34 Low** (h1 was 48.32 Low). With crime excluded that month is **37.56 Critical**, because the labor trough is a larger share of the 0.80 denominator. That is the same month without the trial crime input, not a second shock. Replacing the blend with UNRATE that month scores **54.60 Low**. The trial crime rate that month is 2642.84, not 2723. Held-constant v1 for the whole year runs 51.67 (2020-04-01) to 59.78 (2020-03-01).
 
 **Recent path.** January 2022 through August 2026. Debt is excluded on the v1 partial column before October 2025: this pull does not contain 2022–2025Q3 `GFDEGDQ188S` prints, and those months are not filled by carrying 2020 forward. The 2022 v1 partial lows are inflation plus unemployment only. June 2022 is **51.42 Low** on that two-input v1 basket, and **55.56 Moderate** once crime, homelessness, and trust are pinned at the 2026 baselines.
 
-October 2025 is a BLS gap. CPI, food, unemployment, EPOP, and participation were non-numeric (`-(X)` or `-(9)`) and are blank. v1 partial that month is debt alone (**38.72 Critical**). The v2 candidate uses only `vix_month_mean|incident_rate` (denominator 0.36) and prints **81.27 High**. That pair is the same thin month, not a crash and not a boom. Among recent months with all five trial inputs present, the v2 candidate runs 52.87 (2022-06-01) to 76.75 (2024-07-01).
+October 2025 is a BLS gap. CPI, food, unemployment, EPOP, and participation were non-numeric (`-(X)` or `-(9)`) and are blank. v1 partial that month is debt alone (**38.72 Critical**). The v2 candidate uses only `vix_month_mean|incident_rate` (denominator 0.36) and prints **80.82 High**. That pair is the same thin month, not a crash and not a boom. Among recent months with all five trial inputs present, the v2 candidate runs 59.19 (2022-06-01) to 79.19 (2026-01-01).
 
-From October 2025 the debt print on v1 is the published 122.56815. From January 2026 it is the fixture print 122.59387, carried the way the live publisher carries a quarter. August 2026 held-constant v1 is **57.11**, the same six inputs as the locked 57.11. The v2 candidate that month is **74.51 High** with crime excluded (the RTCI file ends April 2026, trial rate 2074.97). The gap versus 57.11 is the basket: debt, homelessness, and trust are out, and the labor blend and VIX are calm. It is not a claim that stability improved inside v1.0.0.
+From October 2025 the debt print on v1 is the published 122.56815. From January 2026 it is the fixture print 122.59387, carried the way the live publisher carries a quarter. August 2026 held-constant v1 is **57.11**, the same six inputs as the locked 57.11. The v2 candidate that month is **77.28 High** with crime excluded (the RTCI file ends April 2026, trial rate 2074.97). The gap versus 57.11 is the basket: debt, homelessness, and trust are out, and the labor blend and VIX are calm. It is not a claim that stability improved inside v1.0.0.
 
-Food CPI year-over-year is above the 10% draft in 9 months (2022-05-01, 2022-06-01, 2022-07-01, 2022-08-01, 2022-09-01, 2022-10-01, 2022-11-01, 2022-12-01, 2023-01-01). Those months clamp the food component at 0. June 2022 food is 10.4 and September 2022 is 11.2; the v2 candidate those months is 52.87 and 54.57. The recent-window low on the v2 candidate is **52.87 on 2022-06-01**, and that month does have the full trial basket. 4 months in the three windows have negative food inflation and clamp at 100 on this draft (fully stable).
+Food CPI year-over-year uses the h2 range −2 to 15. No month in these windows has food inflation above 15, so the food component does not hit the fully-unstable clamp. No month in these windows has food inflation below −2, so the food component does not hit the fully-stable clamp. 4 months have negative food inflation inside that range, so they lean stable without scoring fully stable. 9 months are above the h1 ceiling of 10 (2022-05-01, 2022-06-01, 2022-07-01, 2022-08-01, 2022-09-01, 2022-10-01, 2022-11-01, 2022-12-01, 2023-01-01). Under h1 those months clamped food at fully unstable. June 2022 food is 10.4 and September 2022 is 11.2; the h2 candidate those months is 59.19 and 60.44. June 2022 moves from h1 **52.87** to h2 **59.19**. That is less stressed than h1's hard floor on food, which is what the wider range was for. The recent-window low on the v2 candidate, including thin months, is **59.19 on 2022-06-01**.
 
 ## Crime trial, and why 2008 cannot use it
 
@@ -129,11 +152,11 @@ UNRATE remains the v1 labor input. The composite is lower in April 2020 than a c
 
 ## What still blocks a v2.0 contract
 
-- These weights and ranges are one labeled hypothesis. They were not fit to a loss, a utility function, or a decision threshold.
+- These weights and ranges are hypothesis h2. They were not fit to a loss, a utility function, or a decision threshold. h1 is the prior labeled basket, not a rejected contract.
 - Housing payment stress is not in the replay. No mortgage, rent-burden, or housing-delinquency series is fetched.
 - Credit spreads are not in the replay. VIX is an equity-volatility index, not a credit spread. Card delinquency (`DRCCLACBS`, issue #48) is still outside the score and is not in this basket.
-- The labor composite is not the incubating participation penalty. That penalty still has no formula.
-- The food draft range 0–10 clamps deflation to "fully stable" and clamps the 2022 peak to "fully unstable".
+- The labor composite is not the incubating participation penalty. That penalty still has no formula. The h2 band 72–82 is a tighter hypothesis range, not that penalty.
+- The h2 food range −2 to 15 is still a draft. Prints outside it still clamp. h1's 0–10 range is what clamped the 2022 peak at fully unstable and mild deflation at fully stable.
 - Crime has no fair 2008 path from RTCI. The published input remains locked at 2723. Agency coverage and the 12-month RTCI definition are not a national historical crime rate.
 - Homelessness and Edelman trust still have no monthly history.
 - Debt-to-GDP for 2022 through 2025Q3 was not in the locked fixture, and the FRED graph download did not return a body on this pull. Those months stay excluded rather than invented.

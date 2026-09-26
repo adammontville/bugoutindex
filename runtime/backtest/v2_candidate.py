@@ -38,19 +38,21 @@ from runtime.backtest.harness import (
 from runtime.data.fetch.fetch_incident_rate import PUBLISHED_INCIDENT_RATE
 from runtime.processing.formula import compute_index, interpret, normalize
 
-CANDIDATE_LABEL = "v2_candidate_hypothesis"
+HYPOTHESIS_ID = "h2"
+CANDIDATE_LABEL = "v2_candidate_hypothesis_h2"
 DATA_PULL_DATE = "2026-09-26"
 # BLS cells for this month were non-numeric in the 2026-09-26 pull.
 BLS_GAP_MONTH = "2025-10-01"
 
-# Hypothesis weights. They sum to 1.00 when every trial input is present.
+# Hypothesis h2 weights. They sum to 1.00 when every trial input is present.
 # They are not formula.WEIGHTS and they are not a fitted contract.
+# h1 was CPI 0.22, food 0.14, labor 0.28, VIX 0.18, crime 0.18.
 TRIAL_WEIGHTS = {
-    "inflation_rate": 0.22,
+    "inflation_rate": 0.20,
     "food_cpi_yoy": 0.14,
-    "labor_utilization": 0.28,
-    "vix_month_mean": 0.18,
-    "incident_rate": 0.18,
+    "labor_utilization": 0.30,
+    "vix_month_mean": 0.16,
+    "incident_rate": 0.20,
 }
 PRIMARY_ORDER = (
     "inflation_rate",
@@ -63,8 +65,10 @@ PRIMARY_ORDER = (
 # or the incubating food draft. Higher raw is less stable unless INVERSE.
 TRIAL_RANGES = {
     "inflation_rate": (-10.0, 15.0),
-    "food_cpi_yoy": (0.0, 10.0),
-    "labor_utilization": (70.0, 83.0),
+    # h1 food range was 0 to 10. h2 is −2 to 15.
+    "food_cpi_yoy": (-2.0, 15.0),
+    # h1 labor blend range was 70 to 83. h2 is 72 to 82.
+    "labor_utilization": (72.0, 82.0),
     "prime_age_epop": (68.0, 82.0),
     "vix_month_mean": (10.0, 65.0),
     "incident_rate": (500.0, 8000.0),
@@ -103,10 +107,11 @@ NOTE_NAME = "V2_CANDIDATE.md"
 CHART_NAME = "v2_candidate_chart.svg"
 
 SCORE_NOTE = (
-    "Hypothesis replay for methodology v2.0 planning. Trial weights and "
+    "Hypothesis h2 replay for methodology v2.0 planning. Trial weights and "
     "ranges are not a contract. v1 columns are compute_index (methodology "
     "1.0.0). v2 columns are not the published BugOut Index and are not "
-    "inputs to the weekly job."
+    "inputs to the weekly job. h1 was the prior labeled basket "
+    "(food 0–10, labor 70–83, weights 0.22/0.14/0.28/0.18/0.18)."
 )
 
 SUMMARY_SCENARIOS = (
@@ -116,12 +121,12 @@ SUMMARY_SCENARIOS = (
     ("v1_held_without_homelessness", "v1.0.0 held, homelessness removed"),
     ("v1_held_without_trust", "v1.0.0 held, trust removed"),
     ("v1_partial_without_debt", "v1.0.0 partial, debt also removed"),
-    ("v2", "v2 candidate (crime trial when the RTCI month exists)"),
-    ("v2_without_crime", "v2 candidate with crime always excluded"),
-    ("v2_if_unrate", "v2 basket with UNRATE instead of the labor composite"),
-    ("v2_if_epop_only", "v2 basket with prime-age EPOP instead of the composite"),
-    ("v2_if_debt_included", "v2 basket plus debt-to-GDP at weight 0.12"),
-    ("v2_if_crime_held", "v2 basket with crime held at the locked 2723"),
+    ("v2", "v2 candidate h2 (crime trial when the RTCI month exists)"),
+    ("v2_without_crime", "v2 candidate h2 with crime always excluded"),
+    ("v2_if_unrate", "v2 h2 basket with UNRATE instead of the labor composite"),
+    ("v2_if_epop_only", "v2 h2 basket with prime-age EPOP instead of the composite"),
+    ("v2_if_debt_included", "v2 h2 basket plus debt-to-GDP at weight 0.12"),
+    ("v2_if_crime_held", "v2 h2 basket with crime held at the locked 2723"),
 )
 
 KEY_MONTHS = (
@@ -134,11 +139,32 @@ KEY_MONTHS = (
     ("2020-03-01", "COVID VIX monthly-mean peak"),
     ("2020-04-01", "COVID unemployment and prime-age EPOP trough"),
     ("2020-12-01", "COVID window ends"),
-    ("2022-06-01", "Food CPI year-over-year above the 10% draft"),
+    ("2022-06-01", "Food CPI year-over-year 10.4 (inside h2; a hard floor under h1)"),
     ("2022-09-01", "Food CPI year-over-year high in this pull"),
     ("2025-10-01", "BLS publication gap in this pull"),
     ("2026-04-01", "Last month in the RTCI trial file"),
     ("2026-08-01", "Latest headline CPI month; locked-score inputs"),
+)
+
+# Prior committed h1 replay. These numbers are not recomputed by this command.
+# They are the scores from the first labeled basket so a reader can compare
+# h2 with h1 without a local run. h1 food range was 0–10, labor range 70–83,
+# weights CPI 0.22 / food 0.14 / labor 0.28 / VIX 0.18 / crime 0.18.
+H1_KEY_SCORES = {
+    "2008-10-01": {"v2": (45.62, "Low"), "crime_off": (45.62, "Low")},
+    "2009-10-01": {"v2": (68.72, "Moderate"), "crime_off": (68.72, "Moderate")},
+    "2020-03-01": {"v2": (60.58, "Moderate"), "crime_off": (58.28, "Moderate")},
+    "2020-04-01": {"v2": (48.32, "Low"), "crime_off": (43.24, "Low")},
+    "2022-06-01": {"v2": (52.87, "Low"), "crime_off": (48.85, "Low")},
+    "2026-08-01": {"v2": (74.51, "High"), "crime_off": (74.51, "High")},
+}
+H1_COMPARE_MONTHS = (
+    "2008-10-01",
+    "2009-10-01",
+    "2020-03-01",
+    "2020-04-01",
+    "2022-06-01",
+    "2026-08-01",
 )
 
 
@@ -748,6 +774,18 @@ def _num(value: object, digits: int = 2) -> str:
     return f"{float(value):.{digits}f}"
 
 
+def _signed(value: float) -> str:
+    """Plain range endpoint, with a minus sign for negatives."""
+    number = float(value)
+    if number.is_integer():
+        text = str(int(number))
+    else:
+        text = f"{number:g}"
+    if number < 0:
+        return "−" + text[1:]
+    return text
+
+
 def _by_date(rows: Sequence[Mapping[str, object]]) -> dict[str, Mapping[str, object]]:
     return {str(row["date"]): row for row in rows}
 
@@ -773,15 +811,27 @@ def _range_phrase(summary_row: Mapping[str, object]) -> str:
 def render_markdown(rows: Sequence[Mapping[str, object]], summary: Sequence[Mapping[str, object]]) -> str:
     """Results note. Numbers come from the rows just scored."""
     by_date = _by_date(rows)
-    food_clamped = [
-        row["date"]
+    food_lo, food_hi = TRIAL_RANGES["food_cpi_yoy"]
+    food_above_range = [
+        str(row["date"])
+        for row in rows
+        if row["v2_food_cpi_yoy"] is not None and float(row["v2_food_cpi_yoy"]) > food_hi
+    ]
+    food_below_range = [
+        str(row["date"])
+        for row in rows
+        if row["v2_food_cpi_yoy"] is not None and float(row["v2_food_cpi_yoy"]) < food_lo
+    ]
+    food_above_h1_floor = [
+        str(row["date"])
         for row in rows
         if row["v2_food_cpi_yoy"] is not None and float(row["v2_food_cpi_yoy"]) > 10
     ]
-    food_deflation = [
-        row["date"]
+    food_mild_negative = [
+        str(row["date"])
         for row in rows
-        if row["v2_food_cpi_yoy"] is not None and float(row["v2_food_cpi_yoy"]) < 0
+        if row["v2_food_cpi_yoy"] is not None
+        and food_lo <= float(row["v2_food_cpi_yoy"]) < 0
     ]
     gfc_v1 = _summary_lookup(summary, "v1_partial", "2008")
     gfc_v1_held = _summary_lookup(summary, "v1_held", "2008")
@@ -896,33 +946,137 @@ def render_markdown(rows: Sequence[Mapping[str, object]], summary: Sequence[Mapp
     else:
         gfc_critical = f"{gfc_v2['critical']} v2 months in that window are Critical."
 
-    text = f"""# v2 candidate replay (hypothesis)
+    non_crime_weight = sum(
+        weight for name, weight in TRIAL_WEIGHTS.items() if name != "incident_rate"
+    )
+    food_lo_txt = _signed(food_lo)
+    food_hi_txt = _signed(food_hi)
+    labor_lo, labor_hi = TRIAL_RANGES["labor_utilization"]
+    oct_2008 = by_date["2008-10-01"]
+    gap_h1 = 68.72 - 45.62
+    gap_h2 = float(oct_2009["v2_index"]) - float(oct_2008["v2_index"])
+    if gap_h2 < gap_h1 - 0.05:
+        gap_read = (
+            f"October 2009 moved closer to October 2008 "
+            f"({gap_h2:.2f} points apart, versus {gap_h1:.2f} under h1)."
+        )
+        if (
+            float(oct_2009["v2_index"]) > float(oct_2008["v2_index"])
+            and oct_2009["v2_band"] == "Moderate Stability"
+        ):
+            gap_read += (
+                " It is still Moderate, and October 2008 is still the lower score. "
+                "The tighter labor band did not make late 2009 the window's trough."
+            )
+    elif gap_h2 > gap_h1 + 0.05:
+        gap_read = (
+            f"October 2009 moved farther from October 2008 "
+            f"({gap_h2:.2f} points apart, versus {gap_h1:.2f} under h1)."
+        )
+    else:
+        gap_read = (
+            f"The gap between October 2009 and October 2008 is about the same as under h1 "
+            f"({gap_h2:.2f} points, versus {gap_h1:.2f})."
+        )
+    june_h1 = H1_KEY_SCORES["2022-06-01"]["v2"][0]
+    june_h2 = float(jun_2022["v2_index"])
+    if june_h2 > june_h1 + 0.05:
+        food_move = (
+            f"June 2022 moves from h1 **{june_h1:.2f}** to h2 **{_num(jun_2022['v2_index'])}**. "
+            "That is less stressed than h1's hard floor on food, which is what the wider range was for."
+        )
+    elif june_h2 < june_h1 - 0.05:
+        food_move = (
+            f"June 2022 moves from h1 **{june_h1:.2f}** to h2 **{_num(jun_2022['v2_index'])}**, "
+            "more stressed than h1 even with the wider food range."
+        )
+    else:
+        food_move = (
+            f"June 2022 is **{_num(jun_2022['v2_index'])}**, about the same as h1 **{june_h1:.2f}**."
+        )
+    if food_above_range:
+        food_above_sentence = (
+            f"{len(food_above_range)} months are above {food_hi_txt} and clamp the food component at 0 "
+            f"({', '.join(food_above_range)})."
+        )
+    else:
+        food_above_sentence = (
+            f"No month in these windows has food inflation above {food_hi_txt}, so the food "
+            "component does not hit the fully-unstable clamp."
+        )
+    if food_below_range:
+        food_below_sentence = (
+            f"{len(food_below_range)} months are below {food_lo_txt} and clamp the food component at 100 "
+            f"({', '.join(food_below_range)})."
+        )
+    else:
+        food_below_sentence = (
+            f"No month in these windows has food inflation below {food_lo_txt}, so the food "
+            "component does not hit the fully-stable clamp."
+        )
+    h1_compare_lines = [
+        "| Month | h1 v2 | h1, crime off | h2 v2 | h2, crime off | v1 held |",
+        "| --- | --- | --- | --- | --- | --- |",
+    ]
+    for day in H1_COMPARE_MONTHS:
+        prior = H1_KEY_SCORES[day]
+        row = by_date[day]
+        h1_compare_lines.append(
+            "| {day} | {hv} {hvb} | {hc} {hcb} | {v} | {c} | {held} |".format(
+                day=day,
+                hv=f"{prior['v2'][0]:.2f}",
+                hvb=prior["v2"][1],
+                hc=f"{prior['crime_off'][0]:.2f}",
+                hcb=prior["crime_off"][1],
+                v=cell(row, "v2_index"),
+                c=cell(row, "v2_without_crime_index"),
+                held=cell(row, "v1_held_index"),
+            )
+        )
 
-This is a research note for methodology v2.0 planning. It is not a methodology version, and it is not the live BugOut Index.
+    text = f"""# v2 candidate replay (hypothesis h2)
+
+This is a research note for methodology v2.0 planning. It is not a methodology version, and it is not the live BugOut Index. The tables below are **hypothesis h2**. Hypothesis h1 was the previous labeled basket on this branch: food CPI year-over-year range 0 to 10, labor blend range 70 to 83, and weights CPI 0.22, food 0.14, labor 0.28, VIX 0.18, crime 0.18. h1 is not recomputed here. Its six comparison months are copied from that earlier replay so the two baskets can be read side by side.
 
 The published score stays the locked v1.0.0 formula. On the 19 September 2026 inputs that formula still returns **57.11 Moderate Stability**. Nothing in this replay is wired into `compute_index`, the weekly publisher, or `docs/data/latest.json`. Merging the branch does not publish to GitHub Pages.
 
 Read this file. You do not need to run the harness. The month-by-month numbers are in [`output/v2_candidate_monthly.csv`](output/v2_candidate_monthly.csv). Window ranges and band counts are in [`output/v2_candidate_summary.csv`](output/v2_candidate_summary.csv). A small chart of the same series is [`output/v2_candidate_chart.svg`](output/v2_candidate_chart.svg).
 
-v1 columns are `runtime.processing.formula.compute_index` (endpoints, weights, trust inversion, clamp, divide-by-sum-of-weights). v2 columns use `formula.normalize` and the same divide-by-sum rule on a **different basket**. Trial weights and ranges below are one hypothesis, chosen so the stress windows are visible. They are not a fitted contract.
+v1 columns are `runtime.processing.formula.compute_index` (endpoints, weights, trust inversion, clamp, divide-by-sum-of-weights). v2 columns use `formula.normalize` and the same divide-by-sum rule on a **different basket**. Trial weights and ranges below are hypothesis h2. They are not a fitted contract.
 
-## What the hypothesis basket is
+## What hypothesis h2 changes
+
+| Piece | h1 | h2 (this note) | Why h2 |
+| --- | --- | --- | --- |
+| Food CPI YoY range | 0 to 10 | {food_lo_txt} to {food_hi_txt} | The 0–10 draft clamped nine 2022–23 months at fully unstable and treated mild food deflation as fully stable. |
+| Labor blend range | 70 to 83 | {labor_lo:g} to {labor_hi:g} | October 2009 (blend about 77, UNRATE 10.0) scored too calm next to the VIX-timed October 2008 Low. A tighter band pulls that labor stress up. This is not a participation penalty. |
+| CPI / food / labor / VIX / crime weights | 0.22 / 0.14 / 0.28 / 0.18 / 0.18 | {TRIAL_WEIGHTS['inflation_rate']:.2f} / {TRIAL_WEIGHTS['food_cpi_yoy']:.2f} / {TRIAL_WEIGHTS['labor_utilization']:.2f} / {TRIAL_WEIGHTS['vix_month_mean']:.2f} / {TRIAL_WEIGHTS['incident_rate']:.2f} | Nudge labor up and VIX down so the Great Recession window is less pure-VIX and the late-2009 unemployment era registers more. Crime stays in the same ballpark. |
+
+Headline CPI endpoints, the VIX range, the crime range, the labor blend formula (`0.70 × EPOP + 0.30 × LFPR`), and the crime trial rule are unchanged. Crime is still excluded when the RTCI month is absent. 2008 is not backfilled. The published crime input stays locked at {PUBLISHED_INCIDENT_RATE:.0f}.
+
+### h1 versus h2 on six months
+
+h1 figures are the prior committed replay. h2 figures are this run. v1 held is the locked formula and does not change between hypotheses.
+
+{chr(10).join(h1_compare_lines)}
+
+## What the h2 basket is
 
 | Trial input | Weight | Range | Direction | Where it comes from |
 | --- | --- | --- | --- | --- |
-| Headline CPI YoY (`CPIAUCSL`) | 0.22 | −10 to 15 | higher is less stable | Same construction as the live inflation fetcher. Endpoints are the v1.0.0 endpoints. |
-| Food CPI YoY (`CPIUFDNS`) | 0.14 | 0 to 10 | higher is less stable | Same one-decimal public print as `fetch_food_shadow`. Range is the incubating draft, which the live site does not apply. |
-| Labor blend | 0.28 | 70 to 83 | higher is more stable | `0.70 × LNS12300060 + 0.30 × LNS11300060`. A simple composite, not the incubating essay's unspecified participation penalty. |
-| VIX monthly mean (`VIXCLS`) | 0.18 | 10 to 65 | higher is less stable | Mean of daily closes in the calendar month. The month's maximum close is stored and not scored. |
-| Crime trial (RTCI) | 0.18 | 500 to 8,000 | higher is less stable | Unweighted agency mean, same construction as the crime diagnostic. v1 endpoints. Included only when that month is in the file. |
+| Headline CPI YoY (`CPIAUCSL`) | {TRIAL_WEIGHTS['inflation_rate']:.2f} | −10 to 15 | higher is less stable | Same construction as the live inflation fetcher. Endpoints are the v1.0.0 endpoints. Unchanged from h1. |
+| Food CPI YoY (`CPIUFDNS`) | {TRIAL_WEIGHTS['food_cpi_yoy']:.2f} | {food_lo_txt} to {food_hi_txt} | higher is less stable | Same one-decimal public print as `fetch_food_shadow`. h2 range. The live site does not apply it. |
+| Labor blend | {TRIAL_WEIGHTS['labor_utilization']:.2f} | {labor_lo:g} to {labor_hi:g} | higher is more stable | `0.70 × LNS12300060 + 0.30 × LNS11300060`. A simple composite, not the incubating essay's unspecified participation penalty. h2 range. |
+| VIX monthly mean (`VIXCLS`) | {TRIAL_WEIGHTS['vix_month_mean']:.2f} | 10 to 65 | higher is less stable | Mean of daily closes in the calendar month. The month's maximum close is stored and not scored. Range unchanged from h1. |
+| Crime trial (RTCI) | {TRIAL_WEIGHTS['incident_rate']:.2f} | 500 to 8,000 | higher is less stable | Unweighted agency mean, same construction as the crime diagnostic. v1 endpoints. Included only when that month is in the file. |
 
-When an input is missing, its weight drops out and the denominator shrinks. The four non-crime weights sum to **0.82**. All five sum to **1.00**.
+When an input is missing, its weight drops out and the denominator shrinks. The four non-crime weights sum to **{non_crime_weight:.2f}**. All five sum to **1.00**.
 
 Demoted from the v2 primary, on purpose, so the side-by-side can be discussed:
 
 - **Debt-to-GDP** is out of the primary. The sensitivity `v2_if_debt_included` adds it back at the v1 raw weight **0.12** and the v1 endpoints (0 to 200).
 - **Homelessness** and **Edelman trust** are out of every v2 column. There is still no monthly history. The "if removed" columns are the locked formula with that held-constant input left out.
-- **UNRATE alone** is not the v2 labor input. `v2_if_unrate` puts headline unemployment back in the labor slot (v1 range 0 to 25, weight 0.28) so the composite can be compared with the series it would replace.
+- **UNRATE alone** is not the v2 labor input. `v2_if_unrate` puts headline unemployment back in the labor slot (v1 range 0 to 25, weight {TRIAL_WEIGHTS['labor_utilization']:.2f}) so the composite can be compared with the series it would replace.
 - **`v2_if_epop_only`** uses prime-age EPOP alone (hypothesis range 68 to 82) instead of the 0.70/0.30 blend.
 - **`v2_if_crime_held`** pins crime at the locked published input **{PUBLISHED_INCIDENT_RATE:.0f}** and labels it held constant. That pin is the 19 September 2026 baseline (`{HELD_CONSTANT_BASELINE['name']}`), not a 2008 or 2020 observation.
 
@@ -950,9 +1104,9 @@ Band counts use the v1.0.0 thresholds on whatever number that column produced. A
 
 ### What the windows show
 
-**Great Recession window.** The locked partial replay (inflation, unemployment, debt only) runs {_range_phrase(gfc_v1)}. All {gfc_v1['months_scored']} months are Moderate. Held-constant crime, homelessness, and trust keep that window Moderate as well ({_range_phrase(gfc_v1_held)}). The v2 candidate runs {_range_phrase(gfc_v2)}. The low is **October 2008 at {_num(gfc_v2['min_index'])} {_short_band(by_date[str(gfc_v2['min_date'])]['v2_band'])}**, with a VIX monthly mean of {_num(by_date['2008-10-01']['v2_vix_month_mean'])}. November is the VIX-mean peak at {_num(nov_2008['v2_vix_month_mean'])} (highest daily close {_num(nov_2008['v2_vix_month_max'])}) and scores **{_num(nov_2008['v2_index'])} {_short_band(nov_2008['v2_band'])}**, a bit higher than October because headline CPI had already cooled. The Low months are {', '.join(gfc_low_months)}. October 2009, the UNRATE peak at 10.0, is v1 partial **{_num(oct_2009['v1_partial_index'])} {_short_band(oct_2009['v1_partial_band'])}** and v2 **{_num(oct_2009['v2_index'])} {_short_band(oct_2009['v2_band'])}**. This hypothesis times Great Recession stress on the volatility spike. It does not mark the later unemployment peak. There is no RTCI month in this window, so the v2 candidate and the crime-off series are the same path. {gfc_critical} None of the locked partial months leave Moderate.
+**Great Recession window.** The locked partial replay (inflation, unemployment, debt only) runs {_range_phrase(gfc_v1)}. All {gfc_v1['months_scored']} months are Moderate. Held-constant crime, homelessness, and trust keep that window Moderate as well ({_range_phrase(gfc_v1_held)}). The v2 candidate runs {_range_phrase(gfc_v2)}. The low is **October 2008 at {_num(gfc_v2['min_index'])} {_short_band(by_date[str(gfc_v2['min_date'])]['v2_band'])}**, with a VIX monthly mean of {_num(by_date['2008-10-01']['v2_vix_month_mean'])}. November is the VIX-mean peak at {_num(nov_2008['v2_vix_month_mean'])} (highest daily close {_num(nov_2008['v2_vix_month_max'])}) and scores **{_num(nov_2008['v2_index'])} {_short_band(nov_2008['v2_band'])}**, a bit higher than October because headline CPI had already cooled. The Low months are {', '.join(gfc_low_months)}. October 2009, the UNRATE peak at 10.0 and a labor blend of {_num(oct_2009['v2_labor_utilization'])}, is v1 partial **{_num(oct_2009['v1_partial_index'])} {_short_band(oct_2009['v1_partial_band'])}** and h2 **{_num(oct_2009['v2_index'])} {_short_band(oct_2009['v2_band'])}**. h1 scored October 2008 at 45.62 Low and October 2009 at 68.72 Moderate. {gap_read} There is no RTCI month in this window, so the v2 candidate and the crime-off series are the same path. {gfc_critical} None of the locked partial months leave Moderate.
 
-**COVID window.** Locked partial runs {_range_phrase(covid_v1)}. April 2020 is **{_num(april['v1_partial_index'])} {_short_band(april['v1_partial_band'])}** partial and **{_num(april['v1_held_index'])} {_short_band(april['v1_held_band'])}** held constant (UNRATE 14.8, debt-to-GDP 132.66). Taking debt out of that held basket moves April to **{april_without_debt} {april_without_debt_band}**. Taking homelessness or trust out does not clear the Low band. Through the Great Recession window the held basket stays Moderate with or without debt, homelessness, or trust. The v2 candidate runs {_range_phrase(covid_v2)}. March 2020, the VIX monthly-mean peak at {_num(march['v2_vix_month_mean'])} (highest daily close {_num(march['v2_vix_month_max'])}), scores **{_num(march['v2_index'])} {_short_band(march['v2_band'])}** because the labor blend is still {_num(march['v2_labor_utilization'])}. April, when prime-age EPOP is {_num(april['v2_prime_age_epop'], 1)} and the blend is {_num(april['v2_labor_utilization'])}, scores **{_num(april['v2_index'])} {_short_band(april['v2_band'])}**. Replacing the blend with UNRATE that month scores **{_num(april['v2_if_unrate_index'])} {_short_band(april['v2_if_unrate_band'])}**. The trial crime rate that month is {_num(april['v2_incident_rate'])}, not {PUBLISHED_INCIDENT_RATE:.0f}. Held-constant v1 for the whole year runs {_range_phrase(covid_v1_held)}.
+**COVID window.** Locked partial runs {_range_phrase(covid_v1)}. April 2020 is **{_num(april['v1_partial_index'])} {_short_band(april['v1_partial_band'])}** partial and **{_num(april['v1_held_index'])} {_short_band(april['v1_held_band'])}** held constant (UNRATE 14.8, debt-to-GDP 132.66). Taking debt out of that held basket moves April to **{april_without_debt} {april_without_debt_band}**. Taking homelessness or trust out does not clear the Low band. Through the Great Recession window the held basket stays Moderate with or without debt, homelessness, or trust. The v2 candidate runs {_range_phrase(covid_v2)}. March 2020, the VIX monthly-mean peak at {_num(march['v2_vix_month_mean'])} (highest daily close {_num(march['v2_vix_month_max'])}), scores **{_num(march['v2_index'])} {_short_band(march['v2_band'])}** because the labor blend is still {_num(march['v2_labor_utilization'])}. April, when prime-age EPOP is {_num(april['v2_prime_age_epop'], 1)} and the blend is {_num(april['v2_labor_utilization'])}, scores **{_num(april['v2_index'])} {_short_band(april['v2_band'])}** (h1 was 48.32 Low). With crime excluded that month is **{_num(april['v2_without_crime_index'])} {_short_band(april['v2_without_crime_band'])}**, because the labor trough is a larger share of the {non_crime_weight:.2f} denominator. That is the same month without the trial crime input, not a second shock. Replacing the blend with UNRATE that month scores **{_num(april['v2_if_unrate_index'])} {_short_band(april['v2_if_unrate_band'])}**. The trial crime rate that month is {_num(april['v2_incident_rate'])}, not {PUBLISHED_INCIDENT_RATE:.0f}. Held-constant v1 for the whole year runs {_range_phrase(covid_v1_held)}.
 
 **Recent path.** January 2022 through August 2026. Debt is excluded on the v1 partial column before October 2025: this pull does not contain 2022–2025Q3 `GFDEGDQ188S` prints, and those months are not filled by carrying 2020 forward. The 2022 v1 partial lows are inflation plus unemployment only. June 2022 is **{_num(jun_2022['v1_partial_index'])} {_short_band(jun_2022['v1_partial_band'])}** on that two-input v1 basket, and **{_num(jun_2022['v1_held_index'])} {_short_band(jun_2022['v1_held_band'])}** once crime, homelessness, and trust are pinned at the 2026 baselines.
 
@@ -960,7 +1114,7 @@ October 2025 is a BLS gap. CPI, food, unemployment, EPOP, and participation were
 
 From October 2025 the debt print on v1 is the published 122.56815. From January 2026 it is the fixture print 122.59387, carried the way the live publisher carries a quarter. August 2026 held-constant v1 is **{_num(aug_2026['v1_held_index'])}**, the same six inputs as the locked 57.11. The v2 candidate that month is **{_num(aug_2026['v2_index'])} {_short_band(aug_2026['v2_band'])}** with crime excluded (the RTCI file ends April 2026, trial rate {_num(apr_2026['v2_incident_rate'])}). The gap versus 57.11 is the basket: debt, homelessness, and trust are out, and the labor blend and VIX are calm. It is not a claim that stability improved inside v1.0.0.
 
-Food CPI year-over-year is above the 10% draft in {len(food_clamped)} months ({', '.join(food_clamped)}). Those months clamp the food component at 0. June 2022 food is {_num(jun_2022['v2_food_cpi_yoy'], 1)} and September 2022 is {_num(sep_2022['v2_food_cpi_yoy'], 1)}; the v2 candidate those months is {_num(jun_2022['v2_index'])} and {_num(sep_2022['v2_index'])}. The recent-window low on the v2 candidate is **{_num(recent_v2['min_index'])} on {recent_v2['min_date']}**, and that month does have the full trial basket. {len(food_deflation)} months in the three windows have negative food inflation and clamp at 100 on this draft (fully stable).
+Food CPI year-over-year uses the h2 range {food_lo_txt} to {food_hi_txt}. {food_above_sentence} {food_below_sentence} {len(food_mild_negative)} months have negative food inflation inside that range, so they lean stable without scoring fully stable. {len(food_above_h1_floor)} months are above the h1 ceiling of 10 ({', '.join(food_above_h1_floor)}). Under h1 those months clamped food at fully unstable. June 2022 food is {_num(jun_2022['v2_food_cpi_yoy'], 1)} and September 2022 is {_num(sep_2022['v2_food_cpi_yoy'], 1)}; the h2 candidate those months is {_num(jun_2022['v2_index'])} and {_num(sep_2022['v2_index'])}. {food_move} The recent-window low on the v2 candidate, including thin months, is **{_num(recent_v2['min_index'])} on {recent_v2['min_date']}**.
 
 ## Crime trial, and why 2008 cannot use it
 
@@ -980,11 +1134,11 @@ UNRATE remains the v1 labor input. The composite is lower in April 2020 than a c
 
 ## What still blocks a v2.0 contract
 
-- These weights and ranges are one labeled hypothesis. They were not fit to a loss, a utility function, or a decision threshold.
+- These weights and ranges are hypothesis h2. They were not fit to a loss, a utility function, or a decision threshold. h1 is the prior labeled basket, not a rejected contract.
 - Housing payment stress is not in the replay. No mortgage, rent-burden, or housing-delinquency series is fetched.
 - Credit spreads are not in the replay. VIX is an equity-volatility index, not a credit spread. Card delinquency (`DRCCLACBS`, issue #48) is still outside the score and is not in this basket.
-- The labor composite is not the incubating participation penalty. That penalty still has no formula.
-- The food draft range 0–10 clamps deflation to "fully stable" and clamps the 2022 peak to "fully unstable".
+- The labor composite is not the incubating participation penalty. That penalty still has no formula. The h2 band 72–82 is a tighter hypothesis range, not that penalty.
+- The h2 food range {food_lo_txt} to {food_hi_txt} is still a draft. Prints outside it still clamp. h1's 0–10 range is what clamped the 2022 peak at fully unstable and mild deflation at fully stable.
 - Crime has no fair 2008 path from RTCI. The published input remains locked at 2723. Agency coverage and the 12-month RTCI definition are not a national historical crime rate.
 - Homelessness and Edelman trust still have no monthly history.
 - Debt-to-GDP for 2022 through 2025Q3 was not in the locked fixture, and the FRED graph download did not return a body on this pull. Those months stay excluded rather than invented.
@@ -1080,7 +1234,7 @@ def render_svg(rows: Sequence[Mapping[str, object]]) -> str:
         f'<text x="{left}" y="{len(V2_WINDOW_ORDER) * height - 4}" font-size="11" font-family="sans-serif">'
         '<tspan fill="#5c6b7a">v1 partial</tspan>'
         '<tspan fill="#1d4e89">   v1 held</tspan>'
-        '<tspan fill="#b45309">   v2 candidate</tspan>'
+        '<tspan fill="#b45309">   v2 candidate h2</tspan>'
         '<tspan fill="#0f766e">   v2 crime off</tspan>'
         "</text>"
     )

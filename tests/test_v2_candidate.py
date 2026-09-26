@@ -98,7 +98,9 @@ def test_august_2026_held_constant_is_still_57_11():
     assert august["v2_incident_status"] == "excluded"
     assert august["v2_index"] == august["v2_without_crime_index"]
     assert august["v2_index"] != 57.11
-    assert abs(august["v2_weight_denominator"] - 0.82) < 1e-9
+    non_crime = sum(weight for name, weight in TRIAL_WEIGHTS.items() if name != "incident_rate")
+    assert abs(august["v2_weight_denominator"] - non_crime) < 1e-9
+    assert abs(non_crime - 0.80) < 1e-9
 
 
 def test_crime_trial_does_not_replace_the_lock_and_does_not_cover_2008():
@@ -174,8 +176,9 @@ def test_cli_prints_the_lock_and_writes_a_labeled_note(tmp_path, capsys):
     monthly = list(csv.DictReader((tmp_path / MONTHLY_NAME).open(encoding="utf-8")))
     assert monthly[0]["candidate_label"] == CANDIDATE_LABEL
     assert monthly[0]["data_pull_date"] == DATA_PULL_DATE
-    assert "hypothesis" in note.read_text(encoding="utf-8").lower()
-    assert "57.11" in note.read_text(encoding="utf-8")
+    note_text = note.read_text(encoding="utf-8")
+    assert "hypothesis h2" in note_text.lower()
+    assert "57.11" in note_text
     assert (tmp_path / SUMMARY_NAME).exists()
     # The v1 command is still the crisis replay and does not write the v2 note.
     v1_dir = tmp_path / "v1"
@@ -195,7 +198,11 @@ def test_committed_v2_tables_match_the_harness():
     note = (PACKAGE_DIR / NOTE_NAME).read_text(encoding="utf-8")
     assert note == render_markdown(rows, summary)
     assert "October 2025" in note
+    assert "hypothesis h2" in note.lower()
     assert "45.62" in note
+    assert "2008-10-01" in note and "2009-10-01" in note
+    assert "2020-03-01" in note and "2020-04-01" in note
+    assert "2022-06-01" in note and "2026-08-01" in note
     assert "not a methodology version" in note.lower() or "not a methodology version" in note
     # v1 crisis CSVs are not rewritten by the v2 row builder.
     partial = (OUTPUT_DIR / "replay_partial.csv").read_text(encoding="utf-8")

@@ -1,0 +1,46 @@
+scenario,scenario_label,window,months_scored,min_index,min_date,max_index,max_date,high,moderate,low,critical
+v1_partial,"v1.0.0 partial (crime, homelessness, trust excluded)",2008,25,55.17,2009-12-01,64.40,2008-12-01,0,25,0,0
+v1_partial,"v1.0.0 partial (crime, homelessness, trust excluded)",2020,12,45.51,2020-04-01,60.48,2020-03-01,0,5,7,0
+v1_partial,"v1.0.0 partial (crime, homelessness, trust excluded)",recent,56,38.72,2025-10-01,65.14,2025-04-01,0,43,12,1
+v1_held,v1.0.0 held constant (2723 / 0.23 / 41),2008,25,56.90,2009-12-01,61.90,2008-12-01,0,25,0,0
+v1_held,v1.0.0 held constant (2723 / 0.23 / 41),2020,12,51.67,2020-04-01,59.78,2020-03-01,0,8,4,0
+v1_held,v1.0.0 held constant (2723 / 0.23 / 41),recent,56,53.55,2025-10-01,61.74,2025-04-01,0,55,1,0
+v1_held_without_debt,"v1.0.0 held, debt removed",2008,25,56.69,2009-12-01,61.78,2009-07-01,0,25,0,0
+v1_held_without_debt,"v1.0.0 held, debt removed",2020,12,55.27,2020-04-01,62.41,2020-03-01,0,12,0,0
+v1_held_without_debt,"v1.0.0 held, debt removed",recent,56,55.56,2022-06-01,61.74,2025-04-01,0,56,0,0
+v1_held_without_homelessness,"v1.0.0 held, homelessness removed",2008,25,57.32,2009-12-01,63.03,2008-12-01,0,25,0,0
+v1_held_without_homelessness,"v1.0.0 held, homelessness removed",2020,12,51.34,2020-04-01,60.60,2020-03-01,0,9,3,0
+v1_held_without_homelessness,"v1.0.0 held, homelessness removed",recent,56,53.44,2025-10-01,63.10,2025-04-01,0,55,1,0
+v1_held_without_trust,"v1.0.0 held, trust removed",2008,25,58.03,2009-12-01,64.03,2008-12-01,0,25,0,0
+v1_held_without_trust,"v1.0.0 held, trust removed",2020,12,51.75,2020-04-01,61.48,2020-03-01,0,9,3,0
+v1_held_without_trust,"v1.0.0 held, trust removed",recent,56,54.39,2025-10-01,64.36,2025-04-01,0,55,1,0
+v1_partial_without_debt,"v1.0.0 partial, debt also removed",2008,25,53.92,2009-12-01,65.24,2009-07-01,0,24,1,0
+v1_partial_without_debt,"v1.0.0 partial, debt also removed",2020,12,50.77,2020-04-01,66.64,2020-03-01,0,10,2,0
+v1_partial_without_debt,"v1.0.0 partial, debt also removed",recent,55,51.42,2022-06-01,65.14,2025-04-01,0,45,10,0
+v2,v2 candidate h2 (crime trial when the RTCI month exists),2008,25,50.79,2008-10-01,70.26,2008-05-01,1,22,2,0
+v2,v2 candidate h2 (crime trial when the RTCI month exists),2020,12,44.34,2020-04-01,77.91,2020-01-01,2,8,2,0
+v2,v2 candidate h2 (crime trial when the RTCI month exists),recent,56,59.19,2022-06-01,80.82,2025-10-01,41,15,0,0
+v2_without_crime,v2 candidate h2 with crime always excluded,2008,25,50.79,2008-10-01,70.26,2008-05-01,1,22,2,0
+v2_without_crime,v2 candidate h2 with crime always excluded,2020,12,37.56,2020-04-01,79.62,2020-01-01,2,6,3,1
+v2_without_crime,v2 candidate h2 with crime always excluded,recent,56,56.19,2022-06-01,85.30,2025-10-01,41,15,0,0
+v2_if_unrate,v2 h2 basket with UNRATE instead of the labor composite,2008,25,49.36,2008-10-01,69.40,2009-09-01,0,23,2,0
+v2_if_unrate,v2 h2 basket with UNRATE instead of the labor composite,2020,12,54.60,2020-04-01,75.54,2020-01-01,2,9,1,0
+v2_if_unrate,v2 h2 basket with UNRATE instead of the labor composite,recent,56,59.19,2022-10-01,80.82,2025-10-01,38,18,0,0
+v2_if_epop_only,v2 h2 basket with prime-age EPOP instead of the composite,2008,25,49.47,2008-10-01,68.89,2008-05-01,0,22,3,0
+v2_if_epop_only,v2 h2 basket with prime-age EPOP instead of the composite,2020,12,45.78,2020-04-01,76.86,2020-01-01,2,8,2,0
+v2_if_epop_only,v2 h2 basket with prime-age EPOP instead of the composite,recent,56,58.83,2022-06-01,80.82,2025-10-01,40,16,0,0
+v2_if_debt_included,v2 h2 basket plus debt-to-GDP at weight 0.12,2008,25,52.43,2008-10-01,69.97,2008-05-01,0,23,2,0
+v2_if_debt_included,v2 h2 basket plus debt-to-GDP at weight 0.12,2020,12,43.19,2020-04-01,74.56,2020-01-01,2,7,3,0
+v2_if_debt_included,v2 h2 basket plus debt-to-GDP at weight 0.12,recent,56,59.19,2022-06-01,79.03,2024-07-01,41,15,0,0
+v2_if_crime_held,v2 h2 basket with crime held at the locked 2723,2008,25,54.70,2008-10-01,70.28,2008-05-01,1,23,1,0
+v2_if_crime_held,v2 h2 basket with crime held at the locked 2723,2020,12,44.12,2020-04-01,77.77,2020-01-01,2,8,2,0
+v2_if_crime_held,v2 h2 basket with crime held at the locked 2723,recent,56,59.02,2022-06-01,78.48,2024-07-01,41,15,0,0
+v2_if_housing,v2 h2 basket plus mortgage delinquency at weight 0.12,2008,25,50.57,2008-10-01,71.21,2007-12-01,3,16,6,0
+v2_if_housing,v2 h2 basket plus mortgage delinquency at weight 0.12,2020,12,48.80,2020-04-01,78.97,2020-01-01,2,9,1,0
+v2_if_housing,v2 h2 basket plus mortgage delinquency at weight 0.12,recent,56,62.63,2022-06-01,83.82,2025-10-01,42,14,0,0
+v2_if_consumer_credit,v2 h2 basket plus credit-card delinquency at weight 0.12,2008,25,48.56,2008-10-01,66.99,2007-12-01,0,18,7,0
+v2_if_consumer_credit,v2 h2 basket plus credit-card delinquency at weight 0.12,2020,12,48.08,2020-04-01,77.69,2020-01-01,2,8,2,0
+v2_if_consumer_credit,v2 h2 basket plus credit-card delinquency at weight 0.12,recent,56,62.03,2022-10-01,78.65,2025-10-01,41,15,0,0
+v2_if_housing_and_consumer,v2 h2 basket plus mortgage and credit-card delinquency,2008,25,48.62,2008-10-01,68.60,2007-12-01,0,15,10,0
+v2_if_housing_and_consumer,v2 h2 basket plus mortgage and credit-card delinquency,2020,12,51.75,2020-04-01,78.66,2020-01-01,2,9,1,0
+v2_if_housing_and_consumer,v2 h2 basket plus mortgage and credit-card delinquency,recent,56,65.01,2022-10-01,81.49,2025-10-01,43,13,0,0

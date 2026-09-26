@@ -35,3 +35,12 @@ v2_if_debt_included,v2 h2 basket plus debt-to-GDP at weight 0.12,recent,56,59.19
 v2_if_crime_held,v2 h2 basket with crime held at the locked 2723,2008,25,54.70,2008-10-01,70.28,2008-05-01,1,23,1,0
 v2_if_crime_held,v2 h2 basket with crime held at the locked 2723,2020,12,44.12,2020-04-01,77.77,2020-01-01,2,8,2,0
 v2_if_crime_held,v2 h2 basket with crime held at the locked 2723,recent,56,59.02,2022-06-01,78.48,2024-07-01,41,15,0,0
+v2_if_housing,v2 h2 basket plus mortgage delinquency at weight 0.12,2008,25,50.57,2008-10-01,71.21,2007-12-01,3,16,6,0
+v2_if_housing,v2 h2 basket plus mortgage delinquency at weight 0.12,2020,12,48.80,2020-04-01,78.97,2020-01-01,2,9,1,0
+v2_if_housing,v2 h2 basket plus mortgage delinquency at weight 0.12,recent,56,62.63,2022-06-01,83.82,2025-10-01,42,14,0,0
+v2_if_consumer_credit,v2 h2 basket plus credit-card delinquency at weight 0.12,2008,25,48.56,2008-10-01,66.99,2007-12-01,0,18,7,0
+v2_if_consumer_credit,v2 h2 basket plus credit-card delinquency at weight 0.12,2020,12,48.08,2020-04-01,77.69,2020-01-01,2,8,2,0
+v2_if_consumer_credit,v2 h2 basket plus credit-card delinquency at weight 0.12,recent,56,62.03,2022-10-01,78.65,2025-10-01,41,15,0,0
+v2_if_housing_and_consumer,v2 h2 basket plus mortgage and credit-card delinquency,2008,25,48.62,2008-10-01,68.60,2007-12-01,0,15,10,0
+v2_if_housing_and_consumer,v2 h2 basket plus mortgage and credit-card delinquency,2020,12,51.75,2020-04-01,78.66,2020-01-01,2,9,1,0
+v2_if_housing_and_consumer,v2 h2 basket plus mortgage and credit-card delinquency,recent,56,65.01,2022-10-01,81.49,2025-10-01,43,13,0,0

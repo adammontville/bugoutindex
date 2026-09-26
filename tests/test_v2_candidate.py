@@ -118,6 +118,28 @@ def test_crime_trial_does_not_replace_the_lock_and_does_not_cover_2008():
     assert PUBLISHED_INCIDENT_RATE == 2723.0
 
 
+def test_household_side_columns_stay_off_the_primary_and_the_live_path():
+    rows = _by_date(build_v2_rows())
+    august = rows["2026-08-01"]
+    assert august["v2_housing_status"] == "carried_forward"
+    assert august["v2_consumer_credit_status"] == "carried_forward"
+    assert august["v2_housing_observation_date"] == "2026-04-01"
+    assert august["v2_housing_delinquency"] == 1.86
+    assert august["v2_consumer_credit_delinquency"] == 2.85
+    assert "housing_delinquency" not in august["v2_inputs_present"]
+    assert august["v2_if_housing_index"] != august["v2_index"]
+    october = rows["2009-10-01"]
+    assert october["v2_housing_status"] == "observed"
+    assert october["v2_housing_observation_date"] == "2009-10-01"
+    assert october["v2_if_housing_and_consumer_index"] < october["v2_index"]
+    april = rows["2020-04-01"]
+    assert april["v2_housing_status"] == "observed"
+    assert rows["2008-10-01"]["v2_incident_status"] == "excluded"
+    formula = (ROOT / "runtime" / "processing" / "formula.py").read_text(encoding="utf-8")
+    assert "DRSFRMACBS" not in formula
+    assert "DRCCLACBS" not in formula
+
+
 def test_october_2025_gap_is_not_filled_in():
     october = _by_date(build_v2_rows())["2025-10-01"]
     assert october["v2_inflation_rate"] is None
@@ -199,6 +221,8 @@ def test_committed_v2_tables_match_the_harness():
     assert note == render_markdown(rows, summary)
     assert "October 2025" in note
     assert "hypothesis h2" in note.lower()
+    assert "DRSFRMACBS" in note
+    assert "DRCCLACBS" in note
     assert "45.62" in note
     assert "2008-10-01" in note and "2009-10-01" in note
     assert "2020-03-01" in note and "2020-04-01" in note

@@ -74,11 +74,19 @@ TRIAL_RANGES = {
     "incident_rate": (500.0, 8000.0),
     "unemployment_rate": (0.0, 25.0),
     "debt_to_gdp_ratio": (0.0, 200.0),
+    # Side-column hypotheses. Sample in this pull: housing 1.41–11.48,
+    # card delinquency 1.53–6.77. The ranges leave those peaks short of a
+    # hard floor and the troughs short of fully stable.
+    "housing_delinquency": (1.0, 12.0),
+    "consumer_credit_delinquency": (1.0, 8.0),
 }
 INVERSE = frozenset({"labor_utilization", "prime_age_epop"})
 LABOR_EPOP_WEIGHT = 0.70
 LABOR_LFPR_WEIGHT = 0.30
 DEBT_SENSITIVITY_WEIGHT = 0.12
+# Side columns only. They are not in TRIAL_WEIGHTS and not in the h2 primary.
+HOUSING_STRESS_WEIGHT = 0.12
+CONSUMER_CREDIT_WEIGHT = 0.12
 LABOR_SLOT_WEIGHT = TRIAL_WEIGHTS["labor_utilization"]
 
 RECENT_WINDOW = Window(
@@ -127,6 +135,15 @@ SUMMARY_SCENARIOS = (
     ("v2_if_epop_only", "v2 h2 basket with prime-age EPOP instead of the composite"),
     ("v2_if_debt_included", "v2 h2 basket plus debt-to-GDP at weight 0.12"),
     ("v2_if_crime_held", "v2 h2 basket with crime held at the locked 2723"),
+    ("v2_if_housing", "v2 h2 basket plus mortgage delinquency at weight 0.12"),
+    (
+        "v2_if_consumer_credit",
+        "v2 h2 basket plus credit-card delinquency at weight 0.12",
+    ),
+    (
+        "v2_if_housing_and_consumer",
+        "v2 h2 basket plus mortgage and credit-card delinquency",
+    ),
 )
 
 KEY_MONTHS = (
@@ -162,6 +179,13 @@ H1_COMPARE_MONTHS = (
     "2008-10-01",
     "2009-10-01",
     "2020-03-01",
+    "2020-04-01",
+    "2022-06-01",
+    "2026-08-01",
+)
+HOUSEHOLD_COMPARE_MONTHS = (
+    "2008-10-01",
+    "2009-10-01",
     "2020-04-01",
     "2022-06-01",
     "2026-08-01",
@@ -245,7 +269,26 @@ def load_v2_bundle(directory: Optional[Path] = None) -> dict:
         "vix": vix_rows,
         "crime": crime,
         "extra_debt": extra_debt,
+        "housing_delinquency": _as_float_map(_load_text_series(folder / "DRSFRMACBS.csv")),
+        "consumer_credit_delinquency": _as_float_map(
+            _load_text_series(folder / "DRCCLACBS.csv")
+        ),
     }
+
+
+def quarterly_asof(series: Mapping[str, float], day: str) -> tuple[Optional[float], str, str]:
+    """Latest quarterly print on or before ``day``.
+
+    Same rule as the debt column: the quarter-start month is ``observed``.
+    Later months keep that print as ``carried_forward``. A month before the
+    first print is ``excluded``. This is not an interpolation.
+    """
+    available = [stamp for stamp in series if stamp <= day]
+    if not available:
+        return None, "excluded", ""
+    chosen = max(available)
+    status = "observed" if chosen == day else "carried_forward"
+    return series[chosen], status, chosen
 
 
 def recent_debt_map(fixture_debt: Mapping[str, float], extra_debt: Mapping[str, float]) -> dict[str, float]:
@@ -385,6 +428,10 @@ def _weights_for(order: Sequence[str], labor_name: str = "labor_utilization") ->
             weights[name] = LABOR_SLOT_WEIGHT
         elif name == "debt_to_gdp_ratio":
             weights[name] = DEBT_SENSITIVITY_WEIGHT
+        elif name == "housing_delinquency":
+            weights[name] = HOUSING_STRESS_WEIGHT
+        elif name == "consumer_credit_delinquency":
+            weights[name] = CONSUMER_CREDIT_WEIGHT
         else:
             weights[name] = TRIAL_WEIGHTS[name]
     return weights
@@ -428,6 +475,23 @@ def build_v2_rows(bundle: Optional[Mapping] = None, fixture: Optional[FredLevels
             debt_values = dict(parts)
             debt_values["debt_to_gdp_ratio"] = debt_raw
             if_debt = score_basket(debt_values, debt_order, _weights_for(debt_order))
+            housing_raw, housing_status, housing_date = quarterly_asof(
+                bundle["housing_delinquency"], day
+            )
+            credit_raw, credit_status, credit_date = quarterly_asof(
+                bundle["consumer_credit_delinquency"], day
+            )
+            parts["housing_delinquency"] = housing_raw
+            parts["consumer_credit_delinquency"] = credit_raw
+            housing_order = PRIMARY_ORDER + ("housing_delinquency",)
+            credit_order = PRIMARY_ORDER + ("consumer_credit_delinquency",)
+            both_order = PRIMARY_ORDER + (
+                "housing_delinquency",
+                "consumer_credit_delinquency",
+            )
+            if_housing = score_basket(parts, housing_order, _weights_for(housing_order))
+            if_credit = score_basket(parts, credit_order, _weights_for(credit_order))
+            if_both = score_basket(parts, both_order, _weights_for(both_order))
             held_crime_values = dict(parts)
             held_crime_values["incident_rate"] = float(PUBLISHED_INCIDENT_RATE)
             if_crime_held = score_basket(
@@ -527,6 +591,18 @@ def build_v2_rows(bundle: Optional[Mapping] = None, fixture: Optional[FredLevels
                     "v2_if_debt_included_band": if_debt["band"],
                     "v2_if_crime_held_index": if_crime_held["index"],
                     "v2_if_crime_held_band": if_crime_held["band"],
+                    "v2_housing_delinquency": housing_raw,
+                    "v2_housing_status": housing_status,
+                    "v2_housing_observation_date": housing_date,
+                    "v2_if_housing_index": if_housing["index"],
+                    "v2_if_housing_band": if_housing["band"],
+                    "v2_consumer_credit_delinquency": credit_raw,
+                    "v2_consumer_credit_status": credit_status,
+                    "v2_consumer_credit_observation_date": credit_date,
+                    "v2_if_consumer_credit_index": if_credit["index"],
+                    "v2_if_consumer_credit_band": if_credit["band"],
+                    "v2_if_housing_and_consumer_index": if_both["index"],
+                    "v2_if_housing_and_consumer_band": if_both["band"],
                     "score_note": SCORE_NOTE,
                 }
             )
@@ -587,6 +663,18 @@ COLUMNS = (
     "v2_if_debt_included_band",
     "v2_if_crime_held_index",
     "v2_if_crime_held_band",
+    "v2_housing_delinquency",
+    "v2_housing_status",
+    "v2_housing_observation_date",
+    "v2_if_housing_index",
+    "v2_if_housing_band",
+    "v2_consumer_credit_delinquency",
+    "v2_consumer_credit_status",
+    "v2_consumer_credit_observation_date",
+    "v2_if_consumer_credit_index",
+    "v2_if_consumer_credit_band",
+    "v2_if_housing_and_consumer_index",
+    "v2_if_housing_and_consumer_band",
     "score_note",
 )
 
@@ -609,6 +697,9 @@ _INDEX_COLUMNS = {
     "v2_if_epop_only_index",
     "v2_if_debt_included_index",
     "v2_if_crime_held_index",
+    "v2_if_housing_index",
+    "v2_if_consumer_credit_index",
+    "v2_if_housing_and_consumer_index",
 }
 _ONE_DECIMAL = {"v2_food_cpi_yoy"}
 _TWO_DECIMAL = {
@@ -617,6 +708,8 @@ _TWO_DECIMAL = {
     "v2_vix_month_max",
     "v2_incident_rate",
     "v2_incident_population_weighted",
+    "v2_housing_delinquency",
+    "v2_consumer_credit_delinquency",
 }
 
 
@@ -691,6 +784,9 @@ def summarize(rows: Sequence[Mapping[str, object]]) -> list[dict]:
         "v2_if_epop_only": "v2_if_epop_only_index",
         "v2_if_debt_included": "v2_if_debt_included_index",
         "v2_if_crime_held": "v2_if_crime_held_index",
+        "v2_if_housing": "v2_if_housing_index",
+        "v2_if_consumer_credit": "v2_if_consumer_credit_index",
+        "v2_if_housing_and_consumer": "v2_if_housing_and_consumer_index",
     }
     band_of = {key: column.replace("_index", "_band") for key, column in index_of.items()}
     summary = []
@@ -857,21 +953,45 @@ def render_markdown(rows: Sequence[Mapping[str, object]], summary: Sequence[Mapp
         return f"{_num(row[index_key])} {_short_band(row[band_key])}"
 
     key_lines = [
-        "| Month | Why it is here | v1 partial | v1 held | v2 candidate | v2, crime off | v2, UNRATE instead | v2, debt added |",
-        "| --- | --- | --- | --- | --- | --- | --- | --- |",
+        "| Month | Why it is here | v1 held | h2 | h2, crime off | h2 + housing | h2 + consumer credit | h2 + both | v2, UNRATE instead | v2, debt added |",
+        "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |",
     ]
     for day, reason in KEY_MONTHS:
         row = by_date[day]
         key_lines.append(
-            "| {day} | {reason} | {p} | {h} | {v} | {c} | {u} | {d} |".format(
+            "| {day} | {reason} | {h} | {v} | {c} | {hs} | {cc} | {both} | {u} | {d} |".format(
                 day=day,
                 reason=reason,
-                p=cell(row, "v1_partial_index"),
                 h=cell(row, "v1_held_index"),
                 v=cell(row, "v2_index"),
                 c=cell(row, "v2_without_crime_index"),
+                hs=cell(row, "v2_if_housing_index"),
+                cc=cell(row, "v2_if_consumer_credit_index"),
+                both=cell(row, "v2_if_housing_and_consumer_index"),
                 u=cell(row, "v2_if_unrate_index"),
                 d=cell(row, "v2_if_debt_included_index"),
+            )
+        )
+    household_lines = [
+        "| Month | Mortgage % | Mortgage as-of | Card % | Card as-of | h2 | + housing | + consumer | + both |",
+        "| --- | --- | --- | --- | --- | --- | --- | --- | --- |",
+    ]
+    for day in HOUSEHOLD_COMPARE_MONTHS:
+        row = by_date[day]
+        household_lines.append(
+            "| {day} | {hv} | {hs} | {cv} | {cs} | {v} | {vh} | {vc} | {vb} |".format(
+                day=day,
+                hv=_num(row["v2_housing_delinquency"]),
+                hs=f"{row['v2_housing_observation_date']} {row['v2_housing_status']}",
+                cv=_num(row["v2_consumer_credit_delinquency"]),
+                cs=(
+                    f"{row['v2_consumer_credit_observation_date']} "
+                    f"{row['v2_consumer_credit_status']}"
+                ),
+                v=cell(row, "v2_index"),
+                vh=cell(row, "v2_if_housing_index"),
+                vc=cell(row, "v2_if_consumer_credit_index"),
+                vb=cell(row, "v2_if_housing_and_consumer_index"),
             )
         )
 
@@ -1075,6 +1195,7 @@ When an input is missing, its weight drops out and the denominator shrinks. The 
 Demoted from the v2 primary, on purpose, so the side-by-side can be discussed:
 
 - **Debt-to-GDP** is out of the primary. The sensitivity `v2_if_debt_included` adds it back at the v1 raw weight **0.12** and the v1 endpoints (0 to 200).
+- **Mortgage delinquency** and **credit-card delinquency** are out of the primary. They are side columns (`v2_if_housing`, `v2_if_consumer_credit`, `v2_if_housing_and_consumer`) at trial weight 0.12 each. They answer a coverage question. They do not replace h2.
 - **Homelessness** and **Edelman trust** are out of every v2 column. There is still no monthly history. The "if removed" columns are the locked formula with that held-constant input left out.
 - **UNRATE alone** is not the v2 labor input. `v2_if_unrate` puts headline unemployment back in the labor slot (v1 range 0 to 25, weight {TRIAL_WEIGHTS['labor_utilization']:.2f}) so the composite can be compared with the series it would replace.
 - **`v2_if_epop_only`** uses prime-age EPOP alone (hypothesis range 68 to 82) instead of the 0.70/0.30 blend.
@@ -1096,7 +1217,28 @@ Band counts use the v1.0.0 thresholds on whatever number that column produced. A
 
 ### Key months
 
+h2 is still the primary candidate. `v2_if_housing`, `v2_if_consumer_credit`, and `v2_if_housing_and_consumer` are side columns for the coverage question “August 2026 High feels wrong.” They are not a new primary basket and they are not in the live score. UNRATE-instead and debt-added stay in this table; v1 partial stays in the monthly CSV.
+
 {chr(10).join(key_lines)}
+
+### Household stress side columns
+
+These two series are household payment difficulty, not corporate credit spreads. The public FRED graph CSV did not return a body on this pull. The levels are the Federal Reserve Board charge-off and delinquency release (CHGDEL), the release FRED uses for these series, downloaded 2026-09-26. The package observations run through 2026-06-30. Each print is stored on the quarter-start month. Later months in the harness use that print as `carried_forward`, the same rule as debt-to-GDP. A month with no print on or before it would drop the weight. None of the three windows are in that state.
+
+| Series | FRED id | What it measures | Frequency | Trial weight | Trial range |
+| --- | --- | --- | --- | --- | --- |
+| Mortgage delinquency | `DRSFRMACBS` | Delinquency rate on loans secured by one- to four-family residential property, including home-equity lines, all commercial banks, seasonally adjusted, percent. Fed table column “Residential,” booked in domestic offices. | Quarterly | {HOUSING_STRESS_WEIGHT:.2f} | 1 to 12 |
+| Credit-card delinquency | `DRCCLACBS` | Delinquency rate on consumer credit card loans, all commercial banks, seasonally adjusted, percent. Issue #48. Not a bond spread. | Quarterly | {CONSUMER_CREDIT_WEIGHT:.2f} | 1 to 8 |
+
+Higher delinquency is less stable. This pull’s sample runs from 1991 Q1 through 2026 Q2: mortgage delinquency 1.41 to 11.48, card delinquency 1.53 to 6.77. The ranges leave those peaks short of a hard floor. Weight 0.12 matches the debt side column. It is a hypothesis, not a fitted share of h2.
+
+{chr(10).join(household_lines)}
+
+August 2026 is **{cell(aug_2026, 'v2_index')}** on h2, **{cell(aug_2026, 'v2_if_housing_index')}** with mortgage delinquency, **{cell(aug_2026, 'v2_if_consumer_credit_index')}** with card delinquency, and **{cell(aug_2026, 'v2_if_housing_and_consumer_index')}** with both. The rates that month are the 2026 Q2 prints carried forward ({_num(aug_2026['v2_housing_delinquency'])}% mortgages, {_num(aug_2026['v2_consumer_credit_delinquency'])}% cards, observation {aug_2026['v2_housing_observation_date']}). There is no 2026 Q3 print in this file. Mortgage delinquency is near the calm end of the sample, so adding it does not pull August toward Moderate. Card delinquency is above its trough and far below the 2009 peak, and the 0.12 weight does not move August out of High either.
+
+October 2009 is where the mortgage series does the work h2’s labor blend did not. Mortgage delinquency is {_num(oct_2009['v2_housing_delinquency'])}% and card delinquency is {_num(oct_2009['v2_consumer_credit_delinquency'])}%. h2 is **{cell(oct_2009, 'v2_index')}**. With both side series it is **{cell(oct_2009, 'v2_if_housing_and_consumer_index')}**. October 2008 is already a VIX Low on h2 (**{cell(oct_2008, 'v2_index')}**); adding both household series scores **{cell(oct_2008, 'v2_if_housing_and_consumer_index')}**.
+
+April 2020 is the opposite case. Bank delinquency was low while prime-age employment had already broken, which is what forbearance does to this series. h2 is **{cell(april, 'v2_index')}**. With both household series it is **{cell(april, 'v2_if_housing_and_consumer_index')}**. These columns do not mark the COVID labor trough.
 
 ### Inputs behind those months
 
@@ -1135,8 +1277,8 @@ UNRATE remains the v1 labor input. The composite is lower in April 2020 than a c
 ## What still blocks a v2.0 contract
 
 - These weights and ranges are hypothesis h2. They were not fit to a loss, a utility function, or a decision threshold. h1 is the prior labeled basket, not a rejected contract.
-- Housing payment stress is not in the replay. No mortgage, rent-burden, or housing-delinquency series is fetched.
-- Credit spreads are not in the replay. VIX is an equity-volatility index, not a credit spread. Card delinquency (`DRCCLACBS`, issue #48) is still outside the score and is not in this basket.
+- Rent burden, a household survey of missed housing payments, and anything after 2026 Q2 are not in the replay. The housing side column is bank delinquency on one- to four-family loans (`DRSFRMACBS`), carried forward from the latest quarter. It is not in the h2 primary and not in the live score.
+- Corporate credit spreads are not in the replay. VIX is an equity-volatility index, not a credit spread. Card delinquency (`DRCCLACBS`, issue #48) is a side column only. It is not a BBB or high-yield OAS series, and it is not in the h2 primary.
 - The labor composite is not the incubating participation penalty. That penalty still has no formula. The h2 band 72–82 is a tighter hypothesis range, not that penalty.
 - The h2 food range {food_lo_txt} to {food_hi_txt} is still a draft. Prints outside it still clamp. h1's 0–10 range is what clamped the 2022 peak at fully unstable and mild deflation at fully stable.
 - Crime has no fair 2008 path from RTCI. The published input remains locked at 2723. Agency coverage and the 12-month RTCI definition are not a national historical crime rate.

@@ -46,6 +46,7 @@ When an input is missing, its weight drops out and the denominator shrinks. The 
 Demoted from the v2 primary, on purpose, so the side-by-side can be discussed:
 
 - **Debt-to-GDP** is out of the primary. The sensitivity `v2_if_debt_included` adds it back at the v1 raw weight **0.12** and the v1 endpoints (0 to 200).
+- **Mortgage delinquency** and **credit-card delinquency** are out of the primary. They are side columns (`v2_if_housing`, `v2_if_consumer_credit`, `v2_if_housing_and_consumer`) at trial weight 0.12 each. They answer a coverage question. They do not replace h2.
 - **Homelessness** and **Edelman trust** are out of every v2 column. There is still no monthly history. The "if removed" columns are the locked formula with that held-constant input left out.
 - **UNRATE alone** is not the v2 labor input. `v2_if_unrate` puts headline unemployment back in the labor slot (v1 range 0 to 25, weight 0.30) so the composite can be compared with the series it would replace.
 - **`v2_if_epop_only`** uses prime-age EPOP alone (hypothesis range 68 to 82) instead of the 0.70/0.30 blend.
@@ -84,22 +85,49 @@ Band counts use the v1.0.0 thresholds on whatever number that column produced. A
 
 ### Key months
 
-| Month | Why it is here | v1 partial | v1 held | v2 candidate | v2, crime off | v2, UNRATE instead | v2, debt added |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| 2007-12-01 | Great Recession window starts | 62.49 Moderate | 60.87 Moderate | 69.75 Moderate | 69.75 Moderate | 67.05 Moderate | 69.61 Moderate |
-| 2008-10-01 | VIX monthly mean jumps | 59.61 Moderate | 59.31 Moderate | 50.79 Low | 50.79 Low | 49.36 Low | 52.43 Low |
-| 2008-11-01 | VIX monthly-mean peak in this pull | 63.29 Moderate | 61.30 Moderate | 52.40 Low | 52.40 Low | 51.31 Low | 53.83 Low |
-| 2009-10-01 | UNRATE peak in the locked vintage (10.0) | 59.72 Moderate | 59.37 Moderate | 65.79 Moderate | 65.79 Moderate | 68.60 Moderate | 64.77 Moderate |
-| 2009-12-01 | Great Recession window ends | 55.17 Moderate | 56.90 Moderate | 62.65 Moderate | 62.65 Moderate | 66.70 Moderate | 62.05 Moderate |
-| 2020-01-01 | Pre-COVID month | 59.76 Moderate | 59.39 Moderate | 77.91 High | 79.62 High | 75.54 High | 74.56 High |
-| 2020-03-01 | COVID VIX monthly-mean peak | 60.48 Moderate | 59.78 Moderate | 62.82 Moderate | 60.76 Moderate | 62.64 Moderate | 61.08 Moderate |
-| 2020-04-01 | COVID unemployment and prime-age EPOP trough | 45.51 Low | 51.67 Low | 44.34 Low | 37.56 Critical | 54.60 Low | 43.19 Low |
-| 2020-12-01 | COVID window ends | 55.01 Moderate | 56.82 Moderate | 64.40 Moderate | 62.39 Moderate | 68.93 Moderate | 61.48 Moderate |
-| 2022-06-01 | Food CPI year-over-year 10.4 (inside h2; a hard floor under h1) | 51.42 Low | 55.56 Moderate | 59.19 Moderate | 56.19 Moderate | 59.22 Moderate | 59.19 Moderate |
-| 2022-09-01 | Food CPI year-over-year high in this pull | 53.35 Low | 56.43 Moderate | 60.44 Moderate | 57.86 Moderate | 59.48 Moderate | 60.44 Moderate |
-| 2025-10-01 | BLS publication gap in this pull | 38.72 Critical | 53.55 Low | 80.82 High | 85.30 High | 80.82 High | 70.30 High |
-| 2026-04-01 | Last month in the RTCI trial file | 54.65 Low | 56.62 Moderate | 76.53 High | 75.91 High | 72.48 High | 72.48 High |
-| 2026-08-01 | Latest headline CPI month; locked-score inputs | 55.55 Moderate | 57.11 Moderate | 77.28 High | 77.28 High | 73.76 High | 72.25 High |
+h2 is still the primary candidate. `v2_if_housing`, `v2_if_consumer_credit`, and `v2_if_housing_and_consumer` are side columns for the coverage question “August 2026 High feels wrong.” They are not a new primary basket and they are not in the live score. UNRATE-instead and debt-added stay in this table; v1 partial stays in the monthly CSV.
+
+| Month | Why it is here | v1 held | h2 | h2, crime off | h2 + housing | h2 + consumer credit | h2 + both | v2, UNRATE instead | v2, debt added |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 2007-12-01 | Great Recession window starts | 60.87 Moderate | 69.75 Moderate | 69.75 Moderate | 71.21 High | 66.99 Moderate | 68.60 Moderate | 67.05 Moderate | 69.61 Moderate |
+| 2008-10-01 | VIX monthly mean jumps | 59.31 Moderate | 50.79 Low | 50.79 Low | 50.57 Low | 48.56 Low | 48.62 Low | 49.36 Low | 52.43 Low |
+| 2008-11-01 | VIX monthly-mean peak in this pull | 61.30 Moderate | 52.40 Low | 52.40 Low | 51.97 Low | 49.96 Low | 49.86 Low | 51.31 Low | 53.83 Low |
+| 2009-10-01 | UNRATE peak in the locked vintage (10.0) | 59.37 Moderate | 65.79 Moderate | 65.79 Moderate | 59.09 Moderate | 60.32 Moderate | 55.03 Moderate | 68.60 Moderate | 64.77 Moderate |
+| 2009-12-01 | Great Recession window ends | 56.90 Moderate | 62.65 Moderate | 62.65 Moderate | 56.37 Moderate | 57.59 Moderate | 52.62 Low | 66.70 Moderate | 62.05 Moderate |
+| 2020-01-01 | Pre-COVID month | 59.39 Moderate | 77.91 High | 79.62 High | 78.97 High | 77.69 High | 78.66 High | 75.54 High | 74.56 High |
+| 2020-03-01 | COVID VIX monthly-mean peak | 59.78 Moderate | 62.82 Moderate | 60.76 Moderate | 65.49 Moderate | 64.21 Moderate | 66.49 Moderate | 62.64 Moderate | 61.08 Moderate |
+| 2020-04-01 | COVID unemployment and prime-age EPOP trough | 51.67 Low | 44.34 Low | 37.56 Critical | 48.80 Low | 48.08 Low | 51.75 Low | 54.60 Low | 43.19 Low |
+| 2020-12-01 | COVID window ends | 56.82 Moderate | 64.40 Moderate | 62.39 Moderate | 66.51 Moderate | 66.53 Moderate | 68.23 Moderate | 68.93 Moderate | 61.48 Moderate |
+| 2022-06-01 | Food CPI year-over-year 10.4 (inside h2; a hard floor under h1) | 55.56 Moderate | 59.19 Moderate | 56.19 Moderate | 62.63 Moderate | 62.29 Moderate | 65.10 Moderate | 59.22 Moderate | 59.19 Moderate |
+| 2022-09-01 | Food CPI year-over-year high in this pull | 56.43 Moderate | 60.44 Moderate | 57.86 Moderate | 63.86 Moderate | 63.07 Moderate | 65.90 Moderate | 59.48 Moderate | 60.44 Moderate |
+| 2025-10-01 | BLS publication gap in this pull | 53.55 Low | 80.82 High | 85.30 High | 83.82 High | 78.65 High | 81.49 High | 80.82 High | 70.30 High |
+| 2026-04-01 | Last month in the RTCI trial file | 56.62 Moderate | 76.53 High | 75.91 High | 78.21 High | 76.21 High | 77.76 High | 72.48 High | 72.48 High |
+| 2026-08-01 | Latest headline CPI month; locked-score inputs | 57.11 Moderate | 77.28 High | 77.28 High | 79.23 High | 76.80 High | 78.57 High | 73.76 High | 72.25 High |
+
+### Household stress side columns
+
+These two series are household payment difficulty, not corporate credit spreads. The public FRED graph CSV did not return a body on this pull. The levels are the Federal Reserve Board charge-off and delinquency release (CHGDEL), the release FRED uses for these series, downloaded 2026-09-26. The package observations run through 2026-06-30. Each print is stored on the quarter-start month. Later months in the harness use that print as `carried_forward`, the same rule as debt-to-GDP. A month with no print on or before it would drop the weight. None of the three windows are in that state.
+
+| Series | FRED id | What it measures | Frequency | Trial weight | Trial range |
+| --- | --- | --- | --- | --- | --- |
+| Mortgage delinquency | `DRSFRMACBS` | Delinquency rate on loans secured by one- to four-family residential property, including home-equity lines, all commercial banks, seasonally adjusted, percent. Fed table column “Residential,” booked in domestic offices. | Quarterly | 0.12 | 1 to 12 |
+| Credit-card delinquency | `DRCCLACBS` | Delinquency rate on consumer credit card loans, all commercial banks, seasonally adjusted, percent. Issue #48. Not a bond spread. | Quarterly | 0.12 | 1 to 8 |
+
+Higher delinquency is less stable. This pull’s sample runs from 1991 Q1 through 2026 Q2: mortgage delinquency 1.41 to 11.48, card delinquency 1.53 to 6.77. The ranges leave those peaks short of a hard floor. Weight 0.12 matches the debt side column. It is a hypothesis, not a fitted share of h2.
+
+| Month | Mortgage % | Mortgage as-of | Card % | Card as-of | h2 | + housing | + consumer | + both |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 2008-10-01 | 6.60 | 2008-10-01 observed | 5.64 | 2008-10-01 observed | 50.79 Low | 50.57 Low | 48.56 Low | 48.62 Low |
+| 2009-10-01 | 10.41 | 2009-10-01 observed | 6.33 | 2009-10-01 observed | 65.79 Moderate | 59.09 Moderate | 60.32 Moderate | 55.03 Moderate |
+| 2020-04-01 | 2.54 | 2020-04-01 observed | 2.45 | 2020-04-01 observed | 44.34 Low | 48.80 Low | 48.08 Low | 51.75 Low |
+| 2022-06-01 | 1.96 | 2022-04-01 carried_forward | 1.83 | 2022-04-01 carried_forward | 59.19 Moderate | 62.63 Moderate | 62.29 Moderate | 65.10 Moderate |
+| 2026-08-01 | 1.86 | 2026-04-01 carried_forward | 2.85 | 2026-04-01 carried_forward | 77.28 High | 79.23 High | 76.80 High | 78.57 High |
+
+August 2026 is **77.28 High** on h2, **79.23 High** with mortgage delinquency, **76.80 High** with card delinquency, and **78.57 High** with both. The rates that month are the 2026 Q2 prints carried forward (1.86% mortgages, 2.85% cards, observation 2026-04-01). There is no 2026 Q3 print in this file. Mortgage delinquency is near the calm end of the sample, so adding it does not pull August toward Moderate. Card delinquency is above its trough and far below the 2009 peak, and the 0.12 weight does not move August out of High either.
+
+October 2009 is where the mortgage series does the work h2’s labor blend did not. Mortgage delinquency is 10.41% and card delinquency is 6.33%. h2 is **65.79 Moderate**. With both side series it is **55.03 Moderate**. October 2008 is already a VIX Low on h2 (**50.79 Low**); adding both household series scores **48.62 Low**.
+
+April 2020 is the opposite case. Bank delinquency was low while prime-age employment had already broken, which is what forbearance does to this series. h2 is **44.34 Low**. With both household series it is **51.75 Low**. These columns do not mark the COVID labor trough.
 
 ### Inputs behind those months
 
@@ -153,8 +181,8 @@ UNRATE remains the v1 labor input. The composite is lower in April 2020 than a c
 ## What still blocks a v2.0 contract
 
 - These weights and ranges are hypothesis h2. They were not fit to a loss, a utility function, or a decision threshold. h1 is the prior labeled basket, not a rejected contract.
-- Housing payment stress is not in the replay. No mortgage, rent-burden, or housing-delinquency series is fetched.
-- Credit spreads are not in the replay. VIX is an equity-volatility index, not a credit spread. Card delinquency (`DRCCLACBS`, issue #48) is still outside the score and is not in this basket.
+- Rent burden, a household survey of missed housing payments, and anything after 2026 Q2 are not in the replay. The housing side column is bank delinquency on one- to four-family loans (`DRSFRMACBS`), carried forward from the latest quarter. It is not in the h2 primary and not in the live score.
+- Corporate credit spreads are not in the replay. VIX is an equity-volatility index, not a credit spread. Card delinquency (`DRCCLACBS`, issue #48) is a side column only. It is not a BBB or high-yield OAS series, and it is not in the h2 primary.
 - The labor composite is not the incubating participation penalty. That penalty still has no formula. The h2 band 72–82 is a tighter hypothesis range, not that penalty.
 - The h2 food range −2 to 15 is still a draft. Prints outside it still clamp. h1's 0–10 range is what clamped the 2022 peak at fully unstable and mild deflation at fully stable.
 - Crime has no fair 2008 path from RTCI. The published input remains locked at 2723. Agency coverage and the 12-month RTCI definition are not a national historical crime rate.

@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "methodology_version": "1.0.0",
-  "generated_at_utc": "2026-09-19T01:21:36+00:00",
-  "publication_date": "2026-09-19",
+  "generated_at_utc": "2026-09-26T01:46:31+00:00",
+  "publication_date": "2026-09-25",
   "bugout_index": 57.11,
   "interpretation": {
     "band": "Moderate Stability",
@@ -22,15 +22,28 @@
       "raw": 2723.0,
       "normalized": 70.36,
       "weight": 0.12,
-      "observation_date": "2024-09-30",
+      "observation_date": "2025-09-30",
       "source_fetched_at": null,
       "status": "success",
       "provenance": {
         "kind": "file",
-        "value_month": "September 2024",
-        "value_month_end": "2024-09-30",
-        "file_through": "December 2024",
-        "file_updated": "2025-02-19"
+        "value_month": "September 2025",
+        "value_month_end": "2025-09-30",
+        "file_through": "April 2026",
+        "file_updated": "2026-06-16",
+        "source_url": "https://raw.githubusercontent.com/AH-Datalytics/rtci/main/docs/app_data/final_sample.csv"
+      },
+      "diagnostics": {
+        "candidate_incident_rate": 2234.66,
+        "candidate_month": "September 2025",
+        "population_weighted_incident_rate": 2622.84,
+        "agencies": 621,
+        "published_incident_rate": 2723.0,
+        "index_input": false,
+        "latest_month": "April 2026",
+        "latest_month_incident_rate": 2074.97,
+        "latest_month_population_weighted_incident_rate": 2443.27,
+        "latest_month_agencies": 621
       }
     },
     "unemployment_rate": {
@@ -60,7 +73,9 @@
         "kind": "manual",
         "last_set": "2024 HUD AHAR",
         "observation_period": "January 2024 point-in-time count",
-        "reference_date": "2024-01-01"
+        "reference_date": "2024-01-01",
+        "source_url": "https://www.huduser.gov/portal/sites/default/files/pdf/2024-AHAR-Part-1.pdf",
+        "reviewed_at": "2025-03-13"
       }
     },
     "trust_in_government": {
@@ -72,34 +87,516 @@
       "status": "success",
       "provenance": {
         "kind": "annual",
-        "year": "2025"
+        "year": "2025",
+        "observation_period": "2025",
+        "source": "2025 Edelman Trust Barometer US Government",
+        "source_url": "https://www.edelman.com/trust-barometer",
+        "reviewed_at": "2025-03-13"
       }
     }
   },
   "markets": {
     "status": "success",
-    "fetched_at": "2026-09-19",
-    "gold_usd_per_oz": 4379.0,
-    "silver_usd_per_oz": 66.377,
-    "dxy": 118.2126
+    "fetched_at": "2026-09-26",
+    "gold_usd_per_oz": 4286.2002,
+    "silver_usd_per_oz": 64.419,
+    "dxy": 119.5133
   },
   "pulse": {
     "status": "success",
-    "fetched_at": "2026-09-18",
+    "fetched_at": "2026-09-25",
     "values": {
-      "initial_jobless_claims": 196000.0,
-      "consumer_sentiment_umich": 55.2,
+      "initial_jobless_claims": 197000.0,
+      "consumer_sentiment_umich": 51.7,
       "business_confidence": 98.96989,
-      "yield_curve_10y_2y": 0.25,
-      "vix": 15.44
+      "yield_curve_10y_2y": 0.36,
+      "vix": 14.21
     },
     "dates": {
-      "initial_jobless_claims": "2026-09-12",
-      "consumer_sentiment_umich": "2026-07-01",
+      "initial_jobless_claims": "2026-09-19",
+      "consumer_sentiment_umich": "2026-08-01",
       "business_confidence": "2024-01-01",
-      "yield_curve_10y_2y": "2026-09-18",
-      "vix": "2026-09-17"
+      "yield_curve_10y_2y": "2026-09-25",
+      "vix": "2026-09-22"
     }
+  },
+  "labor_shadow": {
+    "status": "success",
+    "in_bugout_index": false,
+    "series_ids": {
+      "prime_age_epop": "LNS12300060",
+      "prime_age_lfpr": "LNS11300060"
+    },
+    "values": {
+      "prime_age_epop": 80.4,
+      "prime_age_lfpr": 83.4
+    },
+    "dates": {
+      "prime_age_epop": "2026-08-01",
+      "prime_age_lfpr": "2026-08-01"
+    },
+    "observations": {
+      "prime_age_epop": [
+        {
+          "date": "2023-08-01",
+          "value": 80.8
+        },
+        {
+          "date": "2023-09-01",
+          "value": 80.8
+        },
+        {
+          "date": "2023-10-01",
+          "value": 80.7
+        },
+        {
+          "date": "2023-11-01",
+          "value": 80.8
+        },
+        {
+          "date": "2023-12-01",
+          "value": 80.5
+        },
+        {
+          "date": "2024-01-01",
+          "value": 80.6
+        },
+        {
+          "date": "2024-02-01",
+          "value": 80.7
+        },
+        {
+          "date": "2024-03-01",
+          "value": 80.7
+        },
+        {
+          "date": "2024-04-01",
+          "value": 80.8
+        },
+        {
+          "date": "2024-05-01",
+          "value": 80.8
+        },
+        {
+          "date": "2024-06-01",
+          "value": 80.7
+        },
+        {
+          "date": "2024-07-01",
+          "value": 80.9
+        },
+        {
+          "date": "2024-08-01",
+          "value": 80.9
+        },
+        {
+          "date": "2024-09-01",
+          "value": 80.9
+        },
+        {
+          "date": "2024-10-01",
+          "value": 80.6
+        },
+        {
+          "date": "2024-11-01",
+          "value": 80.5
+        },
+        {
+          "date": "2024-12-01",
+          "value": 80.5
+        },
+        {
+          "date": "2025-01-01",
+          "value": 80.7
+        },
+        {
+          "date": "2025-02-01",
+          "value": 80.5
+        },
+        {
+          "date": "2025-03-01",
+          "value": 80.4
+        },
+        {
+          "date": "2025-04-01",
+          "value": 80.7
+        },
+        {
+          "date": "2025-05-01",
+          "value": 80.5
+        },
+        {
+          "date": "2025-06-01",
+          "value": 80.7
+        },
+        {
+          "date": "2025-07-01",
+          "value": 80.4
+        },
+        {
+          "date": "2025-08-01",
+          "value": 80.7
+        },
+        {
+          "date": "2025-09-01",
+          "value": 80.7
+        },
+        {
+          "date": "2025-11-01",
+          "value": 80.6
+        },
+        {
+          "date": "2025-12-01",
+          "value": 80.7
+        },
+        {
+          "date": "2026-01-01",
+          "value": 80.8
+        },
+        {
+          "date": "2026-02-01",
+          "value": 80.7
+        },
+        {
+          "date": "2026-03-01",
+          "value": 80.7
+        },
+        {
+          "date": "2026-04-01",
+          "value": 80.7
+        },
+        {
+          "date": "2026-05-01",
+          "value": 80.8
+        },
+        {
+          "date": "2026-06-01",
+          "value": 80.2
+        },
+        {
+          "date": "2026-07-01",
+          "value": 80.4
+        },
+        {
+          "date": "2026-08-01",
+          "value": 80.4
+        }
+      ],
+      "prime_age_lfpr": [
+        {
+          "date": "2023-08-01",
+          "value": 83.4
+        },
+        {
+          "date": "2023-09-01",
+          "value": 83.5
+        },
+        {
+          "date": "2023-10-01",
+          "value": 83.4
+        },
+        {
+          "date": "2023-11-01",
+          "value": 83.4
+        },
+        {
+          "date": "2023-12-01",
+          "value": 83.2
+        },
+        {
+          "date": "2024-01-01",
+          "value": 83.3
+        },
+        {
+          "date": "2024-02-01",
+          "value": 83.5
+        },
+        {
+          "date": "2024-03-01",
+          "value": 83.4
+        },
+        {
+          "date": "2024-04-01",
+          "value": 83.5
+        },
+        {
+          "date": "2024-05-01",
+          "value": 83.6
+        },
+        {
+          "date": "2024-06-01",
+          "value": 83.7
+        },
+        {
+          "date": "2024-07-01",
+          "value": 84.0
+        },
+        {
+          "date": "2024-08-01",
+          "value": 83.9
+        },
+        {
+          "date": "2024-09-01",
+          "value": 83.8
+        },
+        {
+          "date": "2024-10-01",
+          "value": 83.5
+        },
+        {
+          "date": "2024-11-01",
+          "value": 83.5
+        },
+        {
+          "date": "2024-12-01",
+          "value": 83.4
+        },
+        {
+          "date": "2025-01-01",
+          "value": 83.5
+        },
+        {
+          "date": "2025-02-01",
+          "value": 83.5
+        },
+        {
+          "date": "2025-03-01",
+          "value": 83.3
+        },
+        {
+          "date": "2025-04-01",
+          "value": 83.6
+        },
+        {
+          "date": "2025-05-01",
+          "value": 83.4
+        },
+        {
+          "date": "2025-06-01",
+          "value": 83.5
+        },
+        {
+          "date": "2025-07-01",
+          "value": 83.4
+        },
+        {
+          "date": "2025-08-01",
+          "value": 83.7
+        },
+        {
+          "date": "2025-09-01",
+          "value": 83.7
+        },
+        {
+          "date": "2025-11-01",
+          "value": 83.8
+        },
+        {
+          "date": "2025-12-01",
+          "value": 83.8
+        },
+        {
+          "date": "2026-01-01",
+          "value": 84.0
+        },
+        {
+          "date": "2026-02-01",
+          "value": 83.9
+        },
+        {
+          "date": "2026-03-01",
+          "value": 83.8
+        },
+        {
+          "date": "2026-04-01",
+          "value": 83.8
+        },
+        {
+          "date": "2026-05-01",
+          "value": 83.9
+        },
+        {
+          "date": "2026-06-01",
+          "value": 83.3
+        },
+        {
+          "date": "2026-07-01",
+          "value": 83.4
+        },
+        {
+          "date": "2026-08-01",
+          "value": 83.4
+        }
+      ]
+    },
+    "errors": []
+  },
+  "food_shadow": {
+    "status": "success",
+    "in_bugout_index": false,
+    "series_ids": {
+      "food_cpi_yoy": "CPIUFDNS"
+    },
+    "bls_series_ids": {
+      "food_cpi_yoy": "CUUR0000SAF1"
+    },
+    "reading": "12-month percent change",
+    "seasonal_adjustment": "not seasonally adjusted",
+    "values": {
+      "food_cpi_yoy": 2.7
+    },
+    "dates": {
+      "food_cpi_yoy": "2026-08-01"
+    },
+    "observations": {
+      "food_cpi_yoy": [
+        {
+          "date": "2023-08-01",
+          "value": 4.3
+        },
+        {
+          "date": "2023-09-01",
+          "value": 3.7
+        },
+        {
+          "date": "2023-10-01",
+          "value": 3.3
+        },
+        {
+          "date": "2023-11-01",
+          "value": 2.9
+        },
+        {
+          "date": "2023-12-01",
+          "value": 2.7
+        },
+        {
+          "date": "2024-01-01",
+          "value": 2.6
+        },
+        {
+          "date": "2024-02-01",
+          "value": 2.2
+        },
+        {
+          "date": "2024-03-01",
+          "value": 2.2
+        },
+        {
+          "date": "2024-04-01",
+          "value": 2.2
+        },
+        {
+          "date": "2024-05-01",
+          "value": 2.1
+        },
+        {
+          "date": "2024-06-01",
+          "value": 2.2
+        },
+        {
+          "date": "2024-07-01",
+          "value": 2.2
+        },
+        {
+          "date": "2024-08-01",
+          "value": 2.1
+        },
+        {
+          "date": "2024-09-01",
+          "value": 2.3
+        },
+        {
+          "date": "2024-10-01",
+          "value": 2.1
+        },
+        {
+          "date": "2024-11-01",
+          "value": 2.4
+        },
+        {
+          "date": "2024-12-01",
+          "value": 2.5
+        },
+        {
+          "date": "2025-01-01",
+          "value": 2.5
+        },
+        {
+          "date": "2025-02-01",
+          "value": 2.6
+        },
+        {
+          "date": "2025-03-01",
+          "value": 3.0
+        },
+        {
+          "date": "2025-04-01",
+          "value": 2.8
+        },
+        {
+          "date": "2025-05-01",
+          "value": 2.9
+        },
+        {
+          "date": "2025-06-01",
+          "value": 3.0
+        },
+        {
+          "date": "2025-07-01",
+          "value": 2.9
+        },
+        {
+          "date": "2025-08-01",
+          "value": 3.2
+        },
+        {
+          "date": "2025-09-01",
+          "value": 3.1
+        },
+        {
+          "date": "2025-11-01",
+          "value": 2.6
+        },
+        {
+          "date": "2025-12-01",
+          "value": 3.1
+        },
+        {
+          "date": "2026-01-01",
+          "value": 2.9
+        },
+        {
+          "date": "2026-02-01",
+          "value": 3.1
+        },
+        {
+          "date": "2026-03-01",
+          "value": 2.7
+        },
+        {
+          "date": "2026-04-01",
+          "value": 3.2
+        },
+        {
+          "date": "2026-05-01",
+          "value": 3.1
+        },
+        {
+          "date": "2026-06-01",
+          "value": 3.0
+        },
+        {
+          "date": "2026-07-01",
+          "value": 3.0
+        },
+        {
+          "date": "2026-08-01",
+          "value": 2.7
+        }
+      ]
+    },
+    "errors": []
   },
   "revisions": {
     "status": "success",
@@ -579,317 +1076,6 @@
         }
       ]
     }
-  },
-  "labor_shadow": {
-    "status": "success",
-    "in_bugout_index": false,
-    "series_ids": {
-      "prime_age_epop": "LNS12300060",
-      "prime_age_lfpr": "LNS11300060"
-    },
-    "values": {
-      "prime_age_epop": 80.4,
-      "prime_age_lfpr": 83.4
-    },
-    "dates": {
-      "prime_age_epop": "2026-08-01",
-      "prime_age_lfpr": "2026-08-01"
-    },
-    "observations": {
-      "prime_age_epop": [
-        {
-          "date": "2023-08-01",
-          "value": 80.8
-        },
-        {
-          "date": "2023-09-01",
-          "value": 80.8
-        },
-        {
-          "date": "2023-10-01",
-          "value": 80.7
-        },
-        {
-          "date": "2023-11-01",
-          "value": 80.8
-        },
-        {
-          "date": "2023-12-01",
-          "value": 80.5
-        },
-        {
-          "date": "2024-01-01",
-          "value": 80.6
-        },
-        {
-          "date": "2024-02-01",
-          "value": 80.7
-        },
-        {
-          "date": "2024-03-01",
-          "value": 80.7
-        },
-        {
-          "date": "2024-04-01",
-          "value": 80.8
-        },
-        {
-          "date": "2024-05-01",
-          "value": 80.8
-        },
-        {
-          "date": "2024-06-01",
-          "value": 80.7
-        },
-        {
-          "date": "2024-07-01",
-          "value": 80.9
-        },
-        {
-          "date": "2024-08-01",
-          "value": 80.9
-        },
-        {
-          "date": "2024-09-01",
-          "value": 80.9
-        },
-        {
-          "date": "2024-10-01",
-          "value": 80.6
-        },
-        {
-          "date": "2024-11-01",
-          "value": 80.5
-        },
-        {
-          "date": "2024-12-01",
-          "value": 80.5
-        },
-        {
-          "date": "2025-01-01",
-          "value": 80.7
-        },
-        {
-          "date": "2025-02-01",
-          "value": 80.5
-        },
-        {
-          "date": "2025-03-01",
-          "value": 80.4
-        },
-        {
-          "date": "2025-04-01",
-          "value": 80.7
-        },
-        {
-          "date": "2025-05-01",
-          "value": 80.5
-        },
-        {
-          "date": "2025-06-01",
-          "value": 80.7
-        },
-        {
-          "date": "2025-07-01",
-          "value": 80.4
-        },
-        {
-          "date": "2025-08-01",
-          "value": 80.7
-        },
-        {
-          "date": "2025-09-01",
-          "value": 80.7
-        },
-        {
-          "date": "2025-11-01",
-          "value": 80.6
-        },
-        {
-          "date": "2025-12-01",
-          "value": 80.7
-        },
-        {
-          "date": "2026-01-01",
-          "value": 80.8
-        },
-        {
-          "date": "2026-02-01",
-          "value": 80.7
-        },
-        {
-          "date": "2026-03-01",
-          "value": 80.7
-        },
-        {
-          "date": "2026-04-01",
-          "value": 80.7
-        },
-        {
-          "date": "2026-05-01",
-          "value": 80.8
-        },
-        {
-          "date": "2026-06-01",
-          "value": 80.2
-        },
-        {
-          "date": "2026-07-01",
-          "value": 80.4
-        },
-        {
-          "date": "2026-08-01",
-          "value": 80.4
-        }
-      ],
-      "prime_age_lfpr": [
-        {
-          "date": "2023-08-01",
-          "value": 83.4
-        },
-        {
-          "date": "2023-09-01",
-          "value": 83.5
-        },
-        {
-          "date": "2023-10-01",
-          "value": 83.4
-        },
-        {
-          "date": "2023-11-01",
-          "value": 83.4
-        },
-        {
-          "date": "2023-12-01",
-          "value": 83.2
-        },
-        {
-          "date": "2024-01-01",
-          "value": 83.3
-        },
-        {
-          "date": "2024-02-01",
-          "value": 83.5
-        },
-        {
-          "date": "2024-03-01",
-          "value": 83.4
-        },
-        {
-          "date": "2024-04-01",
-          "value": 83.5
-        },
-        {
-          "date": "2024-05-01",
-          "value": 83.6
-        },
-        {
-          "date": "2024-06-01",
-          "value": 83.7
-        },
-        {
-          "date": "2024-07-01",
-          "value": 84.0
-        },
-        {
-          "date": "2024-08-01",
-          "value": 83.9
-        },
-        {
-          "date": "2024-09-01",
-          "value": 83.8
-        },
-        {
-          "date": "2024-10-01",
-          "value": 83.5
-        },
-        {
-          "date": "2024-11-01",
-          "value": 83.5
-        },
-        {
-          "date": "2024-12-01",
-          "value": 83.4
-        },
-        {
-          "date": "2025-01-01",
-          "value": 83.5
-        },
-        {
-          "date": "2025-02-01",
-          "value": 83.5
-        },
-        {
-          "date": "2025-03-01",
-          "value": 83.3
-        },
-        {
-          "date": "2025-04-01",
-          "value": 83.6
-        },
-        {
-          "date": "2025-05-01",
-          "value": 83.4
-        },
-        {
-          "date": "2025-06-01",
-          "value": 83.5
-        },
-        {
-          "date": "2025-07-01",
-          "value": 83.4
-        },
-        {
-          "date": "2025-08-01",
-          "value": 83.7
-        },
-        {
-          "date": "2025-09-01",
-          "value": 83.7
-        },
-        {
-          "date": "2025-11-01",
-          "value": 83.8
-        },
-        {
-          "date": "2025-12-01",
-          "value": 83.8
-        },
-        {
-          "date": "2026-01-01",
-          "value": 84.0
-        },
-        {
-          "date": "2026-02-01",
-          "value": 83.9
-        },
-        {
-          "date": "2026-03-01",
-          "value": 83.8
-        },
-        {
-          "date": "2026-04-01",
-          "value": 83.8
-        },
-        {
-          "date": "2026-05-01",
-          "value": 83.9
-        },
-        {
-          "date": "2026-06-01",
-          "value": 83.3
-        },
-        {
-          "date": "2026-07-01",
-          "value": 83.4
-        },
-        {
-          "date": "2026-08-01",
-          "value": 83.4
-        }
-      ]
-    },
-    "errors": []
   },
   "history": {
     "bugout_index": [
@@ -1398,6 +1584,28 @@
         "debt_to_gdp_ratio_normalized": "38.7",
         "homelessness_rate_normalized": "54.0",
         "trust_in_government_normalized": "51.25"
+      },
+      {
+        "date": "2026-09-25",
+        "bugout_index": "57.11",
+        "inflation_rate": "3.353016322755652",
+        "inflation_rate_observation_date": "2026-08-01",
+        "incident_rate": "2723.0",
+        "incident_rate_observation_date": "2025-09-30",
+        "unemployment_rate": "4.1",
+        "unemployment_rate_observation_date": "2026-08-01",
+        "debt_to_gdp_ratio": "122.59387",
+        "debt_to_gdp_ratio_observation_date": "2026-01-01",
+        "homelessness_rate": "0.23",
+        "homelessness_rate_observation_date": "2024-01-01",
+        "trust_in_government": "41.0",
+        "trust_in_government_observation_date": "2025",
+        "inflation_rate_normalized": "46.59",
+        "incident_rate_normalized": "70.36",
+        "unemployment_rate_normalized": "83.6",
+        "debt_to_gdp_ratio_normalized": "38.7",
+        "homelessness_rate_normalized": "54.0",
+        "trust_in_government_normalized": "51.25"
       }
     ],
     "markets": [
@@ -1538,6 +1746,12 @@
         "gold_usd_per_oz": "4379.0",
         "silver_usd_per_oz": "66.377",
         "dxy": "118.2126"
+      },
+      {
+        "date": "2026-09-25",
+        "gold_usd_per_oz": "4286.2002",
+        "silver_usd_per_oz": "64.419",
+        "dxy": "119.5133"
       }
     ],
     "pulse": [
@@ -1724,11 +1938,26 @@
         "business_confidence": "98.96989",
         "yield_curve_10y_2y": "0.25",
         "vix": "15.44"
+      },
+      {
+        "date": "2026-09-25",
+        "initial_jobless_claims": "197000.0",
+        "consumer_sentiment_umich": "51.7",
+        "business_confidence": "98.96989",
+        "yield_curve_10y_2y": "0.36",
+        "vix": "14.21"
       }
     ],
     "labor_shadow": [
       {
         "date": "2026-09-19",
+        "prime_age_epop": "80.4",
+        "prime_age_epop_observation_date": "2026-08-01",
+        "prime_age_lfpr": "83.4",
+        "prime_age_lfpr_observation_date": "2026-08-01"
+      },
+      {
+        "date": "2026-09-25",
         "prime_age_epop": "80.4",
         "prime_age_epop_observation_date": "2026-08-01",
         "prime_age_lfpr": "83.4",
@@ -1740,174 +1969,12 @@
         "date": "2026-09-19",
         "food_cpi_yoy": "2.7",
         "food_cpi_yoy_observation_date": "2026-08-01"
+      },
+      {
+        "date": "2026-09-25",
+        "food_cpi_yoy": "2.7",
+        "food_cpi_yoy_observation_date": "2026-08-01"
       }
     ]
-  },
-  "food_shadow": {
-    "status": "success",
-    "in_bugout_index": false,
-    "series_ids": {
-      "food_cpi_yoy": "CPIUFDNS"
-    },
-    "bls_series_ids": {
-      "food_cpi_yoy": "CUUR0000SAF1"
-    },
-    "reading": "12-month percent change",
-    "seasonal_adjustment": "not seasonally adjusted",
-    "values": {
-      "food_cpi_yoy": 2.7
-    },
-    "dates": {
-      "food_cpi_yoy": "2026-08-01"
-    },
-    "observations": {
-      "food_cpi_yoy": [
-        {
-          "date": "2023-08-01",
-          "value": 4.3
-        },
-        {
-          "date": "2023-09-01",
-          "value": 3.7
-        },
-        {
-          "date": "2023-10-01",
-          "value": 3.3
-        },
-        {
-          "date": "2023-11-01",
-          "value": 2.9
-        },
-        {
-          "date": "2023-12-01",
-          "value": 2.7
-        },
-        {
-          "date": "2024-01-01",
-          "value": 2.6
-        },
-        {
-          "date": "2024-02-01",
-          "value": 2.2
-        },
-        {
-          "date": "2024-03-01",
-          "value": 2.2
-        },
-        {
-          "date": "2024-04-01",
-          "value": 2.2
-        },
-        {
-          "date": "2024-05-01",
-          "value": 2.1
-        },
-        {
-          "date": "2024-06-01",
-          "value": 2.2
-        },
-        {
-          "date": "2024-07-01",
-          "value": 2.2
-        },
-        {
-          "date": "2024-08-01",
-          "value": 2.1
-        },
-        {
-          "date": "2024-09-01",
-          "value": 2.3
-        },
-        {
-          "date": "2024-10-01",
-          "value": 2.1
-        },
-        {
-          "date": "2024-11-01",
-          "value": 2.4
-        },
-        {
-          "date": "2024-12-01",
-          "value": 2.5
-        },
-        {
-          "date": "2025-01-01",
-          "value": 2.5
-        },
-        {
-          "date": "2025-02-01",
-          "value": 2.6
-        },
-        {
-          "date": "2025-03-01",
-          "value": 3.0
-        },
-        {
-          "date": "2025-04-01",
-          "value": 2.8
-        },
-        {
-          "date": "2025-05-01",
-          "value": 2.9
-        },
-        {
-          "date": "2025-06-01",
-          "value": 3.0
-        },
-        {
-          "date": "2025-07-01",
-          "value": 2.9
-        },
-        {
-          "date": "2025-08-01",
-          "value": 3.2
-        },
-        {
-          "date": "2025-09-01",
-          "value": 3.1
-        },
-        {
-          "date": "2025-11-01",
-          "value": 2.6
-        },
-        {
-          "date": "2025-12-01",
-          "value": 3.1
-        },
-        {
-          "date": "2026-01-01",
-          "value": 2.9
-        },
-        {
-          "date": "2026-02-01",
-          "value": 3.1
-        },
-        {
-          "date": "2026-03-01",
-          "value": 2.7
-        },
-        {
-          "date": "2026-04-01",
-          "value": 3.2
-        },
-        {
-          "date": "2026-05-01",
-          "value": 3.1
-        },
-        {
-          "date": "2026-06-01",
-          "value": 3.0
-        },
-        {
-          "date": "2026-07-01",
-          "value": 3.0
-        },
-        {
-          "date": "2026-08-01",
-          "value": 2.7
-        }
-      ]
-    },
-    "errors": []
   }
 }

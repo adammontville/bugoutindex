@@ -169,6 +169,34 @@ def test_rent_burden_is_an_annual_side_column_not_the_live_score():
     formula = (ROOT / "runtime" / "processing" / "formula.py").read_text(encoding="utf-8")
     assert "B25070" not in formula
     assert "CUUR0000SEHA" not in formula
+
+
+def test_yield_side_columns_and_kept_pins_stay_off_the_live_score():
+    rows = _by_date(build_v2_rows())
+    august = rows["2026-08-01"]
+    assert august["v2_treasury_10y_status"] == "observed"
+    assert august["v2_real_yield_status"] == "observed"
+    assert abs(august["v2_treasury_10y"] - 4.684286) < 1e-6
+    assert abs(august["v2_real_yield_10y"] - 2.397143) < 1e-6
+    assert "treasury_10y" not in august["v2_inputs_present"]
+    assert "homelessness_rate" not in august["v2_inputs_present"]
+    assert "trust_in_government" not in august["v2_inputs_present"]
+    assert august["v2_if_dgs10_index"] < august["v2_index"]
+    assert august["v2_if_rates_index"] < august["v2_if_dgs10_index"]
+    assert august["v2_incident_status"] == "excluded"
+    april = rows["2020-04-01"]
+    assert april["v2_if_dgs10_index"] > april["v2_index"]
+    assert april["v2_treasury_10y"] < 1
+    october = rows["2008-10-01"]
+    assert october["v2_if_real_yield_index"] < october["v2_if_dgs10_index"]
+    assert october["v2_incident_status"] == "excluded"
+    june = rows["2022-06-01"]
+    assert june["v1_debt_status"] == "excluded"
+    formula = (ROOT / "runtime" / "processing" / "formula.py").read_text(encoding="utf-8")
+    weekly = (ROOT / "runtime" / "publish" / "weekly_run.py").read_text(encoding="utf-8")
+    assert "DGS10" not in formula
+    assert "DFII10" not in formula
+    assert "DGS10" not in weekly
     burden = load_v2_bundle()["rent_burden_30"]
     assert burden["2011-01-01"] == 53.4
     assert burden["2019-01-01"] == 48.4
@@ -261,6 +289,9 @@ def test_committed_v2_tables_match_the_harness():
     assert "DRCCLACBS" in note
     assert "B25070" in note
     assert "CUUR0000SEHA" in note
+    assert "DGS10" in note
+    assert "DFII10" in note
+    assert "v2_if_kept_debt_hud_trust" in note
     assert "53.4" in note
     assert "2011-01-01" in note
     assert "45.62" in note

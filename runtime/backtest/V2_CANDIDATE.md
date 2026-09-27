@@ -48,6 +48,8 @@ Demoted from the v2 primary, on purpose, so the side-by-side can be discussed:
 - **Debt-to-GDP** is out of the primary. The sensitivity `v2_if_debt_included` adds it back at the v1 raw weight **0.12** and the v1 endpoints (0 to 200).
 - **Mortgage delinquency** and **credit-card delinquency** are out of the primary. They are side columns (`v2_if_housing`, `v2_if_consumer_credit`, `v2_if_housing_and_consumer`) at trial weight 0.12 each. They answer a coverage question. They do not replace h2.
 - **Rent burden** is out of the primary. `v2_if_rent_burden` adds the ACS 30%+ share at trial weight 0.12. `v2_if_rent_burden_and_consumer` adds that share and card delinquency. The 50%+ share is stored and not scored. `v2_if_rent_cpi_proxy` is rent-of-primary-residence inflation, labeled as a proxy, not as rent burden.
+- **Treasury yields** are out of the primary. `v2_if_dgs10` adds the 10-year yield, `v2_if_real_yield` adds the 10-year real yield, and `v2_if_rates` adds both. Corporate credit spreads stay out.
+- **`v2_if_kept_debt_hud_trust`** puts debt (when a print exists) and the locked HUD and Edelman pins back on h2 at their v1.0.0 weights. It is a replacement check before demotion. It is not a historical path for homelessness or trust, and it does not unlock crime.
 - **Homelessness** and **Edelman trust** are out of every v2 column. There is still no monthly history. The "if removed" columns are the locked formula with that held-constant input left out.
 - **UNRATE alone** is not the v2 labor input. `v2_if_unrate` puts headline unemployment back in the labor slot (v1 range 0 to 25, weight 0.30) so the composite can be compared with the series it would replace.
 - **`v2_if_epop_only`** uses prime-age EPOP alone (hypothesis range 68 to 82) instead of the 0.70/0.30 blend.
@@ -163,6 +165,57 @@ April 2020 has no 2020 ACS 1-year. The burden cell is the **2019** survey carrie
 
 October 2008 uses the 2008 survey (**49.8%**), which was not published until the following year. h2 is **50.79 Low** and h2 plus burden is **50.82 Low**. June 2022 uses the 2022 survey (**51.9%**). h2 is **59.19 Moderate** and h2 plus burden is **57.19 Moderate**.
 
+### Financing stress: Treasury yields
+
+These columns are the cost of long-term borrowing. They are not mortgage delinquency, not rent burden, and not a corporate bond spread. BBB and high-yield OAS stay out of the replay.
+
+The scored nominal series is the monthly mean of the daily 10-year Treasury constant-maturity yield, FRED `DGS10`. The companion is the monthly mean of the 10-year real yield, FRED `DFII10` (TIPS). Both files are the FRED graph CSV pulled 2026-09-27, daily prints through 24 September 2026, collapsed to a month mean. The fixture keeps January 2003 through August 2026. September 2026 is a partial month on this pull and is not stored. A missing month would drop the weight. Every month in these windows has a print, so the status is `observed`.
+
+The scored input is the **level**, not the year-over-year change. August 2026 is 4.68% on the 10-year. That is the mortgage benchmark. A small change from a high level would still be expensive financing, and a drop during a crisis (October 2008, April 2020) is flight to Treasuries, not a sign that household borrowing was easy in every other sense. Higher yield is less stable.
+
+| Piece | Choice |
+| --- | --- |
+| Nominal | `DGS10` monthly mean. Trial weight 0.12. Range 0 to 6. In this file the monthly mean runs **0.62** (2020-07-01) to **5.11** (2006-05-01). |
+| Real | `DFII10` monthly mean. Trial weight 0.12. Range −2 to 4. In this file **-1.07** (2021-08-01) to **2.89** (2008-11-01). |
+| Why this range | Daily `DGS10` goes back to 1962 and the monthly mean peaked near 15 in the early 1980s. A 0-to-16 range would score a 4–5% yield as mostly calm. This side column is financing conditions in the same era as the real-yield series, which starts in 2003. The endpoints sit just outside that sample. They were not chosen to push August under 70. |
+| Not scored | `T10Y2Y` (10-year minus 2-year) and `T10YIE` (breakeven inflation) were on the same FRED pull. The term spread steepened in the 2008 crisis while the real yield spiked, and a positive spread is not cheap long-term borrowing. Breakevens are already inside `DFII10`. Neither is a column. |
+
+`v2_if_dgs10` is h2 plus the nominal yield. `v2_if_real_yield` is h2 plus the real yield. `v2_if_rates` is h2 plus both. h2 stays the primary.
+
+| Month | 10y % | Real 10y % | h2 | + 10y | + real yield | + both rates |
+| --- | --- | --- | --- | --- | --- | --- |
+| 2008-10-01 | 3.81 | 2.75 | 50.79 Low | 48.92 Low | 46.88 Low | 45.67 Low |
+| 2009-10-01 | 3.39 | 1.48 | 65.79 Moderate | 62.89 Moderate | 62.68 Moderate | 60.47 Moderate |
+| 2020-04-01 | 0.66 | -0.45 | 44.34 Low | 49.13 Low | 47.52 Low | 51.54 Low |
+| 2022-06-01 | 3.14 | 0.53 | 59.19 Moderate | 57.95 Moderate | 59.05 Moderate | 57.95 Moderate |
+| 2026-08-01 | 4.68 | 2.40 | 77.28 High | 70.06 High | 70.69 High | 65.06 Moderate |
+
+August 2026 is **77.28 High** on h2, **70.06 High** with the 10-year at 4.68%, **70.69 High** with the real yield at 2.40%, and **65.06 Moderate** with both. The 10-year level alone leaves August in High. Nominal and real yields together put August in Moderate. That combined column gives long yields two side-column weights (0.24). Read the 10-year column first.
+
+October 2008 is the month the two yields disagree in a useful way. h2 is already **50.79 Low** on VIX. The nominal mean is 3.81% and h2 plus that yield is **48.92 Low**, a nudge. The real yield is 2.75% because breakevens had collapsed, close to the file high of 2.89 in 2008-11-01. h2 plus the real yield is **46.88 Low**. Both together are **45.67 Low**. The nominal 10-year is not the stress in that month. The real yield is.
+
+April 2020 is the other case. The 10-year mean is 0.66% and the real yield is -0.45%. h2 is **44.34 Low**. With the 10-year it is **49.13 Low**. Long rates were easy while employment had broken, so these columns do not mark the COVID labor trough.
+
+October 2009 nominal is 3.39% (h2 **65.79 Moderate**, plus the 10-year **62.89 Moderate**). June 2022 nominal is 3.14% (h2 **59.19 Moderate**, plus the 10-year **57.95 Moderate**, plus both yields **57.95 Moderate**).
+
+### If debt, HUD, and Edelman stayed
+
+h2 drops debt, homelessness, and Edelman trust. v1 held keeps them, and on the live formula August is the locked **57.11**. Those are different baskets. This section is the literal replacement on **h2**, before treating the drop as settled.
+
+`v2_if_debt_included` adds debt-to-GDP at weight 0.12 and the v1 endpoints (0 to 200) when that month has a print. `v2_if_kept_debt_hud_trust` adds that same debt rule plus homelessness **0.23** at the v1 weight 0.09 (range 0 to 0.5) and trust **41** at the v1 weight 0.12 (range 0 to 80, higher trust more stable). The HUD and Edelman numbers are the 19 September 2026 pins on every month. They are not a historical series. Crime stays on the h2 rule: absent months stay absent. The crime lock is not put back.
+
+| Month | h2 | Debt status | h2 + debt | h2 + debt, HUD pin, Edelman pin | v1 held |
+| --- | --- | --- | --- | --- | --- |
+| 2008-10-01 | 50.79 Low | observed | 52.43 Low | 52.43 Low | 59.31 Moderate |
+| 2009-10-01 | 65.79 Moderate | observed | 64.77 Moderate | 62.48 Moderate | 59.37 Moderate |
+| 2020-04-01 | 44.34 Low | observed | 43.19 Low | 44.65 Low | 51.67 Low |
+| 2022-06-01 | 59.19 Moderate | excluded | 59.19 Moderate | 58.02 Moderate | 55.56 Moderate |
+| 2026-08-01 | 77.28 High | carried_forward | 72.25 High | 68.57 Moderate | 57.11 Moderate |
+
+August 2026 on h2 is **77.28 High**. Debt that month is the carried 2026 print (status carried_forward). h2 plus debt is **72.25 High**. h2 plus debt and the two pins is **68.57 Moderate**. The live held basket is **57.11 Moderate**. On that live basket, dropping debt scores **60.79 Moderate**, dropping homelessness scores **57.55 Moderate**, and dropping trust scores **58.28 Moderate**. Putting the three demoted inputs back on h2 does not reproduce 57.11. The live score still uses unemployment, the crime lock, and the v1 weights. h2 that month has a calm labor blend, calm VIX, and no crime trial.
+
+June 2022 has no debt print in this replay (excluded), so the kept column that month is h2 plus the two pins only: **58.02 Moderate** against h2 **59.19 Moderate**. October 2008 and April 2020 do have debt. Their kept scores are **52.43 Low** and **44.65 Low**.
+
 ### Inputs behind those months
 
 | Month | CPI YoY | Food YoY | Labor blend | EPOP | LFPR | UNRATE | VIX mean | VIX max | Crime trial |
@@ -217,11 +270,11 @@ UNRATE remains the v1 labor input. The composite is lower in April 2020 than a c
 - These weights and ranges are hypothesis h2. They were not fit to a loss, a utility function, or a decision threshold. h1 is the prior labeled basket, not a rejected contract.
 - Rent burden is a side column, not part of h2. It is ACS 1-year `B25070` (30%+ of income), annual, carried forward from the survey-year January. The latest survey in this pull is 2024. There is no 2020 standard 1-year and no 2025 1-year here, and neither gap is filled. The 50%+ share is diagnostic only. `CUUR0000SEHA` year-over-year is a labeled rent-inflation proxy, not the income share. Neither series is in the live score.
 - A household survey of missed housing payments is still not in the replay. Bank delinquency still ends at 2026 Q2.
-- Corporate credit spreads are not in the replay. VIX is an equity-volatility index, not a credit spread. Card delinquency (`DRCCLACBS`, issue #48) is a side column only. It is not a BBB or high-yield OAS series, and it is not in the h2 primary.
+- Treasury yields are side columns, not part of h2. `DGS10` is the nominal 10-year level and `DFII10` is the real 10-year level. `T10Y2Y` and `T10YIE` are not scored. Corporate credit spreads are still not in the replay. VIX is an equity-volatility index, not a credit spread. Card delinquency (`DRCCLACBS`, issue #48) is a side column only. It is not a BBB or high-yield OAS series.
 - The labor composite is not the incubating participation penalty. That penalty still has no formula. The h2 band 72–82 is a tighter hypothesis range, not that penalty.
 - The h2 food range −2 to 15 is still a draft. Prints outside it still clamp. h1's 0–10 range is what clamped the 2022 peak at fully unstable and mild deflation at fully stable.
 - Crime has no fair 2008 path from RTCI. The published input remains locked at 2723. Agency coverage and the 12-month RTCI definition are not a national historical crime rate.
-- Homelessness and Edelman trust still have no monthly history.
+- Homelessness and Edelman trust still have no monthly history. `v2_if_kept_debt_hud_trust` pins them at the 19 September 2026 values so the demotion can be compared with leaving them in. That pin is not a 2008 or 2020 observation.
 - Debt-to-GDP for 2022 through 2025Q3 was not in the locked fixture, and the FRED graph download did not return a body on this pull. Those months stay excluded rather than invented.
 - The pull is a current revised vintage (BLS / CBOE / RTCI on 2026-09-26; v1 crisis fixture 2026-09-23). It is not ALFRED. A 2008 row is not the print available during 2008.
 - Real-time vintage choice, population-adjusted crime, and a published methodology version are still open. This note does not close them.

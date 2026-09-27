@@ -36,7 +36,7 @@ from runtime.backtest.harness import (
     score_published_inputs,
 )
 from runtime.data.fetch.fetch_incident_rate import PUBLISHED_INCIDENT_RATE
-from runtime.processing.formula import compute_index, interpret, normalize
+from runtime.processing.formula import WEIGHTS, compute_index, interpret, normalize
 
 HYPOTHESIS_ID = "h2"
 CANDIDATE_LABEL = "v2_candidate_hypothesis_h2"
@@ -86,8 +86,17 @@ TRIAL_RANGES = {
     # CUUR0000SEHA 12-month change in this pull runs about −0.1 to 8.8.
     # −2 to 12 is the same kind of hypothesis range, not a burden share.
     "rent_cpi_yoy": (-2.0, 12.0),
+    # Monthly-mean DGS10 from 2003 through August 2026 runs about 0.62 to
+    # 5.11. 0 to 6 leaves that trough short of fully stable and that peak
+    # short of a hard floor. The 1962–2026 peak near 15 is a different era.
+    "treasury_10y": (0.0, 6.0),
+    # DFII10 monthly means in the same file run about −1.07 to 2.89.
+    "real_yield_10y": (-2.0, 4.0),
+    # v1.0.0 endpoints, reused only by the "kept" sensitivity.
+    "homelessness_rate": (0.0, 0.5),
+    "trust_in_government": (0.0, 80.0),
 }
-INVERSE = frozenset({"labor_utilization", "prime_age_epop"})
+INVERSE = frozenset({"labor_utilization", "prime_age_epop", "trust_in_government"})
 LABOR_EPOP_WEIGHT = 0.70
 LABOR_LFPR_WEIGHT = 0.30
 DEBT_SENSITIVITY_WEIGHT = 0.12
@@ -99,6 +108,13 @@ CONSUMER_CREDIT_WEIGHT = 0.12
 RENT_BURDEN_WEIGHT = 0.12
 RENT_CPI_PROXY_WEIGHT = 0.12
 RENT_DATA_PULL_DATE = "2026-09-27"
+# Side columns only. Nominal and real 10-year yields, not corporate OAS.
+TREASURY_10Y_WEIGHT = 0.12
+REAL_YIELD_WEIGHT = 0.12
+RATES_DATA_PULL_DATE = "2026-09-27"
+# v1.0.0 weights for the "if debt, HUD, and Edelman stayed" sensitivity.
+HUD_KEPT_WEIGHT = WEIGHTS["homelessness_rate"]
+TRUST_KEPT_WEIGHT = WEIGHTS["trust_in_government"]
 LABOR_SLOT_WEIGHT = TRIAL_WEIGHTS["labor_utilization"]
 
 RECENT_WINDOW = Window(
@@ -167,6 +183,16 @@ SUMMARY_SCENARIOS = (
     (
         "v2_if_rent_cpi_proxy",
         "v2 h2 basket plus rent-of-primary-residence CPI YoY (proxy, not burden)",
+    ),
+    ("v2_if_dgs10", "v2 h2 basket plus 10-year Treasury yield at weight 0.12"),
+    ("v2_if_real_yield", "v2 h2 basket plus 10-year real yield at weight 0.12"),
+    (
+        "v2_if_rates",
+        "v2 h2 basket plus 10-year nominal and real yields",
+    ),
+    (
+        "v2_if_kept_debt_hud_trust",
+        "v2 h2 basket plus debt when present and the HUD and Edelman pins",
     ),
 )
 
@@ -317,6 +343,8 @@ def load_v2_bundle(directory: Optional[Path] = None) -> dict:
         "rent_burden_30": rent_30,
         "rent_burden_50": rent_50,
         "rent_cpi": _load_text_series(folder / "CUUR0000SEHA.csv"),
+        "treasury_10y": _as_float_map(_load_text_series(folder / "DGS10_monthly.csv")),
+        "real_yield_10y": _as_float_map(_load_text_series(folder / "DFII10_monthly.csv")),
     }
 
 
@@ -480,6 +508,14 @@ def _weights_for(order: Sequence[str], labor_name: str = "labor_utilization") ->
             weights[name] = RENT_BURDEN_WEIGHT
         elif name == "rent_cpi_yoy":
             weights[name] = RENT_CPI_PROXY_WEIGHT
+        elif name == "treasury_10y":
+            weights[name] = TREASURY_10Y_WEIGHT
+        elif name == "real_yield_10y":
+            weights[name] = REAL_YIELD_WEIGHT
+        elif name == "homelessness_rate":
+            weights[name] = HUD_KEPT_WEIGHT
+        elif name == "trust_in_government":
+            weights[name] = TRUST_KEPT_WEIGHT
         else:
             weights[name] = TRIAL_WEIGHTS[name]
     return weights
@@ -559,6 +595,28 @@ def build_v2_rows(bundle: Optional[Mapping] = None, fixture: Optional[FredLevels
                 parts, rent_credit_order, _weights_for(rent_credit_order)
             )
             if_rent_proxy = score_basket(parts, proxy_order, _weights_for(proxy_order))
+            treasury_raw = bundle["treasury_10y"].get(day)
+            real_raw = bundle["real_yield_10y"].get(day)
+            treasury_status = "observed" if treasury_raw is not None else "excluded"
+            real_status = "observed" if real_raw is not None else "excluded"
+            parts["treasury_10y"] = treasury_raw
+            parts["real_yield_10y"] = real_raw
+            dgs_order = PRIMARY_ORDER + ("treasury_10y",)
+            real_order = PRIMARY_ORDER + ("real_yield_10y",)
+            rates_order = PRIMARY_ORDER + ("treasury_10y", "real_yield_10y")
+            if_dgs = score_basket(parts, dgs_order, _weights_for(dgs_order))
+            if_real = score_basket(parts, real_order, _weights_for(real_order))
+            if_rates = score_basket(parts, rates_order, _weights_for(rates_order))
+            kept_values = dict(parts)
+            kept_values["debt_to_gdp_ratio"] = debt_raw
+            kept_values["homelessness_rate"] = float(HELD_CONSTANT_BASELINE["homelessness_rate"])
+            kept_values["trust_in_government"] = float(HELD_CONSTANT_BASELINE["trust_in_government"])
+            kept_order = PRIMARY_ORDER + (
+                "debt_to_gdp_ratio",
+                "homelessness_rate",
+                "trust_in_government",
+            )
+            if_kept = score_basket(kept_values, kept_order, _weights_for(kept_order))
             held_crime_values = dict(parts)
             held_crime_values["incident_rate"] = float(PUBLISHED_INCIDENT_RATE)
             if_crime_held = score_basket(
@@ -682,6 +740,18 @@ def build_v2_rows(bundle: Optional[Mapping] = None, fixture: Optional[FredLevels
                     "v2_rent_cpi_status": rent_cpi_status,
                     "v2_if_rent_cpi_proxy_index": if_rent_proxy["index"],
                     "v2_if_rent_cpi_proxy_band": if_rent_proxy["band"],
+                    "v2_treasury_10y": treasury_raw,
+                    "v2_treasury_10y_status": treasury_status,
+                    "v2_if_dgs10_index": if_dgs["index"],
+                    "v2_if_dgs10_band": if_dgs["band"],
+                    "v2_real_yield_10y": real_raw,
+                    "v2_real_yield_status": real_status,
+                    "v2_if_real_yield_index": if_real["index"],
+                    "v2_if_real_yield_band": if_real["band"],
+                    "v2_if_rates_index": if_rates["index"],
+                    "v2_if_rates_band": if_rates["band"],
+                    "v2_if_kept_debt_hud_trust_index": if_kept["index"],
+                    "v2_if_kept_debt_hud_trust_band": if_kept["band"],
                     "score_note": SCORE_NOTE,
                 }
             )
@@ -766,6 +836,18 @@ COLUMNS = (
     "v2_rent_cpi_status",
     "v2_if_rent_cpi_proxy_index",
     "v2_if_rent_cpi_proxy_band",
+    "v2_treasury_10y",
+    "v2_treasury_10y_status",
+    "v2_if_dgs10_index",
+    "v2_if_dgs10_band",
+    "v2_real_yield_10y",
+    "v2_real_yield_status",
+    "v2_if_real_yield_index",
+    "v2_if_real_yield_band",
+    "v2_if_rates_index",
+    "v2_if_rates_band",
+    "v2_if_kept_debt_hud_trust_index",
+    "v2_if_kept_debt_hud_trust_band",
     "score_note",
 )
 
@@ -794,6 +876,10 @@ _INDEX_COLUMNS = {
     "v2_if_rent_burden_index",
     "v2_if_rent_burden_and_consumer_index",
     "v2_if_rent_cpi_proxy_index",
+    "v2_if_dgs10_index",
+    "v2_if_real_yield_index",
+    "v2_if_rates_index",
+    "v2_if_kept_debt_hud_trust_index",
 }
 _ONE_DECIMAL = {"v2_food_cpi_yoy", "v2_rent_burden_30", "v2_rent_burden_50"}
 _TWO_DECIMAL = {
@@ -805,6 +891,8 @@ _TWO_DECIMAL = {
     "v2_housing_delinquency",
     "v2_consumer_credit_delinquency",
     "v2_rent_cpi_yoy",
+    "v2_treasury_10y",
+    "v2_real_yield_10y",
 }
 
 
@@ -885,6 +973,10 @@ def summarize(rows: Sequence[Mapping[str, object]]) -> list[dict]:
         "v2_if_rent_burden": "v2_if_rent_burden_index",
         "v2_if_rent_burden_and_consumer": "v2_if_rent_burden_and_consumer_index",
         "v2_if_rent_cpi_proxy": "v2_if_rent_cpi_proxy_index",
+        "v2_if_dgs10": "v2_if_dgs10_index",
+        "v2_if_real_yield": "v2_if_real_yield_index",
+        "v2_if_rates": "v2_if_rates_index",
+        "v2_if_kept_debt_hud_trust": "v2_if_kept_debt_hud_trust_index",
     }
     band_of = {key: column.replace("_index", "_band") for key, column in index_of.items()}
     summary = []
@@ -1126,6 +1218,62 @@ def render_markdown(rows: Sequence[Mapping[str, object]], summary: Sequence[Mapp
     proxy_peak_day, proxy_peak = max(proxy_values, key=lambda item: (item[1], item[0]))
     rent_lo, rent_hi = TRIAL_RANGES["rent_burden_30"]
     proxy_lo, proxy_hi = TRIAL_RANGES["rent_cpi_yoy"]
+    rate_lines = [
+        "| Month | 10y % | Real 10y % | h2 | + 10y | + real yield | + both rates |",
+        "| --- | --- | --- | --- | --- | --- | --- |",
+    ]
+    kept_lines = [
+        "| Month | h2 | Debt status | h2 + debt | h2 + debt, HUD pin, Edelman pin | v1 held |",
+        "| --- | --- | --- | --- | --- | --- |",
+    ]
+    for day in HOUSEHOLD_COMPARE_MONTHS:
+        row = by_date[day]
+        rate_lines.append(
+            "| {day} | {y10} | {real} | {v} | {dgs} | {ry} | {both} |".format(
+                day=day,
+                y10=_num(row["v2_treasury_10y"]),
+                real=_num(row["v2_real_yield_10y"]),
+                v=cell(row, "v2_index"),
+                dgs=cell(row, "v2_if_dgs10_index"),
+                ry=cell(row, "v2_if_real_yield_index"),
+                both=cell(row, "v2_if_rates_index"),
+            )
+        )
+        kept_lines.append(
+            "| {day} | {v} | {debt} | {plus} | {kept} | {held} |".format(
+                day=day,
+                v=cell(row, "v2_index"),
+                debt=str(row["v1_debt_status"]),
+                plus=cell(row, "v2_if_debt_included_index"),
+                kept=cell(row, "v2_if_kept_debt_hud_trust_index"),
+                held=cell(row, "v1_held_index"),
+            )
+        )
+    treasury_sample = load_v2_bundle()["treasury_10y"]
+    real_sample = load_v2_bundle()["real_yield_10y"]
+    treasury_low = min(treasury_sample, key=lambda stamp: (treasury_sample[stamp], stamp))
+    treasury_high = max(treasury_sample, key=lambda stamp: (treasury_sample[stamp], stamp))
+    real_low = min(real_sample, key=lambda stamp: (real_sample[stamp], stamp))
+    real_high = max(real_sample, key=lambda stamp: (real_sample[stamp], stamp))
+    y10_lo, y10_hi = TRIAL_RANGES["treasury_10y"]
+    real_lo_end, real_hi_end = TRIAL_RANGES["real_yield_10y"]
+    aug_rates = float(aug_2026["v2_if_rates_index"])
+    aug_dgs = float(aug_2026["v2_if_dgs10_index"])
+    if aug_dgs >= 70 and aug_rates >= 55 and aug_rates < 70:
+        rates_read = (
+            "The 10-year level alone leaves August in High. Nominal and real yields "
+            "together put August in Moderate. That combined column gives long yields "
+            "two side-column weights (0.24). Read the 10-year column first."
+        )
+    elif aug_dgs >= 70 and aug_rates >= 70:
+        rates_read = "August stays High with the 10-year alone and with both yield series."
+    elif aug_dgs < 70:
+        rates_read = (
+            "The 10-year level alone moves August out of High. "
+            "That is the financing-cost column."
+        )
+    else:
+        rates_read = "See the table for the August bands."
 
     summary_lines = [
         "| Window | v1 partial | v1 held | v2 candidate | v2, crime always off |",
@@ -1329,6 +1477,8 @@ Demoted from the v2 primary, on purpose, so the side-by-side can be discussed:
 - **Debt-to-GDP** is out of the primary. The sensitivity `v2_if_debt_included` adds it back at the v1 raw weight **0.12** and the v1 endpoints (0 to 200).
 - **Mortgage delinquency** and **credit-card delinquency** are out of the primary. They are side columns (`v2_if_housing`, `v2_if_consumer_credit`, `v2_if_housing_and_consumer`) at trial weight 0.12 each. They answer a coverage question. They do not replace h2.
 - **Rent burden** is out of the primary. `v2_if_rent_burden` adds the ACS 30%+ share at trial weight {RENT_BURDEN_WEIGHT:.2f}. `v2_if_rent_burden_and_consumer` adds that share and card delinquency. The 50%+ share is stored and not scored. `v2_if_rent_cpi_proxy` is rent-of-primary-residence inflation, labeled as a proxy, not as rent burden.
+- **Treasury yields** are out of the primary. `v2_if_dgs10` adds the 10-year yield, `v2_if_real_yield` adds the 10-year real yield, and `v2_if_rates` adds both. Corporate credit spreads stay out.
+- **`v2_if_kept_debt_hud_trust`** puts debt (when a print exists) and the locked HUD and Edelman pins back on h2 at their v1.0.0 weights. It is a replacement check before demotion. It is not a historical path for homelessness or trust, and it does not unlock crime.
 - **Homelessness** and **Edelman trust** are out of every v2 column. There is still no monthly history. The "if removed" columns are the locked formula with that held-constant input left out.
 - **UNRATE alone** is not the v2 labor input. `v2_if_unrate` puts headline unemployment back in the labor slot (v1 range 0 to 25, weight {TRIAL_WEIGHTS['labor_utilization']:.2f}) so the composite can be compared with the series it would replace.
 - **`v2_if_epop_only`** uses prime-age EPOP alone (hypothesis range 68 to 82) instead of the 0.70/0.30 blend.
@@ -1400,6 +1550,45 @@ April 2020 has no 2020 ACS 1-year. The burden cell is the **2019** survey carrie
 
 October 2008 uses the 2008 survey (**{_num(oct_2008['v2_rent_burden_30'], 1)}%**), which was not published until the following year. h2 is **{cell(oct_2008, 'v2_index')}** and h2 plus burden is **{cell(oct_2008, 'v2_if_rent_burden_index')}**. June 2022 uses the 2022 survey (**{_num(jun_2022['v2_rent_burden_30'], 1)}%**). h2 is **{cell(jun_2022, 'v2_index')}** and h2 plus burden is **{cell(jun_2022, 'v2_if_rent_burden_index')}**.
 
+### Financing stress: Treasury yields
+
+These columns are the cost of long-term borrowing. They are not mortgage delinquency, not rent burden, and not a corporate bond spread. BBB and high-yield OAS stay out of the replay.
+
+The scored nominal series is the monthly mean of the daily 10-year Treasury constant-maturity yield, FRED `DGS10`. The companion is the monthly mean of the 10-year real yield, FRED `DFII10` (TIPS). Both files are the FRED graph CSV pulled {RATES_DATA_PULL_DATE}, daily prints through 24 September 2026, collapsed to a month mean. The fixture keeps January 2003 through August 2026. September 2026 is a partial month on this pull and is not stored. A missing month would drop the weight. Every month in these windows has a print, so the status is `observed`.
+
+The scored input is the **level**, not the year-over-year change. August 2026 is {_num(aug_2026['v2_treasury_10y'])}% on the 10-year. That is the mortgage benchmark. A small change from a high level would still be expensive financing, and a drop during a crisis (October 2008, April 2020) is flight to Treasuries, not a sign that household borrowing was easy in every other sense. Higher yield is less stable.
+
+| Piece | Choice |
+| --- | --- |
+| Nominal | `DGS10` monthly mean. Trial weight {TREASURY_10Y_WEIGHT:.2f}. Range {y10_lo:g} to {y10_hi:g}. In this file the monthly mean runs **{_num(treasury_sample[treasury_low])}** ({treasury_low}) to **{_num(treasury_sample[treasury_high])}** ({treasury_high}). |
+| Real | `DFII10` monthly mean. Trial weight {REAL_YIELD_WEIGHT:.2f}. Range {_signed(real_lo_end)} to {real_hi_end:g}. In this file **{_num(real_sample[real_low])}** ({real_low}) to **{_num(real_sample[real_high])}** ({real_high}). |
+| Why this range | Daily `DGS10` goes back to 1962 and the monthly mean peaked near 15 in the early 1980s. A 0-to-16 range would score a 4–5% yield as mostly calm. This side column is financing conditions in the same era as the real-yield series, which starts in 2003. The endpoints sit just outside that sample. They were not chosen to push August under 70. |
+| Not scored | `T10Y2Y` (10-year minus 2-year) and `T10YIE` (breakeven inflation) were on the same FRED pull. The term spread steepened in the 2008 crisis while the real yield spiked, and a positive spread is not cheap long-term borrowing. Breakevens are already inside `DFII10`. Neither is a column. |
+
+`v2_if_dgs10` is h2 plus the nominal yield. `v2_if_real_yield` is h2 plus the real yield. `v2_if_rates` is h2 plus both. h2 stays the primary.
+
+{chr(10).join(rate_lines)}
+
+August 2026 is **{cell(aug_2026, 'v2_index')}** on h2, **{cell(aug_2026, 'v2_if_dgs10_index')}** with the 10-year at {_num(aug_2026['v2_treasury_10y'])}%, **{cell(aug_2026, 'v2_if_real_yield_index')}** with the real yield at {_num(aug_2026['v2_real_yield_10y'])}%, and **{cell(aug_2026, 'v2_if_rates_index')}** with both. {rates_read}
+
+October 2008 is the month the two yields disagree in a useful way. h2 is already **{cell(oct_2008, 'v2_index')}** on VIX. The nominal mean is {_num(oct_2008['v2_treasury_10y'])}% and h2 plus that yield is **{cell(oct_2008, 'v2_if_dgs10_index')}**, a nudge. The real yield is {_num(oct_2008['v2_real_yield_10y'])}% because breakevens had collapsed, close to the file high of {_num(real_sample[real_high])} in {real_high}. h2 plus the real yield is **{cell(oct_2008, 'v2_if_real_yield_index')}**. Both together are **{cell(oct_2008, 'v2_if_rates_index')}**. The nominal 10-year is not the stress in that month. The real yield is.
+
+April 2020 is the other case. The 10-year mean is {_num(april['v2_treasury_10y'])}% and the real yield is {_num(april['v2_real_yield_10y'])}%. h2 is **{cell(april, 'v2_index')}**. With the 10-year it is **{cell(april, 'v2_if_dgs10_index')}**. Long rates were easy while employment had broken, so these columns do not mark the COVID labor trough.
+
+October 2009 nominal is {_num(oct_2009['v2_treasury_10y'])}% (h2 **{cell(oct_2009, 'v2_index')}**, plus the 10-year **{cell(oct_2009, 'v2_if_dgs10_index')}**). June 2022 nominal is {_num(jun_2022['v2_treasury_10y'])}% (h2 **{cell(jun_2022, 'v2_index')}**, plus the 10-year **{cell(jun_2022, 'v2_if_dgs10_index')}**, plus both yields **{cell(jun_2022, 'v2_if_rates_index')}**).
+
+### If debt, HUD, and Edelman stayed
+
+h2 drops debt, homelessness, and Edelman trust. v1 held keeps them, and on the live formula August is the locked **{_num(aug_2026['v1_held_index'])}**. Those are different baskets. This section is the literal replacement on **h2**, before treating the drop as settled.
+
+`v2_if_debt_included` adds debt-to-GDP at weight {DEBT_SENSITIVITY_WEIGHT:.2f} and the v1 endpoints (0 to 200) when that month has a print. `v2_if_kept_debt_hud_trust` adds that same debt rule plus homelessness **{HELD_CONSTANT_BASELINE['homelessness_rate']}** at the v1 weight {HUD_KEPT_WEIGHT:.2f} (range 0 to 0.5) and trust **{HELD_CONSTANT_BASELINE['trust_in_government']:.0f}** at the v1 weight {TRUST_KEPT_WEIGHT:.2f} (range 0 to 80, higher trust more stable). The HUD and Edelman numbers are the 19 September 2026 pins on every month. They are not a historical series. Crime stays on the h2 rule: absent months stay absent. The crime lock is not put back.
+
+{chr(10).join(kept_lines)}
+
+August 2026 on h2 is **{cell(aug_2026, 'v2_index')}**. Debt that month is the carried 2026 print (status {aug_2026['v1_debt_status']}). h2 plus debt is **{cell(aug_2026, 'v2_if_debt_included_index')}**. h2 plus debt and the two pins is **{cell(aug_2026, 'v2_if_kept_debt_hud_trust_index')}**. The live held basket is **{cell(aug_2026, 'v1_held_index')}**. On that live basket, dropping debt scores **{cell(aug_2026, 'v1_held_without_debt_index')}**, dropping homelessness scores **{cell(aug_2026, 'v1_held_without_homelessness_index')}**, and dropping trust scores **{cell(aug_2026, 'v1_held_without_trust_index')}**. Putting the three demoted inputs back on h2 does not reproduce 57.11. The live score still uses unemployment, the crime lock, and the v1 weights. h2 that month has a calm labor blend, calm VIX, and no crime trial.
+
+June 2022 has no debt print in this replay ({jun_2022['v1_debt_status']}), so the kept column that month is h2 plus the two pins only: **{cell(jun_2022, 'v2_if_kept_debt_hud_trust_index')}** against h2 **{cell(jun_2022, 'v2_index')}**. October 2008 and April 2020 do have debt. Their kept scores are **{cell(oct_2008, 'v2_if_kept_debt_hud_trust_index')}** and **{cell(april, 'v2_if_kept_debt_hud_trust_index')}**.
+
 ### Inputs behind those months
 
 {chr(10).join(raw_lines)}
@@ -1439,11 +1628,11 @@ UNRATE remains the v1 labor input. The composite is lower in April 2020 than a c
 - These weights and ranges are hypothesis h2. They were not fit to a loss, a utility function, or a decision threshold. h1 is the prior labeled basket, not a rejected contract.
 - Rent burden is a side column, not part of h2. It is ACS 1-year `B25070` (30%+ of income), annual, carried forward from the survey-year January. The latest survey in this pull is 2024. There is no 2020 standard 1-year and no 2025 1-year here, and neither gap is filled. The 50%+ share is diagnostic only. `CUUR0000SEHA` year-over-year is a labeled rent-inflation proxy, not the income share. Neither series is in the live score.
 - A household survey of missed housing payments is still not in the replay. Bank delinquency still ends at 2026 Q2.
-- Corporate credit spreads are not in the replay. VIX is an equity-volatility index, not a credit spread. Card delinquency (`DRCCLACBS`, issue #48) is a side column only. It is not a BBB or high-yield OAS series, and it is not in the h2 primary.
+- Treasury yields are side columns, not part of h2. `DGS10` is the nominal 10-year level and `DFII10` is the real 10-year level. `T10Y2Y` and `T10YIE` are not scored. Corporate credit spreads are still not in the replay. VIX is an equity-volatility index, not a credit spread. Card delinquency (`DRCCLACBS`, issue #48) is a side column only. It is not a BBB or high-yield OAS series.
 - The labor composite is not the incubating participation penalty. That penalty still has no formula. The h2 band 72–82 is a tighter hypothesis range, not that penalty.
 - The h2 food range {food_lo_txt} to {food_hi_txt} is still a draft. Prints outside it still clamp. h1's 0–10 range is what clamped the 2022 peak at fully unstable and mild deflation at fully stable.
 - Crime has no fair 2008 path from RTCI. The published input remains locked at 2723. Agency coverage and the 12-month RTCI definition are not a national historical crime rate.
-- Homelessness and Edelman trust still have no monthly history.
+- Homelessness and Edelman trust still have no monthly history. `v2_if_kept_debt_hud_trust` pins them at the 19 September 2026 values so the demotion can be compared with leaving them in. That pin is not a 2008 or 2020 observation.
 - Debt-to-GDP for 2022 through 2025Q3 was not in the locked fixture, and the FRED graph download did not return a body on this pull. Those months stay excluded rather than invented.
 - The pull is a current revised vintage (BLS / CBOE / RTCI on {DATA_PULL_DATE}; v1 crisis fixture {FIXTURE_DOWNLOAD_DATE}). It is not ALFRED. A 2008 row is not the print available during 2008.
 - Real-time vintage choice, population-adjusted crime, and a published methodology version are still open. This note does not close them.
@@ -1479,10 +1668,12 @@ def render_svg(rows: Sequence[Mapping[str, object]]) -> str:
         "v2_index": "#b45309",
         "v2_without_crime_index": "#0f766e",
         "v2_if_rent_burden_index": "#7c3aed",
+        "v2_if_dgs10_index": "#9f1239",
     }
     dashes = {
         "v2_without_crime_index": "4 3",
         "v2_if_rent_burden_index": "1 3",
+        "v2_if_dgs10_index": "6 3",
     }
     panels = []
     for index, window_name in enumerate(V2_WINDOW_ORDER):
@@ -1545,6 +1736,7 @@ def render_svg(rows: Sequence[Mapping[str, object]]) -> str:
         '<tspan fill="#b45309">   v2 candidate h2</tspan>'
         '<tspan fill="#0f766e">   v2 crime off</tspan>'
         '<tspan fill="#7c3aed">   h2 + rent burden</tspan>'
+        '<tspan fill="#9f1239">   h2 + 10y</tspan>'
         "</text>"
     )
     body = "".join(panels) + legend

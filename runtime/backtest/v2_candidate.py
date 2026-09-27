@@ -79,6 +79,13 @@ TRIAL_RANGES = {
     # hard floor and the troughs short of fully stable.
     "housing_delinquency": (1.0, 12.0),
     "consumer_credit_delinquency": (1.0, 8.0),
+    # ACS 1-year 30%+ rent burden in this pull runs 48.4 (2019) to 53.4
+    # (2011). 40 to 60 leaves that trough short of fully stable and that
+    # peak short of a hard floor. It is not fitted to the August band.
+    "rent_burden_30": (40.0, 60.0),
+    # CUUR0000SEHA 12-month change in this pull runs about −0.1 to 8.8.
+    # −2 to 12 is the same kind of hypothesis range, not a burden share.
+    "rent_cpi_yoy": (-2.0, 12.0),
 }
 INVERSE = frozenset({"labor_utilization", "prime_age_epop"})
 LABOR_EPOP_WEIGHT = 0.70
@@ -87,6 +94,11 @@ DEBT_SENSITIVITY_WEIGHT = 0.12
 # Side columns only. They are not in TRIAL_WEIGHTS and not in the h2 primary.
 HOUSING_STRESS_WEIGHT = 0.12
 CONSUMER_CREDIT_WEIGHT = 0.12
+# Side columns only. Rent burden is the ACS income-share series.
+# Rent CPI is a labeled shelter-inflation proxy, not that share.
+RENT_BURDEN_WEIGHT = 0.12
+RENT_CPI_PROXY_WEIGHT = 0.12
+RENT_DATA_PULL_DATE = "2026-09-27"
 LABOR_SLOT_WEIGHT = TRIAL_WEIGHTS["labor_utilization"]
 
 RECENT_WINDOW = Window(
@@ -143,6 +155,18 @@ SUMMARY_SCENARIOS = (
     (
         "v2_if_housing_and_consumer",
         "v2 h2 basket plus mortgage and credit-card delinquency",
+    ),
+    (
+        "v2_if_rent_burden",
+        "v2 h2 basket plus ACS 30% rent burden at weight 0.12",
+    ),
+    (
+        "v2_if_rent_burden_and_consumer",
+        "v2 h2 basket plus ACS 30% rent burden and credit-card delinquency",
+    ),
+    (
+        "v2_if_rent_cpi_proxy",
+        "v2 h2 basket plus rent-of-primary-residence CPI YoY (proxy, not burden)",
     ),
 )
 
@@ -240,6 +264,22 @@ def _as_float_map(texts: Mapping[str, str]) -> dict[str, float]:
     return {day: float(raw) for day, raw in texts.items()}
 
 
+def _load_rent_burden(path: Path) -> tuple[dict[str, float], dict[str, float]]:
+    """ACS 1-year 30%+ share (scored) and 50%+ share (diagnostic only)."""
+    thirty: dict[str, float] = {}
+    fifty: dict[str, float] = {}
+    with path.open(newline="", encoding="utf-8") as handle:
+        for row in csv.DictReader(handle):
+            day = (row.get("observation_date") or "").strip()
+            if not day:
+                continue
+            thirty[day] = float(row["rent_burden_30_plus"])
+            fifty[day] = float(row["rent_burden_50_plus"])
+    if not thirty:
+        raise ValueError(f"{path} has no observations")
+    return thirty, fifty
+
+
 def load_v2_bundle(directory: Optional[Path] = None) -> dict:
     """Offline fixtures. No network and no FRED key."""
     folder = V2_FIXTURE_DIR if directory is None else directory
@@ -260,6 +300,7 @@ def load_v2_bundle(directory: Optional[Path] = None) -> dict:
                 "agencies": int(row["agencies"]),
             }
     extra_debt = _as_float_map(_load_text_series(folder / "GFDEGDQ188S_published_extra.csv"))
+    rent_30, rent_50 = _load_rent_burden(folder / "B25070.csv")
     return {
         "cpi": _load_text_series(folder / "CPIAUCSL.csv"),
         "food": _load_text_series(folder / "CPIUFDNS.csv"),
@@ -273,6 +314,9 @@ def load_v2_bundle(directory: Optional[Path] = None) -> dict:
         "consumer_credit_delinquency": _as_float_map(
             _load_text_series(folder / "DRCCLACBS.csv")
         ),
+        "rent_burden_30": rent_30,
+        "rent_burden_50": rent_50,
+        "rent_cpi": _load_text_series(folder / "CUUR0000SEHA.csv"),
     }
 
 
@@ -432,6 +476,10 @@ def _weights_for(order: Sequence[str], labor_name: str = "labor_utilization") ->
             weights[name] = HOUSING_STRESS_WEIGHT
         elif name == "consumer_credit_delinquency":
             weights[name] = CONSUMER_CREDIT_WEIGHT
+        elif name == "rent_burden_30":
+            weights[name] = RENT_BURDEN_WEIGHT
+        elif name == "rent_cpi_yoy":
+            weights[name] = RENT_CPI_PROXY_WEIGHT
         else:
             weights[name] = TRIAL_WEIGHTS[name]
     return weights
@@ -492,6 +540,25 @@ def build_v2_rows(bundle: Optional[Mapping] = None, fixture: Optional[FredLevels
             if_housing = score_basket(parts, housing_order, _weights_for(housing_order))
             if_credit = score_basket(parts, credit_order, _weights_for(credit_order))
             if_both = score_basket(parts, both_order, _weights_for(both_order))
+            rent_raw, rent_status, rent_date = quarterly_asof(bundle["rent_burden_30"], day)
+            rent50_raw, _rent50_status, _rent50_date = quarterly_asof(
+                bundle["rent_burden_50"], day
+            )
+            rent_cpi = _inflation_from_texts(bundle["rent_cpi"], day)
+            rent_cpi_status = "observed" if rent_cpi is not None else "excluded"
+            parts["rent_burden_30"] = rent_raw
+            parts["rent_cpi_yoy"] = rent_cpi
+            rent_order = PRIMARY_ORDER + ("rent_burden_30",)
+            rent_credit_order = PRIMARY_ORDER + (
+                "rent_burden_30",
+                "consumer_credit_delinquency",
+            )
+            proxy_order = PRIMARY_ORDER + ("rent_cpi_yoy",)
+            if_rent = score_basket(parts, rent_order, _weights_for(rent_order))
+            if_rent_credit = score_basket(
+                parts, rent_credit_order, _weights_for(rent_credit_order)
+            )
+            if_rent_proxy = score_basket(parts, proxy_order, _weights_for(proxy_order))
             held_crime_values = dict(parts)
             held_crime_values["incident_rate"] = float(PUBLISHED_INCIDENT_RATE)
             if_crime_held = score_basket(
@@ -603,6 +670,18 @@ def build_v2_rows(bundle: Optional[Mapping] = None, fixture: Optional[FredLevels
                     "v2_if_consumer_credit_band": if_credit["band"],
                     "v2_if_housing_and_consumer_index": if_both["index"],
                     "v2_if_housing_and_consumer_band": if_both["band"],
+                    "v2_rent_burden_30": rent_raw,
+                    "v2_rent_burden_status": rent_status,
+                    "v2_rent_burden_observation_date": rent_date,
+                    "v2_rent_burden_50": rent50_raw,
+                    "v2_if_rent_burden_index": if_rent["index"],
+                    "v2_if_rent_burden_band": if_rent["band"],
+                    "v2_if_rent_burden_and_consumer_index": if_rent_credit["index"],
+                    "v2_if_rent_burden_and_consumer_band": if_rent_credit["band"],
+                    "v2_rent_cpi_yoy": rent_cpi,
+                    "v2_rent_cpi_status": rent_cpi_status,
+                    "v2_if_rent_cpi_proxy_index": if_rent_proxy["index"],
+                    "v2_if_rent_cpi_proxy_band": if_rent_proxy["band"],
                     "score_note": SCORE_NOTE,
                 }
             )
@@ -675,6 +754,18 @@ COLUMNS = (
     "v2_if_consumer_credit_band",
     "v2_if_housing_and_consumer_index",
     "v2_if_housing_and_consumer_band",
+    "v2_rent_burden_30",
+    "v2_rent_burden_status",
+    "v2_rent_burden_observation_date",
+    "v2_rent_burden_50",
+    "v2_if_rent_burden_index",
+    "v2_if_rent_burden_band",
+    "v2_if_rent_burden_and_consumer_index",
+    "v2_if_rent_burden_and_consumer_band",
+    "v2_rent_cpi_yoy",
+    "v2_rent_cpi_status",
+    "v2_if_rent_cpi_proxy_index",
+    "v2_if_rent_cpi_proxy_band",
     "score_note",
 )
 
@@ -700,8 +791,11 @@ _INDEX_COLUMNS = {
     "v2_if_housing_index",
     "v2_if_consumer_credit_index",
     "v2_if_housing_and_consumer_index",
+    "v2_if_rent_burden_index",
+    "v2_if_rent_burden_and_consumer_index",
+    "v2_if_rent_cpi_proxy_index",
 }
-_ONE_DECIMAL = {"v2_food_cpi_yoy"}
+_ONE_DECIMAL = {"v2_food_cpi_yoy", "v2_rent_burden_30", "v2_rent_burden_50"}
 _TWO_DECIMAL = {
     "v2_labor_utilization",
     "v2_vix_month_mean",
@@ -710,6 +804,7 @@ _TWO_DECIMAL = {
     "v2_incident_population_weighted",
     "v2_housing_delinquency",
     "v2_consumer_credit_delinquency",
+    "v2_rent_cpi_yoy",
 }
 
 
@@ -787,6 +882,9 @@ def summarize(rows: Sequence[Mapping[str, object]]) -> list[dict]:
         "v2_if_housing": "v2_if_housing_index",
         "v2_if_consumer_credit": "v2_if_consumer_credit_index",
         "v2_if_housing_and_consumer": "v2_if_housing_and_consumer_index",
+        "v2_if_rent_burden": "v2_if_rent_burden_index",
+        "v2_if_rent_burden_and_consumer": "v2_if_rent_burden_and_consumer_index",
+        "v2_if_rent_cpi_proxy": "v2_if_rent_cpi_proxy_index",
     }
     band_of = {key: column.replace("_index", "_band") for key, column in index_of.items()}
     summary = []
@@ -994,6 +1092,40 @@ def render_markdown(rows: Sequence[Mapping[str, object]], summary: Sequence[Mapp
                 vb=cell(row, "v2_if_housing_and_consumer_index"),
             )
         )
+    rent_lines = [
+        "| Month | 30%+ | 50%+ (not scored) | Burden as-of | h2 | + rent burden | + burden and cards | Rent CPI YoY | + rent CPI proxy |",
+        "| --- | --- | --- | --- | --- | --- | --- | --- | --- |",
+    ]
+    for day in HOUSEHOLD_COMPARE_MONTHS:
+        row = by_date[day]
+        rent_lines.append(
+            "| {day} | {p30} | {p50} | {asof} | {v} | {rb} | {both} | {yoy} | {proxy} |".format(
+                day=day,
+                p30=_num(row["v2_rent_burden_30"], 1),
+                p50=_num(row["v2_rent_burden_50"], 1),
+                asof=(
+                    f"{row['v2_rent_burden_observation_date']} "
+                    f"{row['v2_rent_burden_status']}"
+                ),
+                v=cell(row, "v2_index"),
+                rb=cell(row, "v2_if_rent_burden_index"),
+                both=cell(row, "v2_if_rent_burden_and_consumer_index"),
+                yoy=_num(row["v2_rent_cpi_yoy"]),
+                proxy=cell(row, "v2_if_rent_cpi_proxy_index"),
+            )
+        )
+    # Full ACS file, not only the years a replay window happens to carry.
+    annual_burden = load_v2_bundle()["rent_burden_30"]
+    burden_low_year = min(annual_burden, key=lambda stamp: (annual_burden[stamp], stamp))
+    burden_high_year = max(annual_burden, key=lambda stamp: (annual_burden[stamp], stamp))
+    proxy_values = [
+        (str(row["date"]), float(row["v2_rent_cpi_yoy"]))
+        for row in rows
+        if row["v2_rent_cpi_yoy"] is not None
+    ]
+    proxy_peak_day, proxy_peak = max(proxy_values, key=lambda item: (item[1], item[0]))
+    rent_lo, rent_hi = TRIAL_RANGES["rent_burden_30"]
+    proxy_lo, proxy_hi = TRIAL_RANGES["rent_cpi_yoy"]
 
     summary_lines = [
         "| Window | v1 partial | v1 held | v2 candidate | v2, crime always off |",
@@ -1196,6 +1328,7 @@ Demoted from the v2 primary, on purpose, so the side-by-side can be discussed:
 
 - **Debt-to-GDP** is out of the primary. The sensitivity `v2_if_debt_included` adds it back at the v1 raw weight **0.12** and the v1 endpoints (0 to 200).
 - **Mortgage delinquency** and **credit-card delinquency** are out of the primary. They are side columns (`v2_if_housing`, `v2_if_consumer_credit`, `v2_if_housing_and_consumer`) at trial weight 0.12 each. They answer a coverage question. They do not replace h2.
+- **Rent burden** is out of the primary. `v2_if_rent_burden` adds the ACS 30%+ share at trial weight {RENT_BURDEN_WEIGHT:.2f}. `v2_if_rent_burden_and_consumer` adds that share and card delinquency. The 50%+ share is stored and not scored. `v2_if_rent_cpi_proxy` is rent-of-primary-residence inflation, labeled as a proxy, not as rent burden.
 - **Homelessness** and **Edelman trust** are out of every v2 column. There is still no monthly history. The "if removed" columns are the locked formula with that held-constant input left out.
 - **UNRATE alone** is not the v2 labor input. `v2_if_unrate` puts headline unemployment back in the labor slot (v1 range 0 to 25, weight {TRIAL_WEIGHTS['labor_utilization']:.2f}) so the composite can be compared with the series it would replace.
 - **`v2_if_epop_only`** uses prime-age EPOP alone (hypothesis range 68 to 82) instead of the 0.70/0.30 blend.
@@ -1217,7 +1350,7 @@ Band counts use the v1.0.0 thresholds on whatever number that column produced. A
 
 ### Key months
 
-h2 is still the primary candidate. `v2_if_housing`, `v2_if_consumer_credit`, and `v2_if_housing_and_consumer` are side columns for the coverage question “August 2026 High feels wrong.” They are not a new primary basket and they are not in the live score. UNRATE-instead and debt-added stay in this table; v1 partial stays in the monthly CSV.
+h2 is still the primary candidate. Housing delinquency, card delinquency, rent burden, and the rent-CPI proxy are side columns for the coverage question “August 2026 High feels wrong.” They are not a new primary basket and they are not in the live score. UNRATE-instead and debt-added stay in this table; v1 partial stays in the monthly CSV. The rent-burden comparison is in the next section.
 
 {chr(10).join(key_lines)}
 
@@ -1239,6 +1372,33 @@ August 2026 is **{cell(aug_2026, 'v2_index')}** on h2, **{cell(aug_2026, 'v2_if_
 October 2009 is where the mortgage series does the work h2’s labor blend did not. Mortgage delinquency is {_num(oct_2009['v2_housing_delinquency'])}% and card delinquency is {_num(oct_2009['v2_consumer_credit_delinquency'])}%. h2 is **{cell(oct_2009, 'v2_index')}**. With both side series it is **{cell(oct_2009, 'v2_if_housing_and_consumer_index')}**. October 2008 is already a VIX Low on h2 (**{cell(oct_2008, 'v2_index')}**); adding both household series scores **{cell(oct_2008, 'v2_if_housing_and_consumer_index')}**.
 
 April 2020 is the opposite case. Bank delinquency was low while prime-age employment had already broken, which is what forbearance does to this series. h2 is **{cell(april, 'v2_index')}**. With both household series it is **{cell(april, 'v2_if_housing_and_consumer_index')}**. These columns do not mark the COVID labor trough.
+
+### Rent burden side column
+
+There is no monthly national rent-burden series. Rent burden here is the share of renter households whose gross rent is at least 30% of household income, the Census cost-burden convention. It is not mortgage delinquency (`DRSFRMACBS`) and it is not corporate credit.
+
+The source is ACS table **B25070**, Gross Rent as a Percentage of Household Income in the Past 12 Months, national 1-year estimates. The scored share is `(30–34.9% + 35–39.9% + 40–49.9% + 50% or more) / (total − not computed) × 100`, rounded half-up to one decimal. “Not computed” stays out of the denominator. The **50%+** share uses the same denominator and is the severe-burden convention. It is a subset of the 30% group, so it is stored on the row and not given a second weight.
+
+| Piece | Choice |
+| --- | --- |
+| Series | `B25070` national 1-year. 2007–2009 from the ACS summary file (sequences 134, 138, and 148; United States logrecno 1). 2010–2019 and 2021–2024 from `data.census.gov` product `ACSDT1Y{{year}}.B25070`, geography United States. Pulled {RENT_DATA_PULL_DATE}. |
+| What is missing | **2020** has no standard 1-year ACS (the experimental 2020 1-year is not used). **2025** is not in that API on this pull. No month is invented. |
+| Frequency and lag | Annual. The 1-year ACS for survey year Y is usually released the following September. This file dates the print at January of the survey year, the same revised-vintage convention as the rest of this note, not the release month and not ALFRED. Later months carry that print forward until the next survey year. 2020 carries 2019. August 2026 carries 2024. |
+| Trial weight and range | {RENT_BURDEN_WEIGHT:.2f}, endpoints {rent_lo:g} to {rent_hi:g}. Higher share is less stable. In this file the annual 30%+ share runs **{_num(annual_burden[burden_low_year], 1)}** ({burden_low_year}) to **{_num(annual_burden[burden_high_year], 1)}** ({burden_high_year}). The range leaves that low short of fully stable and that high short of a hard floor. It was not chosen to push August under 70. A missing year drops the weight. None of these windows start before 2007. |
+
+`v2_if_rent_burden` is h2 plus that 30% share. `v2_if_rent_burden_and_consumer` also adds `DRCCLACBS` at weight {CONSUMER_CREDIT_WEIGHT:.2f}. h2 stays the primary.
+
+The last column is an honest high-frequency **proxy**, not rent burden. It is BLS `CUUR0000SEHA`, CPI-U rent of primary residence, not seasonally adjusted, 12-month percent change, same construction as headline CPI. Pulled {RENT_DATA_PULL_DATE}. Trial weight {RENT_CPI_PROXY_WEIGHT:.2f}, range {_signed(proxy_lo)} to {proxy_hi:g}. October 2025 is blank in this series (the appropriations lapse), so that month drops the proxy weight. The highest proxy print in these windows is **{_num(proxy_peak)}** on {proxy_peak_day}.
+
+{chr(10).join(rent_lines)}
+
+August 2026 is **{cell(aug_2026, 'v2_index')}** on h2. The rent-burden input that month is the **2024** ACS print carried forward: **{_num(aug_2026['v2_rent_burden_30'], 1)}%** of renters at the 30% line and **{_num(aug_2026['v2_rent_burden_50'], 1)}%** at the 50% line (observation {aug_2026['v2_rent_burden_observation_date']}). Adding the 30% share scores **{cell(aug_2026, 'v2_if_rent_burden_index')}**. Adding the 30% share and card delinquency scores **{cell(aug_2026, 'v2_if_rent_burden_and_consumer_index')}**. The rent-CPI proxy that month is **{_num(aug_2026['v2_rent_cpi_yoy'])}%** and scores **{cell(aug_2026, 'v2_if_rent_cpi_proxy_index')}**. The 2022, 2023, and 2024 surveys sit on top of each other near 52%, so carrying 2024 into August 2026 is not hiding a later collapse that this file contains. It also cannot see a 2025 or 2026 change in the income share, because those ACS years are not published here. Shelter inflation has cooled from the {proxy_peak_day[:7]} peak, which is why the proxy moves August less than the burden share does. Neither column puts August in Moderate.
+
+October 2009’s burden print is the 2009 survey (**{_num(oct_2009['v2_rent_burden_30'], 1)}%** at 30%+, observation {oct_2009['v2_rent_burden_observation_date']}). h2 is **{cell(oct_2009, 'v2_index')}**. With the burden share it is **{cell(oct_2009, 'v2_if_rent_burden_index')}**. Rent of primary residence that month is only **{_num(oct_2009['v2_rent_cpi_yoy'])}%** year over year, so the proxy scores **{cell(oct_2009, 'v2_if_rent_cpi_proxy_index')}**. The income share and the rent-price change are different facts: burden rose through the recession while rent inflation slowed.
+
+April 2020 has no 2020 ACS 1-year. The burden cell is the **2019** survey carried forward (**{_num(april['v2_rent_burden_30'], 1)}%**, the low in this file). h2 is **{cell(april, 'v2_index')}**. With that carried print it is **{cell(april, 'v2_if_rent_burden_index')}**. That is not a COVID rent-burden observation.
+
+October 2008 uses the 2008 survey (**{_num(oct_2008['v2_rent_burden_30'], 1)}%**), which was not published until the following year. h2 is **{cell(oct_2008, 'v2_index')}** and h2 plus burden is **{cell(oct_2008, 'v2_if_rent_burden_index')}**. June 2022 uses the 2022 survey (**{_num(jun_2022['v2_rent_burden_30'], 1)}%**). h2 is **{cell(jun_2022, 'v2_index')}** and h2 plus burden is **{cell(jun_2022, 'v2_if_rent_burden_index')}**.
 
 ### Inputs behind those months
 
@@ -1277,7 +1437,8 @@ UNRATE remains the v1 labor input. The composite is lower in April 2020 than a c
 ## What still blocks a v2.0 contract
 
 - These weights and ranges are hypothesis h2. They were not fit to a loss, a utility function, or a decision threshold. h1 is the prior labeled basket, not a rejected contract.
-- Rent burden, a household survey of missed housing payments, and anything after 2026 Q2 are not in the replay. The housing side column is bank delinquency on one- to four-family loans (`DRSFRMACBS`), carried forward from the latest quarter. It is not in the h2 primary and not in the live score.
+- Rent burden is a side column, not part of h2. It is ACS 1-year `B25070` (30%+ of income), annual, carried forward from the survey-year January. The latest survey in this pull is 2024. There is no 2020 standard 1-year and no 2025 1-year here, and neither gap is filled. The 50%+ share is diagnostic only. `CUUR0000SEHA` year-over-year is a labeled rent-inflation proxy, not the income share. Neither series is in the live score.
+- A household survey of missed housing payments is still not in the replay. Bank delinquency still ends at 2026 Q2.
 - Corporate credit spreads are not in the replay. VIX is an equity-volatility index, not a credit spread. Card delinquency (`DRCCLACBS`, issue #48) is a side column only. It is not a BBB or high-yield OAS series, and it is not in the h2 primary.
 - The labor composite is not the incubating participation penalty. That penalty still has no formula. The h2 band 72–82 is a tighter hypothesis range, not that penalty.
 - The h2 food range {food_lo_txt} to {food_hi_txt} is still a draft. Prints outside it still clamp. h1's 0–10 range is what clamped the 2022 peak at fully unstable and mild deflation at fully stable.
@@ -1317,6 +1478,11 @@ def render_svg(rows: Sequence[Mapping[str, object]]) -> str:
         "v1_held_index": "#1d4e89",
         "v2_index": "#b45309",
         "v2_without_crime_index": "#0f766e",
+        "v2_if_rent_burden_index": "#7c3aed",
+    }
+    dashes = {
+        "v2_without_crime_index": "4 3",
+        "v2_if_rent_burden_index": "1 3",
     }
     panels = []
     for index, window_name in enumerate(V2_WINDOW_ORDER):
@@ -1345,16 +1511,16 @@ def render_svg(rows: Sequence[Mapping[str, object]]) -> str:
             for i, row in enumerate(subset):
                 if row[key] is None:
                     if points:
-                        lines.append((color, points, key == "v2_without_crime_index"))
+                        lines.append((color, points, dashes.get(key)))
                         points = []
                     continue
                 points.append(xy(i, float(row[key])))
             if points:
-                lines.append((color, points, key == "v2_without_crime_index"))
+                lines.append((color, points, dashes.get(key)))
         path_markup = []
         for color, points, dashed in lines:
             coords = " ".join(f"{x:.1f},{y:.1f}" for x, y in points)
-            dash = ' stroke-dasharray="4 3"' if dashed else ""
+            dash = f' stroke-dasharray="{dashed}"' if dashed else ""
             path_markup.append(
                 f'<polyline fill="none" stroke="{color}" stroke-width="1.6"{dash} points="{coords}"/>'
             )
@@ -1378,6 +1544,7 @@ def render_svg(rows: Sequence[Mapping[str, object]]) -> str:
         '<tspan fill="#1d4e89">   v1 held</tspan>'
         '<tspan fill="#b45309">   v2 candidate h2</tspan>'
         '<tspan fill="#0f766e">   v2 crime off</tspan>'
+        '<tspan fill="#7c3aed">   h2 + rent burden</tspan>'
         "</text>"
     )
     body = "".join(panels) + legend

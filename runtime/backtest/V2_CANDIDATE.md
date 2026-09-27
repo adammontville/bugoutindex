@@ -47,6 +47,7 @@ Demoted from the v2 primary, on purpose, so the side-by-side can be discussed:
 
 - **Debt-to-GDP** is out of the primary. The sensitivity `v2_if_debt_included` adds it back at the v1 raw weight **0.12** and the v1 endpoints (0 to 200).
 - **Mortgage delinquency** and **credit-card delinquency** are out of the primary. They are side columns (`v2_if_housing`, `v2_if_consumer_credit`, `v2_if_housing_and_consumer`) at trial weight 0.12 each. They answer a coverage question. They do not replace h2.
+- **Rent burden** is out of the primary. `v2_if_rent_burden` adds the ACS 30%+ share at trial weight 0.12. `v2_if_rent_burden_and_consumer` adds that share and card delinquency. The 50%+ share is stored and not scored. `v2_if_rent_cpi_proxy` is rent-of-primary-residence inflation, labeled as a proxy, not as rent burden.
 - **Homelessness** and **Edelman trust** are out of every v2 column. There is still no monthly history. The "if removed" columns are the locked formula with that held-constant input left out.
 - **UNRATE alone** is not the v2 labor input. `v2_if_unrate` puts headline unemployment back in the labor slot (v1 range 0 to 25, weight 0.30) so the composite can be compared with the series it would replace.
 - **`v2_if_epop_only`** uses prime-age EPOP alone (hypothesis range 68 to 82) instead of the 0.70/0.30 blend.
@@ -85,7 +86,7 @@ Band counts use the v1.0.0 thresholds on whatever number that column produced. A
 
 ### Key months
 
-h2 is still the primary candidate. `v2_if_housing`, `v2_if_consumer_credit`, and `v2_if_housing_and_consumer` are side columns for the coverage question “August 2026 High feels wrong.” They are not a new primary basket and they are not in the live score. UNRATE-instead and debt-added stay in this table; v1 partial stays in the monthly CSV.
+h2 is still the primary candidate. Housing delinquency, card delinquency, rent burden, and the rent-CPI proxy are side columns for the coverage question “August 2026 High feels wrong.” They are not a new primary basket and they are not in the live score. UNRATE-instead and debt-added stay in this table; v1 partial stays in the monthly CSV. The rent-burden comparison is in the next section.
 
 | Month | Why it is here | v1 held | h2 | h2, crime off | h2 + housing | h2 + consumer credit | h2 + both | v2, UNRATE instead | v2, debt added |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -128,6 +129,39 @@ August 2026 is **77.28 High** on h2, **79.23 High** with mortgage delinquency, *
 October 2009 is where the mortgage series does the work h2’s labor blend did not. Mortgage delinquency is 10.41% and card delinquency is 6.33%. h2 is **65.79 Moderate**. With both side series it is **55.03 Moderate**. October 2008 is already a VIX Low on h2 (**50.79 Low**); adding both household series scores **48.62 Low**.
 
 April 2020 is the opposite case. Bank delinquency was low while prime-age employment had already broken, which is what forbearance does to this series. h2 is **44.34 Low**. With both household series it is **51.75 Low**. These columns do not mark the COVID labor trough.
+
+### Rent burden side column
+
+There is no monthly national rent-burden series. Rent burden here is the share of renter households whose gross rent is at least 30% of household income, the Census cost-burden convention. It is not mortgage delinquency (`DRSFRMACBS`) and it is not corporate credit.
+
+The source is ACS table **B25070**, Gross Rent as a Percentage of Household Income in the Past 12 Months, national 1-year estimates. The scored share is `(30–34.9% + 35–39.9% + 40–49.9% + 50% or more) / (total − not computed) × 100`, rounded half-up to one decimal. “Not computed” stays out of the denominator. The **50%+** share uses the same denominator and is the severe-burden convention. It is a subset of the 30% group, so it is stored on the row and not given a second weight.
+
+| Piece | Choice |
+| --- | --- |
+| Series | `B25070` national 1-year. 2007–2009 from the ACS summary file (sequences 134, 138, and 148; United States logrecno 1). 2010–2019 and 2021–2024 from `data.census.gov` product `ACSDT1Y{year}.B25070`, geography United States. Pulled 2026-09-27. |
+| What is missing | **2020** has no standard 1-year ACS (the experimental 2020 1-year is not used). **2025** is not in that API on this pull. No month is invented. |
+| Frequency and lag | Annual. The 1-year ACS for survey year Y is usually released the following September. This file dates the print at January of the survey year, the same revised-vintage convention as the rest of this note, not the release month and not ALFRED. Later months carry that print forward until the next survey year. 2020 carries 2019. August 2026 carries 2024. |
+| Trial weight and range | 0.12, endpoints 40 to 60. Higher share is less stable. In this file the annual 30%+ share runs **48.4** (2019-01-01) to **53.4** (2011-01-01). The range leaves that low short of fully stable and that high short of a hard floor. It was not chosen to push August under 70. A missing year drops the weight. None of these windows start before 2007. |
+
+`v2_if_rent_burden` is h2 plus that 30% share. `v2_if_rent_burden_and_consumer` also adds `DRCCLACBS` at weight 0.12. h2 stays the primary.
+
+The last column is an honest high-frequency **proxy**, not rent burden. It is BLS `CUUR0000SEHA`, CPI-U rent of primary residence, not seasonally adjusted, 12-month percent change, same construction as headline CPI. Pulled 2026-09-27. Trial weight 0.12, range −2 to 12. October 2025 is blank in this series (the appropriations lapse), so that month drops the proxy weight. The highest proxy print in these windows is **8.81** on 2023-03-01.
+
+| Month | 30%+ | 50%+ (not scored) | Burden as-of | h2 | + rent burden | + burden and cards | Rent CPI YoY | + rent CPI proxy |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 2008-10-01 | 49.8 | 25.1 | 2008-01-01 carried_forward | 50.79 Low | 50.82 Low | 48.84 Low | 3.68 | 51.92 Low |
+| 2009-10-01 | 51.5 | 26.4 | 2009-01-01 carried_forward | 65.79 Moderate | 62.75 Moderate | 58.26 Moderate | 1.23 | 67.24 Moderate |
+| 2020-04-01 | 48.4 | 23.7 | 2019-01-01 carried_forward | 44.34 Low | 45.80 Low | 49.04 Low | 3.49 | 46.10 Low |
+| 2022-06-01 | 51.9 | 26.7 | 2022-01-01 carried_forward | 59.19 Moderate | 57.19 Moderate | 60.18 Moderate | 5.78 | 57.61 Moderate |
+| 2026-08-01 | 51.8 | 26.1 | 2024-01-01 carried_forward | 77.28 High | 72.55 High | 72.67 High | 2.75 | 75.82 High |
+
+August 2026 is **77.28 High** on h2. The rent-burden input that month is the **2024** ACS print carried forward: **51.8%** of renters at the 30% line and **26.1%** at the 50% line (observation 2024-01-01). Adding the 30% share scores **72.55 High**. Adding the 30% share and card delinquency scores **72.67 High**. The rent-CPI proxy that month is **2.75%** and scores **75.82 High**. The 2022, 2023, and 2024 surveys sit on top of each other near 52%, so carrying 2024 into August 2026 is not hiding a later collapse that this file contains. It also cannot see a 2025 or 2026 change in the income share, because those ACS years are not published here. Shelter inflation has cooled from the 2023-03 peak, which is why the proxy moves August less than the burden share does. Neither column puts August in Moderate.
+
+October 2009’s burden print is the 2009 survey (**51.5%** at 30%+, observation 2009-01-01). h2 is **65.79 Moderate**. With the burden share it is **62.75 Moderate**. Rent of primary residence that month is only **1.23%** year over year, so the proxy scores **67.24 Moderate**. The income share and the rent-price change are different facts: burden rose through the recession while rent inflation slowed.
+
+April 2020 has no 2020 ACS 1-year. The burden cell is the **2019** survey carried forward (**48.4%**, the low in this file). h2 is **44.34 Low**. With that carried print it is **45.80 Low**. That is not a COVID rent-burden observation.
+
+October 2008 uses the 2008 survey (**49.8%**), which was not published until the following year. h2 is **50.79 Low** and h2 plus burden is **50.82 Low**. June 2022 uses the 2022 survey (**51.9%**). h2 is **59.19 Moderate** and h2 plus burden is **57.19 Moderate**.
 
 ### Inputs behind those months
 
@@ -181,7 +215,8 @@ UNRATE remains the v1 labor input. The composite is lower in April 2020 than a c
 ## What still blocks a v2.0 contract
 
 - These weights and ranges are hypothesis h2. They were not fit to a loss, a utility function, or a decision threshold. h1 is the prior labeled basket, not a rejected contract.
-- Rent burden, a household survey of missed housing payments, and anything after 2026 Q2 are not in the replay. The housing side column is bank delinquency on one- to four-family loans (`DRSFRMACBS`), carried forward from the latest quarter. It is not in the h2 primary and not in the live score.
+- Rent burden is a side column, not part of h2. It is ACS 1-year `B25070` (30%+ of income), annual, carried forward from the survey-year January. The latest survey in this pull is 2024. There is no 2020 standard 1-year and no 2025 1-year here, and neither gap is filled. The 50%+ share is diagnostic only. `CUUR0000SEHA` year-over-year is a labeled rent-inflation proxy, not the income share. Neither series is in the live score.
+- A household survey of missed housing payments is still not in the replay. Bank delinquency still ends at 2026 Q2.
 - Corporate credit spreads are not in the replay. VIX is an equity-volatility index, not a credit spread. Card delinquency (`DRCCLACBS`, issue #48) is a side column only. It is not a BBB or high-yield OAS series, and it is not in the h2 primary.
 - The labor composite is not the incubating participation penalty. That penalty still has no formula. The h2 band 72–82 is a tighter hypothesis range, not that penalty.
 - The h2 food range −2 to 15 is still a draft. Prints outside it still clamp. h1's 0–10 range is what clamped the 2022 peak at fully unstable and mild deflation at fully stable.

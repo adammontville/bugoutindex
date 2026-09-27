@@ -28,6 +28,7 @@ from runtime.backtest.v2_candidate import (
     build_v2_rows,
     csv_fields,
     food_public_yoy,
+    load_v2_bundle,
     main,
     render_markdown,
     summarize,
@@ -140,6 +141,41 @@ def test_household_side_columns_stay_off_the_primary_and_the_live_path():
     assert "DRCCLACBS" not in formula
 
 
+def test_rent_burden_is_an_annual_side_column_not_the_live_score():
+    rows = _by_date(build_v2_rows())
+    august = rows["2026-08-01"]
+    assert august["v2_rent_burden_status"] == "carried_forward"
+    assert august["v2_rent_burden_observation_date"] == "2024-01-01"
+    assert august["v2_rent_burden_30"] == 51.8
+    assert august["v2_rent_burden_50"] == 26.1
+    assert "rent_burden_30" not in august["v2_inputs_present"]
+    assert august["v2_if_rent_burden_band"] == "High Stability"
+    assert august["v2_if_rent_cpi_proxy_band"] == "High Stability"
+    assert august["v2_if_rent_burden_index"] < august["v2_index"]
+    assert august["v2_rent_cpi_status"] == "observed"
+    october = rows["2009-10-01"]
+    assert october["v2_rent_burden_observation_date"] == "2009-01-01"
+    assert october["v2_rent_burden_30"] == 51.5
+    assert october["v2_if_rent_burden_index"] < october["v2_index"]
+    assert october["v2_if_rent_cpi_proxy_index"] > october["v2_index"]
+    april = rows["2020-04-01"]
+    assert april["v2_rent_burden_observation_date"] == "2019-01-01"
+    assert april["v2_rent_burden_status"] == "carried_forward"
+    assert april["v2_rent_burden_30"] == 48.4
+    assert rows["2008-10-01"]["v2_rent_burden_observation_date"] == "2008-01-01"
+    assert rows["2022-06-01"]["v2_rent_burden_30"] == 51.9
+    assert rows["2025-10-01"]["v2_rent_cpi_status"] == "excluded"
+    assert rows["2025-10-01"]["v2_rent_cpi_yoy"] is None
+    formula = (ROOT / "runtime" / "processing" / "formula.py").read_text(encoding="utf-8")
+    assert "B25070" not in formula
+    assert "CUUR0000SEHA" not in formula
+    burden = load_v2_bundle()["rent_burden_30"]
+    assert burden["2011-01-01"] == 53.4
+    assert burden["2019-01-01"] == 48.4
+    assert "2020-01-01" not in burden
+    assert "2025-01-01" not in burden
+
+
 def test_october_2025_gap_is_not_filled_in():
     october = _by_date(build_v2_rows())["2025-10-01"]
     assert october["v2_inflation_rate"] is None
@@ -223,6 +259,10 @@ def test_committed_v2_tables_match_the_harness():
     assert "hypothesis h2" in note.lower()
     assert "DRSFRMACBS" in note
     assert "DRCCLACBS" in note
+    assert "B25070" in note
+    assert "CUUR0000SEHA" in note
+    assert "53.4" in note
+    assert "2011-01-01" in note
     assert "45.62" in note
     assert "2008-10-01" in note and "2009-10-01" in note
     assert "2020-03-01" in note and "2020-04-01" in note

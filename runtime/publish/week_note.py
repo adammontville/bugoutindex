@@ -268,6 +268,8 @@ def _disclaimer(snapshot: Dict[str, Any]) -> str:
         named.append("the labor-utilization shadow series")
     if _shadow_present(snapshot, "food_shadow", ("food_cpi_yoy",)):
         named.append("the food-price shadow series")
+    if _shadow_present(snapshot, "nyc_dhs_shadow", ("nyc_dhs_total_individuals",)):
+        named.append("the NYC DHS shelter-census shadow series")
     if not named:
         return "Markets and the short-term pulse are not inputs to the BugOut Index score."
     if len(named) == 1:

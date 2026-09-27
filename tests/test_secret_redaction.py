@@ -13,6 +13,7 @@ import requests
 
 from runtime.data.fetch.fetch_food_shadow import fetch as fetch_food
 from runtime.data.fetch.fetch_labor_shadow import fetch as fetch_labor
+from runtime.data.fetch.fetch_nyc_dhs_shadow import fetch as fetch_nyc_dhs
 from runtime.data.fetch.fetch_revisions import fetch as fetch_revisions
 from runtime.processing.formula import CORE_METRICS
 from runtime.util.http_retry import RetryError
@@ -82,13 +83,15 @@ def test_fetchers_store_redacted_errors_when_the_exception_is_already_poisoned(m
 
     monkeypatch.setattr("runtime.data.fetch.fetch_labor_shadow.get_with_retry", boom)
     monkeypatch.setattr("runtime.data.fetch.fetch_food_shadow.get_with_retry", boom)
+    monkeypatch.setattr("runtime.data.fetch.fetch_nyc_dhs_shadow.get_with_retry", boom)
     monkeypatch.setattr("runtime.data.fetch.fetch_revisions.get_with_retry", boom)
 
     labor = fetch_labor()
     food = fetch_food()
+    nyc = fetch_nyc_dhs()
     revisions = fetch_revisions()
 
-    for payload in (labor, food, revisions):
+    for payload in (labor, food, nyc, revisions):
         blob = json.dumps(payload)
         assert FAKE_KEY not in blob
         assert FAKE_HEADER not in blob
@@ -97,6 +100,9 @@ def test_fetchers_store_redacted_errors_when_the_exception_is_already_poisoned(m
     assert "FRED unreachable" in labor["message"]
     assert food["status"] == "error"
     assert food["in_bugout_index"] is False
+    assert nyc["status"] == "error"
+    assert nyc["in_bugout_index"] is False
+    assert "NYC Open Data unreachable" in nyc["message"]
     assert revisions["status"] == "error"
     assert "ALFRED unreachable" in revisions["message"]
     assert "series_id=UNRATE" in revisions["message"]

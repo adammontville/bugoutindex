@@ -124,9 +124,13 @@ def test_markets_refusal_does_not_write_a_snapshot(tmp_path, monkeypatch):
             for metric in weekly.CORE_METRICS
         },
     )
+    def _should_not_fetch_nyc():
+        raise AssertionError("NYC DHS shadow fetch ran after a markets refusal")
+
     monkeypatch.setattr(weekly, "fetch_markets", lambda: {"status": "error", "data": {}})
     monkeypatch.setattr(weekly, "fetch_pulse", lambda: {"status": "success", "data": {}})
     monkeypatch.setattr(weekly, "fetch_revisions", lambda: {"status": "success"})
+    monkeypatch.setattr(weekly, "fetch_nyc_dhs_shadow", _should_not_fetch_nyc)
 
     assert weekly.main() == EXIT_MARKETS_OR_PULSE_REFUSED
     assert not (tmp_path / "docs" / "latest.json").exists()

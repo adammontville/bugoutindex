@@ -164,6 +164,37 @@
 <p class="chart-caption">Each point is a FRED observation month, not a BugOut Index publication week. Not in the BugOut Index.</p>
 {% endif %}
 
+<div class="section-title">
+  <h3>NYC DHS shelter census — shadow series</h3>
+  <span class="hint">Not in the BugOut Index. No weight. New York City only — not a U.S. total. Daily count of individuals in the NYC Department of Homeless Services shelter system. HUD AHAR remains the annual national homelessness input.</span>
+</div>
+<p class="rev-callout">
+  This reading is a companion only. It is not in the BugOut Index and it has no weight.
+  It is a New York City headcount from
+  <a href="https://data.cityofnewyork.us/Social-Services/DHS-Daily-Report/k46n-sa2m">NYC Open Data {{ nyc_dataset_id }}</a>
+  (field <code>total_individuals_in_shelter</code>), not a national rate and not a substitute for the HUD AHAR homelessness input.
+  {% if nyc_reused_from %}
+  This week’s fetch failed; the value is carried forward from the {{ nyc_reused_from }} publish. The date below is the DHS census date.
+  {% endif %}
+</p>
+<div class="grid nyc">
+  {% for tile in nyc_tiles %}
+  <div class="tile{% if tile.stale %} stale{% endif %}">
+    <div class="k">{{ tile.label }}{% if tile.stale %} <span class="badge-stale">Stale</span>{% endif %}</div>
+    <div class="v">{{ tile.value|fmt(tile.unit, 0) }}</div>
+    <div class="meta">
+      <span><a href="{{ tile.source_url }}">NYC Open Data {{ tile.dataset_id }}</a></span>
+      <span>NYC only · not in the BugOut Index</span>
+    </div>
+    <div class="age">{{ tile.age_text }}</div>
+  </div>
+  {% endfor %}
+</div>
+{% if nyc_chart %}
+<div class="chart-card">{{ nyc_chart|safe }}</div>
+<p class="chart-caption">Each point is a DHS census date, not a BugOut Index publication week. New York City only. Not in the BugOut Index.</p>
+{% endif %}
+
 <div class="section-title"><h3>About this index</h3></div>
 <p style="max-width:70ch;color:var(--muted);">
   The BugOut Index is a directional stress and stability reading
@@ -171,8 +202,8 @@
   fixed endpoints and combine into one 0–100 score. Higher means those conditions are
   less stressed. The number shows how hard the published inputs are pressing. It is not
   a forecast, and it is not an instruction to bug out.
-  Markets, the short-term pulse, labor utilization, and food prices on this page are companions.
-  They are not in the score. Several inputs update monthly, quarterly, or once a year,
+  Markets, the short-term pulse, labor utilization, food prices, and the NYC DHS shelter census on this page are companions.
+  They are not in the score. The NYC census is New York City only. HUD AHAR remains the annual national homelessness input. Several inputs update monthly, quarterly, or once a year,
   so many weeks the number does not move.
   See <a href="./methodology.html">methodology</a> for the calculation, weights, and limits.
   The committed weekly files are the record of a past score. Rerunning the publisher

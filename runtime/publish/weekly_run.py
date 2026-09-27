@@ -9,8 +9,9 @@ Responsibilities:
        Streamlit runtime (reading FRED_API_KEY from env vars instead).
     2. Fetch all six core BOI metrics and compute the weighted index.
     3. Fetch metals (gold, silver, DXY), the short-term economic pulse,
-       the labor-utilization shadow series, and the food-price shadow
-       series (not index inputs; a shadow failure does not refuse the publish).
+       and the shadow companions (labor utilization, food prices, and
+       the NYC DHS shelter census). Shadows are not index inputs; a
+       shadow failure does not refuse the publish.
     4. Append a flat row to the weekly history CSVs.
     5. Emit a single `docs/data/latest.json` snapshot consumed by the
        static-site renderer.
@@ -162,6 +163,19 @@ def fetch_food_shadow() -> Dict[str, Any]:
         return _shadow_fetch_error("food shadow", exc)
 
 
+def fetch_nyc_dhs_shadow() -> Dict[str, Any]:
+    """NYC DHS shelter census. Not an index input and not a U.S. rate.
+
+    A raised exception becomes ``status: error`` so the publish can continue.
+    """
+    sys.path.insert(0, str(REPO_ROOT))
+    try:
+        mod = importlib.import_module("runtime.data.fetch.fetch_nyc_dhs_shadow")
+        return mod.fetch()
+    except Exception as exc:  # noqa: BLE001
+        return _shadow_fetch_error("NYC DHS shadow", exc)
+
+
 def _shadow_has_value(block: Dict[str, Any]) -> bool:
     values = block.get("values") or {}
     return any(isinstance(value, (int, float)) and not isinstance(value, bool) for value in values.values())
@@ -186,7 +200,7 @@ def _read_previous_snapshot() -> Dict[str, Any]:
 def _resolve_shadow(payload: Dict[str, Any], block_key: str) -> Dict[str, Any]:
     """Keep a failed shadow fetch from blanking a series we already published.
 
-    Carried-forward observation dates stay the FRED dates on the previous
+    Carried-forward observation dates stay the dates on the previous
     block. Nothing here writes the current clock.
     """
     block = dict(payload or {})
@@ -214,6 +228,10 @@ def _resolve_labor_shadow(payload: Dict[str, Any]) -> Dict[str, Any]:
 
 def _resolve_food_shadow(payload: Dict[str, Any]) -> Dict[str, Any]:
     return _resolve_shadow(payload, "food_shadow")
+
+
+def _resolve_nyc_dhs_shadow(payload: Dict[str, Any]) -> Dict[str, Any]:
+    return _resolve_shadow(payload, "nyc_dhs_shadow")
 
 
 def fetch_revisions() -> Dict[str, Any]:
@@ -293,11 +311,21 @@ def _append_food_shadow(run_date: str, food_shadow: Dict[str, Any]) -> None:
     )
 
 
+def _append_nyc_dhs_shadow(run_date: str, nyc_dhs_shadow: Dict[str, Any]) -> None:
+    _append_shadow_row(
+        "nyc_dhs_shadow_history.csv",
+        "runtime.data.fetch.fetch_nyc_dhs_shadow",
+        run_date,
+        nyc_dhs_shadow,
+    )
+
+
 def append_history(run_date: str, boi: Dict[str, Any],
                    markets: Dict[str, Any], pulse: Dict[str, Any],
                    core: Dict[str, Dict[str, Any]] | None = None,
                    labor_shadow: Dict[str, Any] | None = None,
-                   food_shadow: Dict[str, Any] | None = None) -> None:
+                   food_shadow: Dict[str, Any] | None = None,
+                   nyc_dhs_shadow: Dict[str, Any] | None = None) -> None:
     # Flat core metrics history (replaces the old dict-stringified CSV going forward).
     boi_path = DATA_DIR / "weekly_bugout_index.csv"
     # Old files gain the observation-date columns with blank cells. Dates are
@@ -329,6 +357,8 @@ def append_history(run_date: str, boi: Dict[str, Any],
         _append_labor_shadow(run_date, labor_shadow)
     if food_shadow is not None:
         _append_food_shadow(run_date, food_shadow)
+    if nyc_dhs_shadow is not None:
+        _append_nyc_dhs_shadow(run_date, nyc_dhs_shadow)
 
 
 def _metric_snapshot(metric: str, scored: Dict[str, Any], payload: Dict[str, Any]) -> Dict[str, Any]:
@@ -354,7 +384,8 @@ def build_snapshot(run_date: str, boi: Dict[str, Any],
                    markets: Dict[str, Any],
                    pulse: Dict[str, Any],
                    labor_shadow: Dict[str, Any] | None = None,
-                   food_shadow: Dict[str, Any] | None = None) -> Dict[str, Any]:
+                   food_shadow: Dict[str, Any] | None = None,
+                   nyc_dhs_shadow: Dict[str, Any] | None = None) -> Dict[str, Any]:
     band = interpret(boi["index"])
     snapshot = {
         "schema_version": 1,
@@ -387,6 +418,10 @@ def build_snapshot(run_date: str, boi: Dict[str, Any],
         block = dict(food_shadow)
         block["in_bugout_index"] = False
         snapshot["food_shadow"] = block
+    if nyc_dhs_shadow is not None:
+        block = dict(nyc_dhs_shadow)
+        block["in_bugout_index"] = False
+        snapshot["nyc_dhs_shadow"] = block
     return snapshot
 
 
@@ -467,7 +502,8 @@ def main() -> int:
               file=sys.stderr)
 
     # Hard-fail if markets or the pulse returned no usable data at all.
-    # Labor and food shadows are companions: their failure must not refuse the publish.
+    # Labor, food, and NYC DHS shadows are companions: their failure must
+    # not refuse the publish. They are fetched only after this check.
     hard_failures = []
     if markets.get("status") == "error":
         hard_failures.append("markets fully failed")
@@ -509,6 +545,21 @@ def main() -> int:
         )
     food_shadow = _resolve_food_shadow(food_shadow)
 
+    print("[weekly_run] fetching NYC DHS shelter census (not in the index)…")
+    nyc_dhs_shadow = fetch_nyc_dhs_shadow()
+    if nyc_dhs_shadow.get("status") not in ("success", "partial"):
+        print(
+            "[weekly_run] NYC DHS shadow failed (publishing anyway): "
+            f"{nyc_dhs_shadow.get('message') or nyc_dhs_shadow.get('errors')}",
+            file=sys.stderr,
+        )
+    elif nyc_dhs_shadow.get("errors"):
+        print(
+            f"[weekly_run] NYC DHS shadow partial (publishing anyway): {nyc_dhs_shadow['errors']}",
+            file=sys.stderr,
+        )
+    nyc_dhs_shadow = _resolve_nyc_dhs_shadow(nyc_dhs_shadow)
+
     # Soft-warn if any partial failures occurred (some pulse items missing, etc.).
     partial_warnings = _summarize_failures(core, markets, pulse)
     if partial_warnings:
@@ -517,9 +568,11 @@ def main() -> int:
             print(f"  - {line}", file=sys.stderr)
 
     print("[weekly_run] appending history…")
-    append_history(run_date, boi, markets, pulse, core, labor_shadow, food_shadow)
+    append_history(run_date, boi, markets, pulse, core, labor_shadow, food_shadow, nyc_dhs_shadow)
 
-    snapshot = build_snapshot(run_date, boi, core, markets, pulse, labor_shadow, food_shadow)
+    snapshot = build_snapshot(
+        run_date, boi, core, markets, pulse, labor_shadow, food_shadow, nyc_dhs_shadow,
+    )
 
     # Carry the previous revisions payload forward if this week's fetch failed.
     if revisions.get("status") == "success":
@@ -550,6 +603,7 @@ def main() -> int:
         "pulse": load_history(DATA_DIR / "pulse_history.csv"),
         "labor_shadow": load_history(DATA_DIR / "labor_shadow_history.csv"),
         "food_shadow": load_history(DATA_DIR / "food_shadow_history.csv"),
+        "nyc_dhs_shadow": load_history(DATA_DIR / "nyc_dhs_shadow_history.csv"),
     }
 
     # Shadow and revision failures are published on exit 0. Scrub the

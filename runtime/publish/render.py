@@ -293,6 +293,19 @@ FOOD_SHADOW_COLORS = {
     "food_cpi_yoy": "#0f766e",
 }
 
+# Companion only. IDs match runtime/data/fetch/fetch_nyc_dhs_shadow.py SERIES.
+# Not in CORE_METRICS and not passed to compute_index.
+# New York City shelter headcount. Not the national HUD AHAR rate.
+NYC_DHS_SHADOW_LABELS = {
+    "nyc_dhs_total_individuals": (
+        "Total individuals in NYC DHS shelters",
+        "people",
+        "total_individuals_in_shelter",
+    ),
+}
+NYC_DHS_SOURCE_URL = "https://data.cityofnewyork.us/Social-Services/DHS-Daily-Report/k46n-sa2m"
+NYC_DHS_DATASET_ID = "k46n-sa2m"
+
 
 def _fmt(val, unit: str = "", digits: int = 2) -> str:
     if val is None:
@@ -381,6 +394,36 @@ def _food_chart_svg(food: Dict[str, Any]) -> str:
         FOOD_SHADOW_LABELS,
         FOOD_SHADOW_COLORS,
         "Food CPI, 12-month percent change — not in the BugOut Index",
+    )
+
+
+def _nyc_dhs_chart_svg(shadow: Dict[str, Any]) -> str:
+    """Daily NYC census dates. The axis is the DHS date, not the publish week."""
+    observations = (shadow or {}).get("observations") or {}
+    points: List[dict] = []
+    for row in observations.get("nyc_dhs_total_individuals") or []:
+        if not isinstance(row, dict):
+            continue
+        day = row.get("date")
+        value = row.get("value")
+        if not day or value is None:
+            continue
+        try:
+            points.append({"date": str(day), "value": float(value)})
+        except (TypeError, ValueError):
+            continue
+    points.sort(key=lambda item: item["date"])
+    if not points:
+        return ""
+    return multiline_chart_svg(
+        series=[{
+            "label": "NYC DHS total individuals in shelter",
+            "color": "#7c2d12",
+            "values": [item["value"] for item in points],
+        }],
+        x_labels=[item["date"] for item in points],
+        title="NYC DHS shelter census — New York City only, not in the BugOut Index",
+        y_digits=0,
     )
 
 
@@ -518,6 +561,28 @@ def render_site(snapshot: Dict[str, Any]) -> None:
             "bls_series_id": (food.get("bls_series_ids") or {}).get(key) or "CUUR0000SAF1",
         })
 
+    nyc = snapshot.get("nyc_dhs_shadow") or {}
+    nyc_dates = nyc.get("dates") or {}
+    nyc_values = nyc.get("values") or {}
+    nyc_history = snapshot.get("history", {}).get("nyc_dhs_shadow", []) or []
+    nyc_tiles = []
+    for key, (label, unit, field) in NYC_DHS_SHADOW_LABELS.items():
+        age = describe_pulse_age(
+            nyc_dates.get(key),
+            snapshot.get("publication_date"),
+            flat=series_is_flat(_series(nyc_history, key)),
+        )
+        nyc_tiles.append({
+            "label": label,
+            "unit": unit,
+            "value": nyc_values.get(key),
+            "age_text": age["text"],
+            "stale": age["stale"],
+            "source_id": field,
+            "dataset_id": nyc.get("dataset_id") or NYC_DHS_DATASET_ID,
+            "source_url": nyc.get("source_url") or NYC_DHS_SOURCE_URL,
+        })
+
     # Week-over-week BOI delta
     boi_delta = None
     if len(boi_series) >= 2 and boi_series[-1] is not None and boi_series[-2] is not None:
@@ -536,6 +601,10 @@ def render_site(snapshot: Dict[str, Any]) -> None:
         "food_tiles": food_tiles,
         "food_chart": _food_chart_svg(food),
         "food_reused_from": food.get("reused_from"),
+        "nyc_tiles": nyc_tiles,
+        "nyc_chart": _nyc_dhs_chart_svg(nyc),
+        "nyc_reused_from": nyc.get("reused_from"),
+        "nyc_dataset_id": nyc.get("dataset_id") or NYC_DHS_DATASET_ID,
         "history_count": len(boi_history),
         "week_note": build_week_note(snapshot),
     }
@@ -546,6 +615,7 @@ def render_site(snapshot: Dict[str, Any]) -> None:
         boi_history=boi_history, markets_history=markets_history, pulse_history=pulse_history,
         labor_history=labor_history, labor_labels=LABOR_SHADOW_LABELS,
         food_history=food_history, food_labels=FOOD_SHADOW_LABELS,
+        nyc_history=nyc_history, nyc_labels=NYC_DHS_SHADOW_LABELS,
         metric_labels=METRIC_LABELS, pulse_labels=PULSE_LABELS, snapshot=snapshot,
     ))
 

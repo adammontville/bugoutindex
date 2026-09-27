@@ -73,6 +73,7 @@ jobs:
                   runtime/data/pulse_history.csv \
                   runtime/data/labor_shadow_history.csv \
                   runtime/data/food_shadow_history.csv \
+                  runtime/data/nyc_dhs_shadow_history.csv \
                   docs/
           if git diff --cached --quiet; then
             echo "No changes to commit."

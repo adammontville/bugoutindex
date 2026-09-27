@@ -184,13 +184,16 @@ For more information, see the [LICENSE](./LICENSE.md) file.
 
 Nothing in this section is part of the v1.0.0 score. Companions stay outside the score unless an explicit, versioned methodology change says otherwise. The index is a directional stress reading of published statistics, not a historical bug-out siren.
 
-The inventory below is the cut locked by Adam Montville on 2026-09-23. It does not add a series to the weekly publisher.
+The inventory below is the cut locked by Adam Montville on 2026-09-23. That cut does not add a series to the score. The NYC DHS shelter census was added later as a companion only. It is not in v1.0.0.
 
 ### Keep-shadow — Labor utilization
 - [Labor Utilization](./incubating/boi-labor-utilization-incubating.md) — prime-age EPOP (`LNS12300060`) and participation (`LNS11300060`) stay on the weekly site as a shadow series. They are not in v1.0.0. The composite formula stays incubating. A backtest is still required before any v1.1 promotion into the score.
 
 ### Keep-shadow — Food prices
 - [Food Price Index](./incubating/food_price_index.md) — food CPI year-over-year (FRED `CPIUFDNS`, BLS `CUUR0000SAF1`, not seasonally adjusted, 12-month percent change) is on the weekly site as a shadow series. It is not in v1.0.0. No weight. The draft 0–10% normalization is not applied. The old `fetch_food_price_index` stub stays fail-closed; the weekly job calls `fetch_food_shadow`.
+
+### Shipped companion — NYC DHS shelter census
+- [NYC DHS Daily Shelter Census](./incubating/nyc_dhs_shelter_census.md) — NYC Open Data `k46n-sa2m`, field `total_individuals_in_shelter`. New York City only. Not a U.S. rate and not a substitute for the HUD AHAR homelessness input (issue [#81](https://github.com/adammontville/bugoutindex/issues/81)). No weight. Not in `compute_index`.
 
 ### Still incubating — Grid outages / energy
 - [Grid Outages](./incubating/grid_outages.md) — kept incubating on purpose (not archived). The note is a theoretical exploration: why grid stress matters now, which public measures are worth researching, and whether any of them would improve a directional weekly reading. No source has been chosen. No weight. The stub fails closed. The weekly job does not call it.

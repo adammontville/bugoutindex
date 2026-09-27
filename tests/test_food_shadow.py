@@ -297,6 +297,11 @@ def test_food_shadow_failure_still_publishes_the_locked_score(tmp_path, monkeypa
         "fetch_food_shadow",
         lambda: {"status": "error", "message": "down", "values": {}, "dates": {}, "errors": ["down"]},
     )
+    monkeypatch.setattr(
+        weekly,
+        "fetch_nyc_dhs_shadow",
+        lambda: {"status": "success", "in_bugout_index": False, "values": {}, "dates": {}, "errors": []},
+    )
     monkeypatch.setattr(render, "render_site", lambda _snapshot: None)
     monkeypatch.setattr(weekly, "publication_date_for", lambda now=None: "2026-09-23")
 
@@ -339,8 +344,12 @@ def test_markets_refusal_does_not_fetch_the_shadow_series(tmp_path, monkeypatch)
     def _should_not_fetch():
         raise AssertionError("food shadow fetch ran after a markets refusal")
 
+    def _should_not_fetch_nyc():
+        raise AssertionError("NYC DHS shadow fetch ran after a markets refusal")
+
     monkeypatch.setattr(weekly, "fetch_food_shadow", _should_not_fetch)
     monkeypatch.setattr(weekly, "fetch_labor_shadow", lambda: {"status": "success", "values": {}})
+    monkeypatch.setattr(weekly, "fetch_nyc_dhs_shadow", _should_not_fetch_nyc)
     assert weekly.main() == EXIT_MARKETS_OR_PULSE_REFUSED
     assert not (tmp_path / "docs" / "latest.json").exists()
 

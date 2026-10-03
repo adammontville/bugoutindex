@@ -95,3 +95,7 @@ An empty `inputs_present` would be the formula's zero (nothing was scored), not 
 ## Out of scope
 
 Issue #55 still asks for Depression, WWII, and 1970s reconstructions, population-adjusted crime, and a page about the analysis. This directory does not do that work, and it does not add a page to the public site.
+
+## v2 candidate hypothesis
+
+[`V2_CANDIDATE.md`](V2_CANDIDATE.md) is a separate replay for methodology v2.0 planning. It does not change this v1.0.0 command, `compute_index`, or the weekly publish. The note's current basket is hypothesis h2. Run it with `python -m runtime.backtest.v2_candidate`. The results note is meant to be read without a local run.

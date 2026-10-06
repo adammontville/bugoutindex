@@ -9,9 +9,10 @@ Responsibilities:
        Streamlit runtime (reading FRED_API_KEY from env vars instead).
     2. Fetch all six core BOI metrics and compute the weighted index.
     3. Fetch metals (gold, silver, DXY), the short-term economic pulse,
-       and the shadow companions (labor utilization, food prices, and
-       the NYC DHS shelter census). Shadows are not index inputs; a
-       shadow failure does not refuse the publish.
+       and the shadow companions (labor utilization, food prices, the
+       NYC DHS shelter census, Pew public trust, and Gallup confidence
+       in institutions). Shadows are not index inputs; a shadow failure
+       does not refuse the publish.
     4. Append a flat row to the weekly history CSVs.
     5. Emit a single `docs/data/latest.json` snapshot consumed by the
        static-site renderer.
@@ -176,6 +177,35 @@ def fetch_nyc_dhs_shadow() -> Dict[str, Any]:
         return _shadow_fetch_error("NYC DHS shadow", exc)
 
 
+def fetch_pew_trust_shadow() -> Dict[str, Any]:
+    """Pew public trust in government. Not an index input.
+
+    Reads the manual checklist. A raised exception becomes ``status: error``
+    so the publish can continue. Edelman stays the scored trust input.
+    """
+    sys.path.insert(0, str(REPO_ROOT))
+    try:
+        mod = importlib.import_module("runtime.data.fetch.fetch_pew_trust_shadow")
+        return mod.fetch()
+    except Exception as exc:  # noqa: BLE001
+        return _shadow_fetch_error("Pew public-trust shadow", exc)
+
+
+def fetch_gallup_confidence_shadow() -> Dict[str, Any]:
+    """Gallup confidence in institutions. Not an index input.
+
+    Reads the manual annual checklist. A raised exception becomes
+    ``status: error`` so the publish can continue. This does not scrape
+    Gallup. Edelman stays the scored trust input.
+    """
+    sys.path.insert(0, str(REPO_ROOT))
+    try:
+        mod = importlib.import_module("runtime.data.fetch.fetch_gallup_confidence_shadow")
+        return mod.fetch()
+    except Exception as exc:  # noqa: BLE001
+        return _shadow_fetch_error("Gallup confidence shadow", exc)
+
+
 def _shadow_has_value(block: Dict[str, Any]) -> bool:
     values = block.get("values") or {}
     return any(isinstance(value, (int, float)) and not isinstance(value, bool) for value in values.values())
@@ -232,6 +262,14 @@ def _resolve_food_shadow(payload: Dict[str, Any]) -> Dict[str, Any]:
 
 def _resolve_nyc_dhs_shadow(payload: Dict[str, Any]) -> Dict[str, Any]:
     return _resolve_shadow(payload, "nyc_dhs_shadow")
+
+
+def _resolve_pew_trust_shadow(payload: Dict[str, Any]) -> Dict[str, Any]:
+    return _resolve_shadow(payload, "pew_trust_shadow")
+
+
+def _resolve_gallup_confidence_shadow(payload: Dict[str, Any]) -> Dict[str, Any]:
+    return _resolve_shadow(payload, "gallup_confidence_shadow")
 
 
 def fetch_revisions() -> Dict[str, Any]:
@@ -320,12 +358,32 @@ def _append_nyc_dhs_shadow(run_date: str, nyc_dhs_shadow: Dict[str, Any]) -> Non
     )
 
 
+def _append_pew_trust_shadow(run_date: str, pew_trust_shadow: Dict[str, Any]) -> None:
+    _append_shadow_row(
+        "pew_trust_shadow_history.csv",
+        "runtime.data.fetch.fetch_pew_trust_shadow",
+        run_date,
+        pew_trust_shadow,
+    )
+
+
+def _append_gallup_confidence_shadow(run_date: str, gallup_confidence_shadow: Dict[str, Any]) -> None:
+    _append_shadow_row(
+        "gallup_confidence_shadow_history.csv",
+        "runtime.data.fetch.fetch_gallup_confidence_shadow",
+        run_date,
+        gallup_confidence_shadow,
+    )
+
+
 def append_history(run_date: str, boi: Dict[str, Any],
                    markets: Dict[str, Any], pulse: Dict[str, Any],
                    core: Dict[str, Dict[str, Any]] | None = None,
                    labor_shadow: Dict[str, Any] | None = None,
                    food_shadow: Dict[str, Any] | None = None,
-                   nyc_dhs_shadow: Dict[str, Any] | None = None) -> None:
+                   nyc_dhs_shadow: Dict[str, Any] | None = None,
+                   pew_trust_shadow: Dict[str, Any] | None = None,
+                   gallup_confidence_shadow: Dict[str, Any] | None = None) -> None:
     # Flat core metrics history (replaces the old dict-stringified CSV going forward).
     boi_path = DATA_DIR / "weekly_bugout_index.csv"
     # Old files gain the observation-date columns with blank cells. Dates are
@@ -359,6 +417,10 @@ def append_history(run_date: str, boi: Dict[str, Any],
         _append_food_shadow(run_date, food_shadow)
     if nyc_dhs_shadow is not None:
         _append_nyc_dhs_shadow(run_date, nyc_dhs_shadow)
+    if pew_trust_shadow is not None:
+        _append_pew_trust_shadow(run_date, pew_trust_shadow)
+    if gallup_confidence_shadow is not None:
+        _append_gallup_confidence_shadow(run_date, gallup_confidence_shadow)
 
 
 def _metric_snapshot(metric: str, scored: Dict[str, Any], payload: Dict[str, Any]) -> Dict[str, Any]:
@@ -385,7 +447,9 @@ def build_snapshot(run_date: str, boi: Dict[str, Any],
                    pulse: Dict[str, Any],
                    labor_shadow: Dict[str, Any] | None = None,
                    food_shadow: Dict[str, Any] | None = None,
-                   nyc_dhs_shadow: Dict[str, Any] | None = None) -> Dict[str, Any]:
+                   nyc_dhs_shadow: Dict[str, Any] | None = None,
+                   pew_trust_shadow: Dict[str, Any] | None = None,
+                   gallup_confidence_shadow: Dict[str, Any] | None = None) -> Dict[str, Any]:
     band = interpret(boi["index"])
     snapshot = {
         "schema_version": 1,
@@ -422,6 +486,14 @@ def build_snapshot(run_date: str, boi: Dict[str, Any],
         block = dict(nyc_dhs_shadow)
         block["in_bugout_index"] = False
         snapshot["nyc_dhs_shadow"] = block
+    if pew_trust_shadow is not None:
+        block = dict(pew_trust_shadow)
+        block["in_bugout_index"] = False
+        snapshot["pew_trust_shadow"] = block
+    if gallup_confidence_shadow is not None:
+        block = dict(gallup_confidence_shadow)
+        block["in_bugout_index"] = False
+        snapshot["gallup_confidence_shadow"] = block
     return snapshot
 
 
@@ -502,8 +574,8 @@ def main() -> int:
               file=sys.stderr)
 
     # Hard-fail if markets or the pulse returned no usable data at all.
-    # Labor, food, and NYC DHS shadows are companions: their failure must
-    # not refuse the publish. They are fetched only after this check.
+    # Labor, food, NYC DHS, Pew, and Gallup shadows are companions: their
+    # failure must not refuse the publish. They are fetched only after this check.
     hard_failures = []
     if markets.get("status") == "error":
         hard_failures.append("markets fully failed")
@@ -560,6 +632,37 @@ def main() -> int:
         )
     nyc_dhs_shadow = _resolve_nyc_dhs_shadow(nyc_dhs_shadow)
 
+    print("[weekly_run] fetching Pew public-trust shadow (not in the index)…")
+    pew_trust_shadow = fetch_pew_trust_shadow()
+    if pew_trust_shadow.get("status") not in ("success", "partial"):
+        print(
+            "[weekly_run] Pew public-trust shadow failed (publishing anyway): "
+            f"{pew_trust_shadow.get('message') or pew_trust_shadow.get('errors')}",
+            file=sys.stderr,
+        )
+    elif pew_trust_shadow.get("errors"):
+        print(
+            f"[weekly_run] Pew public-trust shadow partial (publishing anyway): {pew_trust_shadow['errors']}",
+            file=sys.stderr,
+        )
+    pew_trust_shadow = _resolve_pew_trust_shadow(pew_trust_shadow)
+
+    print("[weekly_run] fetching Gallup confidence shadow (not in the index)…")
+    gallup_confidence_shadow = fetch_gallup_confidence_shadow()
+    if gallup_confidence_shadow.get("status") not in ("success", "partial"):
+        print(
+            "[weekly_run] Gallup confidence shadow failed (publishing anyway): "
+            f"{gallup_confidence_shadow.get('message') or gallup_confidence_shadow.get('errors')}",
+            file=sys.stderr,
+        )
+    elif gallup_confidence_shadow.get("errors"):
+        print(
+            "[weekly_run] Gallup confidence shadow partial (publishing anyway): "
+            f"{gallup_confidence_shadow['errors']}",
+            file=sys.stderr,
+        )
+    gallup_confidence_shadow = _resolve_gallup_confidence_shadow(gallup_confidence_shadow)
+
     # Soft-warn if any partial failures occurred (some pulse items missing, etc.).
     partial_warnings = _summarize_failures(core, markets, pulse)
     if partial_warnings:
@@ -568,10 +671,14 @@ def main() -> int:
             print(f"  - {line}", file=sys.stderr)
 
     print("[weekly_run] appending history…")
-    append_history(run_date, boi, markets, pulse, core, labor_shadow, food_shadow, nyc_dhs_shadow)
+    append_history(
+        run_date, boi, markets, pulse, core, labor_shadow, food_shadow, nyc_dhs_shadow,
+        pew_trust_shadow, gallup_confidence_shadow,
+    )
 
     snapshot = build_snapshot(
         run_date, boi, core, markets, pulse, labor_shadow, food_shadow, nyc_dhs_shadow,
+        pew_trust_shadow, gallup_confidence_shadow,
     )
 
     # Carry the previous revisions payload forward if this week's fetch failed.
@@ -604,6 +711,8 @@ def main() -> int:
         "labor_shadow": load_history(DATA_DIR / "labor_shadow_history.csv"),
         "food_shadow": load_history(DATA_DIR / "food_shadow_history.csv"),
         "nyc_dhs_shadow": load_history(DATA_DIR / "nyc_dhs_shadow_history.csv"),
+        "pew_trust_shadow": load_history(DATA_DIR / "pew_trust_shadow_history.csv"),
+        "gallup_confidence_shadow": load_history(DATA_DIR / "gallup_confidence_shadow_history.csv"),
     }
 
     # Shadow and revision failures are published on exit 0. Scrub the

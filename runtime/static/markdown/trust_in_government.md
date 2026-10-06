@@ -84,3 +84,13 @@ normalized = (41 / 80) × 100 = 51.25
 
 ## **Summary**
 The **Trust in Government** metric provides a key indicator of **institutional stability, governance effectiveness, and public confidence**. By integrating **annual Edelman Trust data**, mapping the trust percent linearly on **0–80** with inversion, and weighting at **0.12 / 0.72**, the BugOut Index reflects declining institutional confidence as lower stability — matching the weekly publisher.
+
+---
+
+## **Companions, not in the score**
+Pew public trust and Gallup confidence in institutions are shown beside the index. They are not this metric. They have no weight, and they are not inputs to `compute_index`.
+
+- **Pew** is the share who trust the government in Washington to do what is right just about always or most of the time. The September 2025 wave on Pew’s chart is 17%. That is not a substitute for Edelman 41.
+- **Gallup** is “a great deal” plus “quite a lot” of confidence in Congress, the presidency, the Supreme Court, and the 14-institution average. The June 2026 poll is the current checklist year. Those percents are not a substitute for Edelman 41.
+
+Update steps are in `runtime/data/TRUST_SHADOWS.md`. Issue [#81](https://github.com/adammontville/bugoutindex/issues/81) tracks whether a more frequent series should ever enter the score. That would be a new methodology version.

@@ -69,6 +69,14 @@ The Action runs `weekly_run.py`, which:
    (San Francisco monthly occupancy rate, stored as percent, not a
    headcount). Each one is outside the index. A failed fetch does not
    refuse the publish.
+8. Reads the Pew public-trust shadow from `runtime/data/pew_trust_shadow.csv`
+   and the Gallup confidence shadow from
+   `runtime/data/gallup_confidence_shadow.csv`. Both are companions.
+   They are not index inputs. Edelman remains the scored trust input.
+   The job does not download Pew or Gallup. A failed read does not
+   refuse the publish. When the read fails and the previous snapshot
+   has the series, that block is carried forward and its survey date
+   is kept. Update steps are in `runtime/data/TRUST_SHADOWS.md`.
 9. Appends a row to `runtime/data/weekly_bugout_index.csv`,
    `runtime/data/markets_history.csv`,
    `runtime/data/pulse_history.csv`, and, when a shadow series has
@@ -78,6 +86,9 @@ The Action runs `weekly_run.py`, which:
    have a value, `runtime/data/ramsey_shelter_shadow_history.csv`,
    `runtime/data/toronto_shelter_shadow_history.csv`, and
    `runtime/data/sf_shelter_shadow_history.csv`. Each core raw value is stored next
+   `runtime/data/nyc_dhs_shadow_history.csv`,
+   `runtime/data/pew_trust_shadow_history.csv`, and
+   `runtime/data/gallup_confidence_shadow_history.csv`. Each core raw value is stored next
    to `{metric}_observation_date` (the period the number describes).
    The same field is `observation_date` on each object in
    `metrics` inside `docs/data/latest.json`. A later week that changes
@@ -104,6 +115,10 @@ The Action runs `weekly_run.py`, which:
    publication date. The labor, food, and shelter shadow tiles use the same age line.
    They are labeled not in the BugOut Index. Each shelter tile names
    its place. The San Francisco tile is an occupancy rate, not a headcount.
+   publication date.    The labor, food, NYC DHS, Pew, and Gallup shadow tiles are labeled
+   not in the BugOut Index. The NYC tile is labeled New York City only.
+   Pew and Gallup use the checklist survey date and are not marked with
+   the pulse stale rule. Edelman remains the trust input.
 12. Commits and pushes the results to `main`.
 
 GitHub Pages is configured to serve the `/docs` directory on `main`.
@@ -146,6 +161,8 @@ python -m http.server 8765 --directory docs
 | Ramsey County shelter census shadow | `fetch_ramsey_shelter_shadow` | Ramsey County open data `9mck-bcqu`. Monthly sum of `population_enrollees` across household types. Ramsey County, Minnesota only. Not in the index. Failure does not abort the publish. |
 | Toronto shelter census shadow | `fetch_toronto_shelter_shadow` | Toronto Open Data daily sum of `SERVICE_USER_COUNT`. Toronto only. Not a U.S. figure and not a deduplicated person count. Not in the index. Failure does not abort the publish. |
 | San Francisco shelter occupancy shadow | `fetch_sf_shelter_shadow` | DataSF `kc49-udxn` measure `279`. Monthly occupancy rate in percent, not a headcount. San Francisco only. Not in the index. Failure does not abort the publish. |
+| Pew public trust shadow | `fetch_pew_trust_shadow` | Checklist `runtime/data/pew_trust_shadow.csv`. Share who trust the government in Washington just about always or most of the time. Not the Edelman input. Not in the index. Failure does not abort the publish. |
+| Gallup confidence shadow | `fetch_gallup_confidence_shadow` | Checklist `runtime/data/gallup_confidence_shadow.csv`. Current annual “great deal” plus “quite a lot” for Congress, the presidency, the Supreme Court, and the 14-institution average. Not a Gallup archive and not the Edelman input. Not in the index. Failure does not abort the publish. |
 
 ## Methodology freshness
 
@@ -160,6 +177,7 @@ week over week.
 `weekly_run.py` exits **2** when a core metric did not succeed, and exits
 **3** when markets or the pulse failed completely. A labor-shadow,
 food-shadow, NYC DHS, Ramsey County, Toronto, or San Francisco shelter shadow failure is not exit 3; the index still publishes. Either exit happens
+food-shadow, NYC DHS, Pew, or Gallup shadow failure is not exit 3; the index still publishes. Either exit happens
 before history, `docs/data/latest.json`, or HTML is written. Any other
 non-zero exit is a crash. The workflow records that code, then fails the
 job. The commit step does not run, so GitHub Pages keeps serving the last

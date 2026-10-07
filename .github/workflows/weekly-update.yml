@@ -77,6 +77,8 @@ jobs:
                   runtime/data/ramsey_shelter_shadow_history.csv \
                   runtime/data/toronto_shelter_shadow_history.csv \
                   runtime/data/sf_shelter_shadow_history.csv \
+                  runtime/data/pew_trust_shadow_history.csv \
+                  runtime/data/gallup_confidence_shadow_history.csv \
                   docs/
           if git diff --cached --quiet; then
             echo "No changes to commit."

@@ -2419,6 +2419,26 @@
         "nyc_dhs_total_individuals_observation_date": "2026-10-01"
       }
     ],
+    "pew_trust_shadow": [
+      {
+        "date": "2026-10-02",
+        "pew_public_trust": "17",
+        "pew_public_trust_observation_date": "2025-09-28"
+      }
+    ],
+    "gallup_confidence_shadow": [
+      {
+        "date": "2026-10-02",
+        "gallup_congress": "9",
+        "gallup_congress_observation_date": "2026-06-15",
+        "gallup_presidency": "27",
+        "gallup_presidency_observation_date": "2026-06-15",
+        "gallup_supreme_court": "27",
+        "gallup_supreme_court_observation_date": "2026-06-15",
+        "gallup_core_institutions": "27",
+        "gallup_core_institutions_observation_date": "2026-06-15"
+      }
+    ],
     "ramsey_shelter_shadow": [
       {
         "date": "2026-10-02",
@@ -2440,6 +2460,134 @@
         "sf_shelter_occupancy_rate_observation_date": "2026-08-31"
       }
     ]
+  },
+  "pew_trust_shadow": {
+    "status": "success",
+    "in_bugout_index": false,
+    "series_ids": {
+      "pew_public_trust": "just about always or most of the time"
+    },
+    "values": {
+      "pew_public_trust": 17
+    },
+    "dates": {
+      "pew_public_trust": "2025-09-28"
+    },
+    "periods": {
+      "pew_public_trust": "September 22-28 2025"
+    },
+    "sources": {
+      "pew_public_trust": "Pew Research Center Public Trust in Government 1958-2025"
+    },
+    "source_urls": {
+      "pew_public_trust": "https://www.pewresearch.org/politics/2025/12/04/public-trust-in-government-1958-2025/"
+    },
+    "reviewed_at": {
+      "pew_public_trust": "2026-10-06"
+    },
+    "observations": {
+      "pew_public_trust": [
+        {
+          "date": "2024-05-19",
+          "value": 22
+        },
+        {
+          "date": "2025-02-09",
+          "value": 17
+        },
+        {
+          "date": "2025-09-28",
+          "value": 17
+        }
+      ]
+    },
+    "errors": [],
+    "reading": "share who trust the government in Washington to do what is right just about always or most of the time",
+    "cadence": "irregular",
+    "source_url": "https://www.pewresearch.org/politics/2025/12/04/public-trust-in-government-1958-2025/",
+    "checklist": "runtime/data/pew_trust_shadow.csv",
+    "levels_note": "Not interchangeable with the Edelman Trust Barometer US Government figure used in the BugOut Index score",
+    "license_note": "Short excerpt of recent Pew waves, stored with attribution. The weekly job does not download or republish the full series."
+  },
+  "gallup_confidence_shadow": {
+    "status": "success",
+    "in_bugout_index": false,
+    "series_ids": {
+      "gallup_congress": "Congress",
+      "gallup_presidency": "The presidency",
+      "gallup_supreme_court": "The U.S. Supreme Court",
+      "gallup_core_institutions": "14 institutions measured each year since 1993"
+    },
+    "values": {
+      "gallup_congress": 9,
+      "gallup_presidency": 27,
+      "gallup_supreme_court": 27,
+      "gallup_core_institutions": 27
+    },
+    "dates": {
+      "gallup_congress": "2026-06-15",
+      "gallup_presidency": "2026-06-15",
+      "gallup_supreme_court": "2026-06-15",
+      "gallup_core_institutions": "2026-06-15"
+    },
+    "periods": {
+      "gallup_congress": "June 1-15 2026",
+      "gallup_presidency": "June 1-15 2026",
+      "gallup_supreme_court": "June 1-15 2026",
+      "gallup_core_institutions": "June 1-15 2026"
+    },
+    "sources": {
+      "gallup_congress": "Gallup Confidence in Institutions July 13 2026",
+      "gallup_presidency": "Gallup Confidence in Institutions July 13 2026",
+      "gallup_supreme_court": "Gallup Confidence in Institutions July 13 2026",
+      "gallup_core_institutions": "Gallup Confidence in Institutions July 13 2026"
+    },
+    "source_urls": {
+      "gallup_congress": "https://news.gallup.com/poll/712436/confidence-institutions-remains-near-time-low.aspx",
+      "gallup_presidency": "https://news.gallup.com/poll/712436/confidence-institutions-remains-near-time-low.aspx",
+      "gallup_supreme_court": "https://news.gallup.com/poll/712436/confidence-institutions-remains-near-time-low.aspx",
+      "gallup_core_institutions": "https://news.gallup.com/poll/712436/confidence-institutions-remains-near-time-low.aspx"
+    },
+    "reviewed_at": {
+      "gallup_congress": "2026-10-06",
+      "gallup_presidency": "2026-10-06",
+      "gallup_supreme_court": "2026-10-06",
+      "gallup_core_institutions": "2026-10-06"
+    },
+    "observations": {
+      "gallup_congress": [
+        {
+          "date": "2026-06-15",
+          "value": 9
+        }
+      ],
+      "gallup_presidency": [
+        {
+          "date": "2026-06-15",
+          "value": 27
+        }
+      ],
+      "gallup_supreme_court": [
+        {
+          "date": "2026-06-15",
+          "value": 27
+        }
+      ],
+      "gallup_core_institutions": [
+        {
+          "date": "2026-06-15",
+          "value": 27
+        }
+      ]
+    },
+    "errors": [],
+    "reading": "percent with a great deal or quite a lot of confidence",
+    "cadence": "annual",
+    "source_url": "https://news.gallup.com/poll/1597/confidence-institutions.aspx",
+    "checklist": "runtime/data/gallup_confidence_shadow.csv",
+    "average_definition": "Average of the 14 institutions Gallup has measured each year since 1993: the presidency, Congress, the public schools, the Supreme Court, the military, the criminal justice system, the police, banks, big business, organized labor, the medical system, newspapers, television news, and the church or organized religion",
+    "levels_note": "Not interchangeable with the Edelman Trust Barometer US Government figure used in the BugOut Index score",
+    "license_note": "Current annual reading only, entered by hand from the cited Gallup article. This checklist is not a republication of Gallup's historical series. Continuous republication of Gallup data may require permission."
   },
   "ramsey_shelter_shadow": {
     "status": "success",

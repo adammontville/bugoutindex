@@ -267,7 +267,7 @@ def test_snapshot_keeps_the_locked_score_when_companions_are_attached():
         None,
         None,
         None,
-        {
+        extra_shadows={
             "ramsey_shelter_shadow": ramsey,
             "toronto_shelter_shadow": toronto,
             "sf_shelter_shadow": sf_shelter,

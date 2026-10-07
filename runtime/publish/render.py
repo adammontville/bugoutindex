@@ -347,6 +347,44 @@ SF_SHELTER_SHADOW_LABELS = {
 SF_SHELTER_SOURCE_URL = "https://data.sf.gov/City-Management-and-Ethics/Scorecard-Measures/kc49-udxn"
 SF_SHELTER_DATASET_ID = "kc49-udxn"
 
+# Companion only. IDs match runtime/data/fetch/fetch_pew_trust_shadow.py SERIES.
+# Not in CORE_METRICS and not passed to compute_index.
+# Not the Edelman trust percent used in the score.
+PEW_TRUST_SHADOW_LABELS = {
+    "pew_public_trust": (
+        "Trust the government in Washington",
+        "%",
+        "just about always or most of the time",
+    ),
+}
+PEW_TRUST_SHADOW_COLORS = {
+    "pew_public_trust": "#1e3a8a",
+}
+PEW_TRUST_SOURCE_URL = (
+    "https://www.pewresearch.org/politics/2025/12/04/public-trust-in-government-1958-2025/"
+)
+
+# Companion only. IDs match runtime/data/fetch/fetch_gallup_confidence_shadow.py SERIES.
+# Not in CORE_METRICS and not passed to compute_index.
+# Current annual reading only. Not a Gallup historical archive.
+GALLUP_CONFIDENCE_SHADOW_LABELS = {
+    "gallup_congress": ("Congress", "%", "great deal + quite a lot"),
+    "gallup_presidency": ("The presidency", "%", "great deal + quite a lot"),
+    "gallup_supreme_court": ("U.S. Supreme Court", "%", "great deal + quite a lot"),
+    "gallup_core_institutions": (
+        "14 institutions since 1993",
+        "%",
+        "great deal + quite a lot",
+    ),
+}
+GALLUP_CONFIDENCE_SHADOW_COLORS = {
+    "gallup_congress": "#9a3412",
+    "gallup_presidency": "#1d4ed8",
+    "gallup_supreme_court": "#6d28d9",
+    "gallup_core_institutions": "#0f766e",
+}
+GALLUP_CONFIDENCE_SOURCE_URL = "https://news.gallup.com/poll/1597/confidence-institutions.aspx"
+
 
 def _fmt(val, unit: str = "", digits: int = 2) -> str:
     if val is None:
@@ -435,6 +473,73 @@ def _food_chart_svg(food: Dict[str, Any]) -> str:
         FOOD_SHADOW_LABELS,
         FOOD_SHADOW_COLORS,
         "Food CPI, 12-month percent change — not in the BugOut Index",
+    )
+
+
+def _cited_wave_age(observed_on: Optional[str], publication: Optional[str]) -> Dict[str, Any]:
+    """Age of a manual companion wave.
+
+    The checklist is the latest cited reading until a person replaces it.
+    The pulse stale rule is not applied: an irregular or annual survey can
+    be the current Pew or Gallup print and still be more than a year old.
+    """
+    age = describe_pulse_age(observed_on, publication or "")
+    text = age["text"]
+    if text.endswith(" · stale"):
+        text = text[: -len(" · stale")]
+    return {"text": text, "stale": False}
+
+
+def _checklist_tiles(shadow: Dict[str, Any], labels: Dict[str, tuple], publication: Optional[str], fallback_url: str) -> list:
+    dates = (shadow or {}).get("dates") or {}
+    values = (shadow or {}).get("values") or {}
+    periods = (shadow or {}).get("periods") or {}
+    source_urls = (shadow or {}).get("source_urls") or {}
+    tiles = []
+    for key, (label, unit, question) in labels.items():
+        age = _cited_wave_age(dates.get(key), publication)
+        tiles.append({
+            "label": label,
+            "unit": unit,
+            "value": values.get(key),
+            "age_text": age["text"],
+            "stale": age["stale"],
+            "question": question,
+            "period": periods.get(key) or "",
+            "source_url": source_urls.get(key) or (shadow or {}).get("source_url") or fallback_url,
+        })
+    return tiles
+
+
+def _pew_chart_svg(shadow: Dict[str, Any]) -> str:
+    return _shadow_chart_svg(
+        shadow,
+        PEW_TRUST_SHADOW_LABELS,
+        PEW_TRUST_SHADOW_COLORS,
+        "Pew: trust in Washington just about always or most of the time — not in the BugOut Index",
+        y_digits=0,
+    )
+
+
+def _gallup_chart_svg(shadow: Dict[str, Any]) -> str:
+    """A time series only after a second annual reading is stored.
+
+    The checklist keeps the current year. One date is not a chart.
+    """
+    observations = (shadow or {}).get("observations") or {}
+    dates = set()
+    for rows in observations.values():
+        for row in rows or []:
+            if isinstance(row, dict) and row.get("date"):
+                dates.add(str(row["date"]))
+    if len(dates) < 2:
+        return ""
+    return _shadow_chart_svg(
+        shadow,
+        GALLUP_CONFIDENCE_SHADOW_LABELS,
+        GALLUP_CONFIDENCE_SHADOW_COLORS,
+        "Gallup confidence, great deal or quite a lot — not in the BugOut Index",
+        y_digits=0,
     )
 
 
@@ -687,8 +792,17 @@ def render_site(snapshot: Dict[str, Any]) -> None:
     )
     sf_tiles = _local_shelter_tiles(
         sf_shelter, SF_SHELTER_SHADOW_LABELS, SF_SHELTER_SOURCE_URL,
-        SF_SHELTER_DATASET_ID, 1, "San Francisco only", "sf_shelter_shadow",
+        SF_SHELTER_DATASET_ID, 1, "San Francisco only",         "sf_shelter_shadow",
     )
+    publication = snapshot.get("publication_date")
+    pew = snapshot.get("pew_trust_shadow") or {}
+    pew_tiles = _checklist_tiles(pew, PEW_TRUST_SHADOW_LABELS, publication, PEW_TRUST_SOURCE_URL)
+    pew_history = snapshot.get("history", {}).get("pew_trust_shadow", []) or []
+    gallup = snapshot.get("gallup_confidence_shadow") or {}
+    gallup_tiles = _checklist_tiles(
+        gallup, GALLUP_CONFIDENCE_SHADOW_LABELS, publication, GALLUP_CONFIDENCE_SOURCE_URL,
+    )
+    gallup_history = snapshot.get("history", {}).get("gallup_confidence_shadow", []) or []
 
     # Week-over-week BOI delta
     boi_delta = None
@@ -745,6 +859,12 @@ def render_site(snapshot: Dict[str, Any]) -> None:
         ),
         "sf_reused_from": sf_shelter.get("reused_from"),
         "sf_dataset_id": sf_shelter.get("dataset_id") or SF_SHELTER_DATASET_ID,
+        "pew_tiles": pew_tiles,
+        "pew_chart": _pew_chart_svg(pew),
+        "pew_reused_from": pew.get("reused_from"),
+        "gallup_tiles": gallup_tiles,
+        "gallup_chart": _gallup_chart_svg(gallup),
+        "gallup_reused_from": gallup.get("reused_from"),
         "history_count": len(boi_history),
         "week_note": build_week_note(snapshot),
     }
@@ -762,6 +882,8 @@ def render_site(snapshot: Dict[str, Any]) -> None:
         toronto_labels=TORONTO_SHELTER_SHADOW_LABELS,
         sf_history=snapshot.get("history", {}).get("sf_shelter_shadow", []) or [],
         sf_labels=SF_SHELTER_SHADOW_LABELS,
+        pew_history=pew_history, pew_labels=PEW_TRUST_SHADOW_LABELS,
+        gallup_history=gallup_history, gallup_labels=GALLUP_CONFIDENCE_SHADOW_LABELS,
         metric_labels=METRIC_LABELS, pulse_labels=PULSE_LABELS, snapshot=snapshot,
     ))
 

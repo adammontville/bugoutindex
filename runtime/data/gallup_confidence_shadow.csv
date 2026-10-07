@@ -1,0 +1,5 @@
+series,value,observation_period,observation_date,source,source_url,reviewed_at
+gallup_congress,9,June 1-15 2026,2026-06-15,Gallup Confidence in Institutions July 13 2026,https://news.gallup.com/poll/712436/confidence-institutions-remains-near-time-low.aspx,2026-10-06
+gallup_presidency,27,June 1-15 2026,2026-06-15,Gallup Confidence in Institutions July 13 2026,https://news.gallup.com/poll/712436/confidence-institutions-remains-near-time-low.aspx,2026-10-06
+gallup_supreme_court,27,June 1-15 2026,2026-06-15,Gallup Confidence in Institutions July 13 2026,https://news.gallup.com/poll/712436/confidence-institutions-remains-near-time-low.aspx,2026-10-06
+gallup_core_institutions,27,June 1-15 2026,2026-06-15,Gallup Confidence in Institutions July 13 2026,https://news.gallup.com/poll/712436/confidence-institutions-remains-near-time-low.aspx,2026-10-06

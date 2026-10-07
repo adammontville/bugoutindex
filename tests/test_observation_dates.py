@@ -153,6 +153,10 @@ def test_placeholder_timestamp_is_not_an_observation_date():
     assert observation_date_for("incident_rate", payload) is None
     dated = dict(payload, provenance={"kind": "file", "value_month_end": "2024-09-30"})
     assert observation_date_for("incident_rate", dated) == "2024-09-30"
+    # A fetcher that leaves observation_date empty has refused the file
+    # vintage. The value-month end must not fill the cell anyway.
+    refused = dict(dated, observation_date=None)
+    assert observation_date_for("incident_rate", refused) is None
 
 
 def test_classify_same_date_revision_versus_new_period():
@@ -382,21 +386,35 @@ def test_committed_history_keeps_the_june_revision_and_does_not_invent_crime_dat
 
     for when, row in rows.items():
         assert "2025-01-01T00:00:00Z" not in "".join(row.values())
+        # 2723.0 is the September 2024 unweighted mean. Only the 2026-09-19
+        # publish recorded that month. A later file's value-month end is not
+        # an observation of the same locked rate.
         if when != "2026-09-19":
             assert row["incident_rate_observation_date"] == ""
+        assert row["incident_rate_observation_date"] != "2025-09-30"
+        # 0.23 is the January 2024 HUD count. Weeks before that date was
+        # recorded stay blank. Later publishes may repeat the source date.
+        if when < "2026-09-19":
             assert row["homelessness_rate_observation_date"] == ""
+        else:
+            assert row["homelessness_rate_observation_date"] == "2024-01-01"
         for metric in ("inflation_rate", "unemployment_rate", "debt_to_gdp_ratio", "trust_in_government"):
             assert row[observation_column(metric)]
 
     latest = json.loads(LATEST.read_text())
-    assert latest["bugout_index"] == 57.11
+    assert latest["schema_version"] == 1
+    assert latest["bugout_index"] == 57.04
     assert latest["methodology_version"] == "1.0.0"
+    assert latest["publication_date"] == "2026-10-02"
     history = load_history(WEEKLY_CSV, limit=100)
     assert latest["history"]["bugout_index"] == history
-    published_history = next(row for row in history if row["date"] == "2026-09-19")
+    live = next(row for row in history if row["date"] == "2026-10-02")
     for metric in CORE_METRICS:
-        assert latest["metrics"][metric]["observation_date"] == published_history[observation_column(metric)]
-        assert float(latest["metrics"][metric]["raw"]) == float(published[metric])
+        assert latest["metrics"][metric]["observation_date"] == live[observation_column(metric)]
+        assert float(latest["metrics"][metric]["raw"]) == float(live[metric])
     assert latest["metrics"]["incident_rate"]["raw"] == 2723.0
+    assert latest["metrics"]["incident_rate"]["observation_date"] is None
+    assert live["incident_rate_observation_date"] is None
+    assert float(live["bugout_index"]) == 57.04
     assert latest["metrics"]["homelessness_rate"]["raw"] == 0.23
     assert latest["metrics"]["trust_in_government"]["raw"] == 41.0

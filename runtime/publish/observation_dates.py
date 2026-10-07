@@ -12,7 +12,7 @@ placeholder timestamp, which is not an observation date.
 ``observation_date`` is the period the raw value describes:
 
 * inflation, unemployment, debt-to-GDP — FRED observation date (``YYYY-MM-DD``)
-* crime — last day of the file's value month
+* crime — last day of the value month, only when that month's rate is the locked input
 * homelessness — reference date of the point-in-time count
 * trust — Edelman survey year (``YYYY``)
 
@@ -94,9 +94,11 @@ def observation_date_for(_metric: str, payload: Optional[Mapping[str, Any]]) -> 
 
     The metric name is part of the call so the CSV column and the payload
     stay paired. Dating itself comes from the payload. Explicit
-    ``observation_date`` wins. Otherwise the date is recovered from
-    provenance, then from ``fetched_at`` / ``source_fetched_at`` when that
-    field is actually a period (FRED date or survey year).
+    ``observation_date`` wins. An explicit blank on a file payload is kept
+    blank: the value-month end is file vintage, not a substitute period.
+    Otherwise the date is recovered from provenance, then from
+    ``fetched_at`` / ``source_fetched_at`` when that field is actually a
+    period (FRED date or survey year).
     """
     payload = payload or {}
     explicit = normalize_observation_date(payload.get("observation_date"))
@@ -105,6 +107,16 @@ def observation_date_for(_metric: str, payload: Optional[Mapping[str, Any]]) -> 
 
     provenance = payload.get("provenance") or {}
     kind = provenance.get("kind")
+    # An explicit blank means this payload has no period for the raw value.
+    # The RTCI value-month end is file vintage. It moves when a later
+    # September appears, while the locked rate stays 2723.0. Do not copy it
+    # into the observation column.
+    if (
+        kind == "file"
+        and "observation_date" in payload
+        and payload.get("observation_date") in (None, "")
+    ):
+        return None
     if kind == "file":
         found = normalize_observation_date(provenance.get("value_month_end"))
         if found:

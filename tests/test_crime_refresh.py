@@ -8,7 +8,8 @@ from runtime.data.fetch.fetch_incident_rate import (
     PUBLISHED_INCIDENT_RATE,
     fetch as fetch_incident_rate,
 )
-from runtime.publish.weekly_run import build_snapshot, compute_index
+from runtime.publish.observation_dates import observation_date_for
+from runtime.publish.weekly_run import build_snapshot, compute_index, core_history_row
 from runtime.util.download_crime_rate_data import (
     CrimeFileError,
     body_is_html,
@@ -77,6 +78,10 @@ def test_fixture_csv_parses_and_records_vintage():
     assert diagnostics["latest_month_incident_rate"] == 500.0
     assert diagnostics["index_input"] is False
     assert diagnostics["published_incident_rate"] == PUBLISHED_INCIDENT_RATE
+    # The fixture's value month is September 2024, but that month's rate is
+    # 1010, not the locked 2723. The month-end stays file vintage.
+    assert payload["observation_date"] is None
+    assert observation_date_for("incident_rate", payload) is None
 
 
 def test_html_body_is_not_a_successful_fetch():
@@ -150,6 +155,38 @@ def test_unreadable_and_non_csv_fail_closed(tmp_path):
 
     broken = "Date,Something Else\nSeptember 2024,1\n"
     assert fetch_incident_rate(csv_text=broken)["status"] == "error"
+
+
+# A later September sorts after September 2024 as text, so Date.max() moves
+# even though the locked rate is still the older month's 2723.
+LATER_SEPTEMBER_CSV = """\
+Date,Violent Crime_mvs_12mo,Property Crime_mvs_12mo,FBI.Population.Covered,Last Updated
+September 2024,200,72.3,10000,2026-06-16 12:00:00 EST
+September 2025,10,10,10000,2026-06-16 12:00:00 EST
+"""
+
+
+def test_later_september_does_not_date_the_locked_rate():
+    crime = fetch_incident_rate(csv_text=LATER_SEPTEMBER_CSV)
+    assert crime["status"] == "success"
+    assert crime["data"]["incident_rate"] == 2723.0
+    assert crime["provenance"]["value_month"] == "September 2025"
+    assert crime["provenance"]["value_month_end"] == "2025-09-30"
+    assert crime["diagnostics"]["candidate_incident_rate"] == 200.0
+    assert crime["diagnostics"]["candidate_month"] == "September 2025"
+    assert crime["observation_date"] is None
+    assert observation_date_for("incident_rate", crime) is None
+
+    results = {
+        metric: {"status": "success", "data": {metric: raw}}
+        for metric, raw in PUBLISHED_RAWS.items()
+    }
+    results["incident_rate"] = crime
+    scored = compute_index(results)
+    assert scored["index"] == 57.11
+    row = core_history_row("2026-10-02", scored, results)
+    assert row["incident_rate"] == 2723.0
+    assert row["incident_rate_observation_date"] == ""
 
 
 def test_diagnostics_do_not_change_the_locked_score():

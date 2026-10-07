@@ -156,6 +156,25 @@ def crime_rate_diagnostics(frame) -> dict:
     return diagnostics
 
 
+def locked_rate_observation_date(candidate_rate, value_month_end):
+    """Month-end of the locked rate, or None when this file's value month is not that rate.
+
+    ``candidate_rate`` is the unweighted mean for the lexicographic max
+    ``Date`` (what ``DataFrame.max`` selects). The published input stays
+    ``PUBLISHED_INCIDENT_RATE``. A later September moves that max and the
+    candidate without changing 2723.0. That newer month-end is file vintage,
+    not an observation date for the locked rate.
+    """
+    try:
+        candidate = float(candidate_rate)
+    except (TypeError, ValueError):
+        return None
+    locked = float(PUBLISHED_INCIDENT_RATE)
+    if abs(candidate - locked) > 1e-6 * max(1.0, abs(locked)):
+        return None
+    return value_month_end
+
+
 def _error(message: str) -> dict:
     return {"status": "error", "message": message, "data": {}}
 
@@ -200,12 +219,16 @@ def fetch(csv_text: Optional[str] = None, csv_path: Optional[str] = None):
     )
     provenance["source_url"] = source_url
     # Observation date is the last day of the month the locked rate describes.
-    # Diagnostics are not the index input. fetched_at stays empty: this is a
-    # file vintage, not a clock time.
+    # That is the file's value-month end only when that month's unweighted
+    # rate is still 2723.0. Diagnostics are not the index input. fetched_at
+    # stays empty: this is a file vintage, not a clock time.
     return {
         "status": "success",
         "fetched_at": None,
-        "observation_date": provenance.get("value_month_end"),
+        "observation_date": locked_rate_observation_date(
+            diagnostics.get("candidate_incident_rate"),
+            provenance.get("value_month_end"),
+        ),
         "provenance": provenance,
         "diagnostics": diagnostics,
         "data": {

@@ -57,3 +57,5 @@ Write a date. Do not write a clock time, and do not write `2025-01-01T00:00:00Z`
 Whether a public series can update these two inputs more often than once a year is tracked in issue [#81](https://github.com/adammontville/bugoutindex/issues/81). That research does not change the live score.
 
 The NYC Department of Homeless Services daily shelter census (NYC Open Data `k46n-sa2m`, field `total_individuals_in_shelter`) is a local high-frequency companion. It is New York City only. It is not a U.S. figure and it does not replace this HUD AHAR row. The weekly job stores it beside the index. It is not an input to the score.
+
+Pew public trust and Gallup confidence in institutions are trust companions for the same issue. They do not replace the Edelman row above. Trust in the score stays **41** for survey year **2025**. The update steps for those two checklists are in [`TRUST_SHADOWS.md`](TRUST_SHADOWS.md).

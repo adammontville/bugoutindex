@@ -195,6 +195,12 @@ The inventory below is the cut locked by Adam Montville on 2026-09-23. That cut 
 ### Shipped companion — NYC DHS shelter census
 - [NYC DHS Daily Shelter Census](./incubating/nyc_dhs_shelter_census.md) — NYC Open Data `k46n-sa2m`, field `total_individuals_in_shelter`. New York City only. Not a U.S. rate and not a substitute for the HUD AHAR homelessness input (issue [#81](https://github.com/adammontville/bugoutindex/issues/81)). No weight. Not in `compute_index`.
 
+### Shipped companion — Pew public trust
+- [Pew public trust](./incubating/pew_public_trust.md) — share who trust the government in Washington just about always or most of the time. Irregular checklist excerpt. Not interchangeable with the Edelman trust input (issue [#81](https://github.com/adammontville/bugoutindex/issues/81)). No weight. Not in `compute_index`.
+
+### Shipped companion — Gallup confidence in institutions
+- [Gallup confidence in institutions](./incubating/gallup_confidence_institutions.md) — current annual “great deal” plus “quite a lot” for Congress, the presidency, the Supreme Court, and the 14-institution average. Not interchangeable with the Edelman trust input (issue [#81](https://github.com/adammontville/bugoutindex/issues/81)). No weight. Not in `compute_index`. The checklist is the current year only.
+
 ### Still incubating — Grid outages / energy
 - [Grid Outages](./incubating/grid_outages.md) — kept incubating on purpose (not archived). The note is a theoretical exploration: why grid stress matters now, which public measures are worth researching, and whether any of them would improve a directional weekly reading. No source has been chosen. No weight. The stub fails closed. The weekly job does not call it.
 

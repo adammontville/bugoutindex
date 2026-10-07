@@ -195,6 +195,70 @@
 <p class="chart-caption">Each point is a DHS census date, not a BugOut Index publication week. New York City only. Not in the BugOut Index.</p>
 {% endif %}
 
+<div class="section-title">
+  <h3>Pew public trust — shadow series</h3>
+  <span class="hint">Not in the BugOut Index. No weight. Share who trust the government in Washington to do what is right just about always or most of the time. Irregular. Not the Edelman figure in the score.</span>
+</div>
+<p class="rev-callout">
+  This reading is a companion only. It is not in the BugOut Index and it has no weight.
+  The levels are not interchangeable with the Edelman Trust Barometer US Government input
+  (survey year 2025, value 41). The weekly job reads a short excerpt from the checklist.
+  It does not download Pew’s full series.
+  {% if pew_reused_from %}
+  This week’s checklist read failed; the value is carried forward from the {{ pew_reused_from }} publish. The date below is the survey date in the checklist.
+  {% endif %}
+</p>
+<div class="grid pew">
+  {% for tile in pew_tiles %}
+  <div class="tile">
+    <div class="k">{{ tile.label }}</div>
+    <div class="v">{{ tile.value|fmt(tile.unit, 0) }}</div>
+    <div class="meta">
+      <span><a href="{{ tile.source_url }}">Pew Research Center</a></span>
+      <span>companion · not in the BugOut Index</span>
+    </div>
+    <div class="age">{{ tile.question }}{% if tile.period %} · {{ tile.period }}{% endif %}</div>
+    <div class="age">{{ tile.age_text }}</div>
+  </div>
+  {% endfor %}
+</div>
+{% if pew_chart %}
+<div class="chart-card">{{ pew_chart|safe }}</div>
+<p class="chart-caption">Each point is a Pew survey date from the checklist excerpt, not a BugOut Index publication week. Not in the BugOut Index. Not the Edelman trust input.</p>
+{% endif %}
+
+<div class="section-title">
+  <h3>Gallup confidence in institutions — shadow series</h3>
+  <span class="hint">Not in the BugOut Index. No weight. “A great deal” plus “quite a lot.” Annual, typically June. Not the Edelman figure in the score.</span>
+</div>
+<p class="rev-callout">
+  These readings are companions only. They are not in the BugOut Index and they have no weight.
+  They are not interchangeable with the Edelman Trust Barometer US Government input.
+  The checklist stores the current annual reading only. It is not a republication of Gallup’s historical series.
+  Continuous republication of Gallup data may require permission.
+  {% if gallup_reused_from %}
+  This week’s checklist read failed; the values are carried forward from the {{ gallup_reused_from }} publish. The dates below are the survey dates in the checklist.
+  {% endif %}
+</p>
+<div class="grid gallup">
+  {% for tile in gallup_tiles %}
+  <div class="tile">
+    <div class="k">{{ tile.label }}</div>
+    <div class="v">{{ tile.value|fmt(tile.unit, 0) }}</div>
+    <div class="meta">
+      <span><a href="{{ tile.source_url }}">Gallup</a></span>
+      <span>companion · not in the BugOut Index</span>
+    </div>
+    <div class="age">{{ tile.question }}{% if tile.period %} · {{ tile.period }}{% endif %}</div>
+    <div class="age">{{ tile.age_text }}</div>
+  </div>
+  {% endfor %}
+</div>
+{% if gallup_chart %}
+<div class="chart-card">{{ gallup_chart|safe }}</div>
+<p class="chart-caption">Each point is a Gallup survey date from the checklist, not a BugOut Index publication week. Not in the BugOut Index.</p>
+{% endif %}
+
 <div class="section-title"><h3>About this index</h3></div>
 <p style="max-width:70ch;color:var(--muted);">
   The BugOut Index is a directional stress and stability reading
@@ -202,8 +266,8 @@
   fixed endpoints and combine into one 0–100 score. Higher means those conditions are
   less stressed. The number shows how hard the published inputs are pressing. It is not
   a forecast, and it is not an instruction to bug out.
-  Markets, the short-term pulse, labor utilization, food prices, and the NYC DHS shelter census on this page are companions.
-  They are not in the score. The NYC census is New York City only. HUD AHAR remains the annual national homelessness input. Several inputs update monthly, quarterly, or once a year,
+  Markets, the short-term pulse, labor utilization, food prices, the NYC DHS shelter census, Pew public trust, and Gallup confidence in institutions on this page are companions.
+  They are not in the score. Edelman remains the trust input. The NYC census is New York City only. HUD AHAR remains the annual national homelessness input. Several inputs update monthly, quarterly, or once a year,
   so many weeks the number does not move.
   See <a href="./methodology.html">methodology</a> for the calculation, weights, and limits.
   The committed weekly files are the record of a past score. Rerunning the publisher

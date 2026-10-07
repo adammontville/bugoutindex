@@ -126,13 +126,26 @@ GitHub Pages is configured to serve the `/docs` directory on `main`.
 
 ## Running locally
 
+A laptop or a Raspberry Pi uses the same command as the weekly job. Set
+`FRED_API_KEY` in the environment (a shell export or the process
+environment). The pipeline does not read Streamlit secrets and does not
+import Streamlit.
+
 ```bash
 export FRED_API_KEY=<your key>
 export PYTHONPATH=$PWD
 python -m runtime.publish.weekly_run
-# Preview:
+# Preview the files GitHub Pages serves:
 python -m http.server 8765 --directory docs
 ```
+
+Optional viewer, if you still want one: from `runtime/`, `streamlit run main.py`.
+It reads `docs/data/latest.json`. It does not write the weekly site.
+
+The snapshot contract is
+[`docs/architecture/snapshot-schema.md`](../../docs/architecture/snapshot-schema.md)
+(`schema_version` 1, `methodology_version` 1.0.0). A snapshot that fails
+that check exits 4 and does not write `docs/`.
 
 ## Files
 
@@ -206,7 +219,9 @@ python -m runtime.publish.failure_notice 1
 
 ## Secrets
 
-The workflow requires one repository secret:
+The workflow requires one repository secret, passed in as an environment
+variable. Fetchers read it with `runtime/util/secrets_compat.py`. They do
+not import Streamlit.
 
 - `FRED_API_KEY` — free from <https://fredaccount.stlouisfed.org/apikeys>.
 

@@ -1,26 +1,22 @@
-# Setting Up BugOutIndex in PyCharm
+# Setting up BugOut Index
 
-1. Clone the repository:
+1. Clone the repository and create a virtual environment.
+
+2. Install the hashed lock from the repo root:
+
    ```bash
-   git clone <repository-url>
-   cd bugoutindex
+   python -m pip install --require-hashes -r runtime/requirements.txt
    ```
 
-2. Create a virtual environment:
+3. Publish locally the same way the weekly job does. `FRED_API_KEY` comes from the environment.
+
    ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows, use `venv\Scripts\activate`
+   export FRED_API_KEY=<your key>
+   export PYTHONPATH=$PWD
+   python -m runtime.publish.weekly_run
+   python -m http.server 8765 --directory docs
    ```
 
-3. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
+4. Optional viewer: from `runtime/`, run `streamlit run main.py`. It reads `docs/data/latest.json` and does not write the site. The weekly job does not import Streamlit.
 
-4. Open the project in PyCharm and configure:
-   - Set up the Python interpreter to use the virtual environment.
-   - Add a run configuration for Streamlit:
-     - Script: `streamlit`
-     - Parameters: `run presentation/dashboard.py`
-
-5. Run the dashboard using the PyCharm "Run" button.
+The snapshot contract is `docs/architecture/snapshot-schema.md`.

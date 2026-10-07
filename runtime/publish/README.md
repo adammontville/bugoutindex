@@ -62,6 +62,14 @@ The Action runs `weekly_run.py`, which:
    homelessness input. A failed fetch does not refuse the publish.
    When the fetch fails and the previous snapshot has the series, that
    block is carried forward and its census date is kept.
+8. Fetches the other local shelter companions the same way: Ramsey
+   County open data `9mck-bcqu` (monthly sum of `population_enrollees`),
+   DataSF `kc49-udxn` measure `279` (San Francisco monthly occupancy
+   rate, stored as percent, not a headcount), and the U.S. regional
+   checklist in `runtime/data/shelter_region_shadow.csv` (Nashville,
+   Austin, and Denver). Each one is outside the index. A failed fetch
+   or a bad checklist does not refuse the publish. Update steps are in
+   `incubating/shelter_census_companions.md`.
 8. Reads the Pew public-trust shadow from `runtime/data/pew_trust_shadow.csv`
    and the Gallup confidence shadow from
    `runtime/data/gallup_confidence_shadow.csv`. Both are companions.
@@ -75,6 +83,10 @@ The Action runs `weekly_run.py`, which:
    `runtime/data/pulse_history.csv`, and, when a shadow series has
    a value, `runtime/data/labor_shadow_history.csv`,
    `runtime/data/food_shadow_history.csv`,
+   `runtime/data/nyc_dhs_shadow_history.csv`, and, when those companions
+   have a value, `runtime/data/ramsey_shelter_shadow_history.csv`,
+   `runtime/data/sf_shelter_shadow_history.csv`, and
+   `runtime/data/shelter_region_shadow_history.csv`. Each core raw value is stored next
    `runtime/data/nyc_dhs_shadow_history.csv`,
    `runtime/data/pew_trust_shadow_history.csv`, and
    `runtime/data/gallup_confidence_shadow_history.csv`. Each core raw value is stored next
@@ -101,6 +113,9 @@ The Action runs `weekly_run.py`, which:
    `runtime/data/ANNUAL_INPUTS.md`). Homelessness is labeled as a manual
    annual input. OECD business confidence is
    marked stale when its observation is more than 365 days before the
+   publication date. The labor, food, and shelter shadow tiles use the same age line.
+   They are labeled not in the BugOut Index. Each shelter tile names
+   its place. The Denver and San Francisco tiles are occupancy rates, not headcounts.
    publication date.    The labor, food, NYC DHS, Pew, and Gallup shadow tiles are labeled
    not in the BugOut Index. The NYC tile is labeled New York City only.
    Pew and Gallup use the checklist survey date and are not marked with
@@ -144,6 +159,9 @@ python -m http.server 8765 --directory docs
 | labor utilization shadow | `fetch_labor_shadow` | FRED `LNS12300060` (prime-age EPOP, 25–54) and `LNS11300060` (prime-age participation). Not in the index. Failure does not abort the publish. |
 | food price shadow | `fetch_food_shadow` | FRED `CPIUFDNS` (BLS `CUUR0000SAF1`), food CPI 12-month percent change, not seasonally adjusted. Not in the index. Failure does not abort the publish. |
 | NYC DHS shelter census shadow | `fetch_nyc_dhs_shadow` | NYC Open Data `k46n-sa2m`, field `total_individuals_in_shelter`. New York City only. Not a U.S. rate and not the HUD AHAR input. Not in the index. Failure does not abort the publish. |
+| Ramsey County shelter census shadow | `fetch_ramsey_shelter_shadow` | Ramsey County open data `9mck-bcqu`. Monthly sum of `population_enrollees` across household types. Ramsey County, Minnesota only. Not in the index. Failure does not abort the publish. |
+| U.S. regional shelter checklist | `fetch_shelter_region_shadow` | Checklist `runtime/data/shelter_region_shadow.csv`. Nashville–Davidson monthly HMIS people, Austin/Travis sheltered card, Denver HOST pilot occupancy rate. Not a U.S. total. Not in the index. A bad checklist does not abort the publish. |
+| San Francisco shelter occupancy shadow | `fetch_sf_shelter_shadow` | DataSF `kc49-udxn` measure `279`. Monthly occupancy rate in percent, not a headcount. San Francisco only. Not in the index. Failure does not abort the publish. |
 | Pew public trust shadow | `fetch_pew_trust_shadow` | Checklist `runtime/data/pew_trust_shadow.csv`. Share who trust the government in Washington just about always or most of the time. Not the Edelman input. Not in the index. Failure does not abort the publish. |
 | Gallup confidence shadow | `fetch_gallup_confidence_shadow` | Checklist `runtime/data/gallup_confidence_shadow.csv`. Current annual “great deal” plus “quite a lot” for Congress, the presidency, the Supreme Court, and the 14-institution average. Not a Gallup archive and not the Edelman input. Not in the index. Failure does not abort the publish. |
 
@@ -159,6 +177,7 @@ week over week.
 
 `weekly_run.py` exits **2** when a core metric did not succeed, and exits
 **3** when markets or the pulse failed completely. A labor-shadow,
+food-shadow, NYC DHS, Ramsey County, San Francisco, or regional-checklist shelter shadow failure is not exit 3; the index still publishes. Either exit happens
 food-shadow, NYC DHS, Pew, or Gallup shadow failure is not exit 3; the index still publishes. Either exit happens
 before history, `docs/data/latest.json`, or HTML is written. Any other
 non-zero exit is a crash. The workflow records that code, then fails the

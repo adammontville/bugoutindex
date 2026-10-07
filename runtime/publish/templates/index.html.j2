@@ -165,7 +165,12 @@
 {% endif %}
 
 <div class="section-title">
-  <h3>NYC DHS shelter census — shadow series</h3>
+  <h3>U.S. regional shelter companions</h3>
+  <span class="hint">Not in the BugOut Index. No weight. Northeast New York City, Southeast Nashville–Davidson, South Austin/Travis County, Midwest Ramsey County, Southwest Denver, West San Francisco. None is a U.S. total. HUD AHAR remains the annual national homelessness input.</span>
+</div>
+
+<div class="section-title">
+  <h3>Northeast — NYC DHS shelter census</h3>
   <span class="hint">Not in the BugOut Index. No weight. New York City only — not a U.S. total. Daily count of individuals in the NYC Department of Homeless Services shelter system. HUD AHAR remains the annual national homelessness input.</span>
 </div>
 <p class="rev-callout">
@@ -194,6 +199,155 @@
 <div class="chart-card">{{ nyc_chart|safe }}</div>
 <p class="chart-caption">Each point is a DHS census date, not a BugOut Index publication week. New York City only. Not in the BugOut Index.</p>
 {% endif %}
+
+<div class="section-title">
+  <h3>Southeast — Nashville–Davidson shelter checklist</h3>
+  <span class="hint">Not in the BugOut Index. No weight. Nashville–Davidson only — not a U.S. total. Monthly HMIS count of people who experienced homelessness. Not a one-night shelter census. HUD AHAR remains the annual national homelessness input.</span>
+</div>
+<p class="rev-callout">
+  This reading is a companion only. It is not in the BugOut Index and it has no weight.
+  It is copied from the Metro Nashville Office of Homeless Services
+  <a href="https://www.nashville.gov/departments/office-homeless-services/homeless-management-information-system/monthly-data-reports">HMIS monthly data reports</a>.
+  The latest row is people who experienced homelessness in Nashville during that month.
+  Nashville Rescue Mission figures on the same PDF are separate and are not added.
+  A person updates <code>runtime/data/shelter_region_shadow.csv</code>. The weekly job does not download the PDF.
+  {% if region_reused_from %}
+  This week’s checklist read failed; the value is carried forward from the {{ region_reused_from }} publish. The date below is the month in the checklist.
+  {% endif %}
+</p>
+<div class="grid nyc">
+  {% for tile in nashville_tiles %}
+  <div class="tile">
+    <div class="k">{{ tile.label }}</div>
+    <div class="v">{{ tile.value|fmt(tile.unit, 0) }}</div>
+    <div class="meta">
+      <span><a href="{{ tile.source_url }}">Nashville HMIS monthly report</a></span>
+      <span>Nashville–Davidson only · not in the BugOut Index</span>
+    </div>
+    <div class="age">{{ tile.question }}{% if tile.period %} · {{ tile.period }}{% endif %} · {{ tile.age_text }}</div>
+  </div>
+  {% endfor %}
+</div>
+{% if nashville_chart %}
+<div class="chart-card">{{ nashville_chart|safe }}</div>
+<p class="chart-caption">Each point is a month from the checklist, not a BugOut Index publication week. Nashville–Davidson only. Not in the BugOut Index.</p>
+{% endif %}
+
+<div class="section-title">
+  <h3>South — Austin/Travis County shelter checklist</h3>
+  <span class="hint">Not in the BugOut Index. No weight. Austin/Travis County only — not a U.S. total. The public dashboard lags the month it names. HUD AHAR remains the annual national homelessness input.</span>
+</div>
+<p class="rev-callout">
+  This reading is a companion only. It is not in the BugOut Index and it has no weight.
+  It is the ECHO
+  <a href="https://echoatx.github.io/hrs-dashboard-site/">Homelessness Response System dashboard</a>
+  card for people engaged in the past six months and likely experiencing sheltered homelessness.
+  The June 2025 dashboard was published September 10, 2025, with a data-effective date of July 1, 2025.
+  That publication lag stays on the tile. A person updates the checklist. The weekly job does not scrape the dashboard.
+</p>
+<div class="grid nyc">
+  {% for tile in austin_tiles %}
+  <div class="tile">
+    <div class="k">{{ tile.label }}</div>
+    <div class="v">{{ tile.value|fmt(tile.unit, 0) }}</div>
+    <div class="meta">
+      <span><a href="{{ tile.source_url }}">ECHO HRS dashboard</a></span>
+      <span>Austin/Travis County only · not in the BugOut Index</span>
+    </div>
+    <div class="age">{{ tile.question }}{% if tile.period %} · {{ tile.period }}{% endif %} · {{ tile.age_text }}</div>
+  </div>
+  {% endfor %}
+</div>
+
+<div class="section-title">
+  <h3>Midwest — Ramsey County shelter census</h3>
+  <span class="hint">Not in the BugOut Index. No weight. Ramsey County, Minnesota only — not a U.S. total. Monthly sum of people in emergency shelters across published household types. HUD AHAR remains the annual national homelessness input.</span>
+</div>
+<p class="rev-callout">
+  This reading is a companion only. It is not in the BugOut Index and it has no weight.
+  It is a Ramsey County headcount from
+  <a href="https://data.ramseycountymn.gov/dataset/Emergency-shelter-population-and-utilization/9mck-bcqu">Ramsey County open data {{ ramsey_dataset_id }}</a>
+  (field <code>population_enrollees</code>, summed across household types), not a national rate and not a substitute for the HUD AHAR homelessness input.
+  {% if ramsey_reused_from %}
+  This week’s fetch failed; the value is carried forward from the {{ ramsey_reused_from }} publish. The date below is the county month stamp.
+  {% endif %}
+</p>
+<div class="grid nyc">
+  {% for tile in ramsey_tiles %}
+  <div class="tile{% if tile.stale %} stale{% endif %}">
+    <div class="k">{{ tile.label }}{% if tile.stale %} <span class="badge-stale">Stale</span>{% endif %}</div>
+    <div class="v">{{ tile.value|fmt(tile.unit, 0) }}</div>
+    <div class="meta">
+      <span><a href="{{ tile.source_url }}">Ramsey County {{ tile.dataset_id }}</a></span>
+      <span>Ramsey County only · not in the BugOut Index</span>
+    </div>
+    <div class="age">{{ tile.age_text }}</div>
+  </div>
+  {% endfor %}
+</div>
+{% if ramsey_chart %}
+<div class="chart-card">{{ ramsey_chart|safe }}</div>
+<p class="chart-caption">Each point is a county month, not a BugOut Index publication week. Ramsey County only. Not in the BugOut Index.</p>
+{% endif %}
+
+<div class="section-title">
+  <h3>Southwest — Denver shelter checklist</h3>
+  <span class="hint">Not in the BugOut Index. No weight. Denver only — not a U.S. total. This is an occupancy rate for a seven-shelter pilot, not a headcount. HUD AHAR remains the annual national homelessness input.</span>
+</div>
+<p class="rev-callout">
+  This reading is a companion only. It is not in the BugOut Index and it has no weight.
+  It is the occupancy rate Denver HOST published for its performance-based contracting pilot
+  (seven shelters, 769 units) in the
+  <a href="https://www.denvergov.org/Government/Agencies-Departments-Offices/Agencies-Departments-Offices-Directory/Department-of-Housing-Stability/News/HOST-Announces-Strong-Early-Results-from-Performance-Based-Contracting-Pilot">August 4, 2026 results</a>.
+  The monthly citywide view is the
+  <a href="https://www.denvergov.org/Government/Agencies-Departments-Offices/Agencies-Departments-Offices-Directory/Mayors-Office/Programs-and-Initiatives/Homelessness-Initiative/All-In-Mile-High-Dashboard">All In Mile High dashboard</a>.
+  A person copies the next cited figure into the checklist. The weekly job does not scrape that dashboard.
+</p>
+<div class="grid nyc">
+  {% for tile in denver_tiles %}
+  <div class="tile">
+    <div class="k">{{ tile.label }}</div>
+    <div class="v">{{ tile.value|fmt(tile.unit, 0) }}</div>
+    <div class="meta">
+      <span><a href="{{ tile.source_url }}">Denver HOST</a></span>
+      <span>Denver only · occupancy rate · not in the BugOut Index</span>
+    </div>
+    <div class="age">{{ tile.question }}{% if tile.period %} · {{ tile.period }}{% endif %} · {{ tile.age_text }}</div>
+  </div>
+  {% endfor %}
+</div>
+
+<div class="section-title">
+  <h3>West — San Francisco shelter occupancy</h3>
+  <span class="hint">Not in the BugOut Index. No weight. San Francisco only — not a U.S. total. This is an occupancy rate, not a headcount. HUD AHAR remains the annual national homelessness input.</span>
+</div>
+<p class="rev-callout">
+  This reading is a companion only. It is not in the BugOut Index and it has no weight.
+  It is the monthly average occupancy rate of year-round temporary shelter and crisis intervention programs from
+  <a href="https://data.sf.gov/City-Management-and-Ethics/Scorecard-Measures/kc49-udxn">DataSF {{ sf_dataset_id }}</a>
+  measure <code>279</code>. The source stores a ratio; this tile shows percent. It is not a person count and not a substitute for the HUD AHAR homelessness input.
+  {% if sf_reused_from %}
+  This week’s fetch failed; the value is carried forward from the {{ sf_reused_from }} publish. The date below is the scorecard month.
+  {% endif %}
+</p>
+<div class="grid nyc">
+  {% for tile in sf_tiles %}
+  <div class="tile{% if tile.stale %} stale{% endif %}">
+    <div class="k">{{ tile.label }}{% if tile.stale %} <span class="badge-stale">Stale</span>{% endif %}</div>
+    <div class="v">{{ tile.value|fmt(tile.unit, 1) }}</div>
+    <div class="meta">
+      <span><a href="{{ tile.source_url }}">DataSF {{ tile.dataset_id }}</a></span>
+      <span>San Francisco only · occupancy rate · not in the BugOut Index</span>
+    </div>
+    <div class="age">{{ tile.age_text }}</div>
+  </div>
+  {% endfor %}
+</div>
+{% if sf_chart %}
+<div class="chart-card">{{ sf_chart|safe }}</div>
+<p class="chart-caption">Each point is a scorecard month, not a BugOut Index publication week. San Francisco only. Not a headcount. Not in the BugOut Index.</p>
+{% endif %}
+
 
 <div class="section-title">
   <h3>Pew public trust — shadow series</h3>
@@ -259,6 +413,7 @@
 <p class="chart-caption">Each point is a Gallup survey date from the checklist, not a BugOut Index publication week. Not in the BugOut Index.</p>
 {% endif %}
 
+
 <div class="section-title"><h3>About this index</h3></div>
 <p style="max-width:70ch;color:var(--muted);">
   The BugOut Index is a directional stress and stability reading
@@ -266,8 +421,8 @@
   fixed endpoints and combine into one 0–100 score. Higher means those conditions are
   less stressed. The number shows how hard the published inputs are pressing. It is not
   a forecast, and it is not an instruction to bug out.
-  Markets, the short-term pulse, labor utilization, food prices, the NYC DHS shelter census, Pew public trust, and Gallup confidence in institutions on this page are companions.
-  They are not in the score. Edelman remains the trust input. The NYC census is New York City only. HUD AHAR remains the annual national homelessness input. Several inputs update monthly, quarterly, or once a year,
+  Markets, the short-term pulse, labor utilization, food prices, the U.S. regional shelter companions, Pew public trust, and Gallup confidence in institutions on this page are companions.
+  They are not in the score. Edelman remains the trust input. The shelter readings are local: New York City, Nashville–Davidson, Austin/Travis County, Ramsey County (Minnesota), Denver, and San Francisco. None of them is a U.S. total. Denver and San Francisco are occupancy rates, not headcounts. HUD AHAR remains the annual national homelessness input. Several inputs update monthly, quarterly, or once a year,
   so many weeks the number does not move.
   See <a href="./methodology.html">methodology</a> for the calculation, weights, and limits.
   The committed weekly files are the record of a past score. Rerunning the publisher

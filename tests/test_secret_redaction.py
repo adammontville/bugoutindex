@@ -14,6 +14,8 @@ import requests
 from runtime.data.fetch.fetch_food_shadow import fetch as fetch_food
 from runtime.data.fetch.fetch_labor_shadow import fetch as fetch_labor
 from runtime.data.fetch.fetch_nyc_dhs_shadow import fetch as fetch_nyc_dhs
+from runtime.data.fetch.fetch_ramsey_shelter_shadow import fetch as fetch_ramsey
+from runtime.data.fetch.fetch_sf_shelter_shadow import fetch as fetch_sf
 from runtime.data.fetch.fetch_revisions import fetch as fetch_revisions
 from runtime.processing.formula import CORE_METRICS
 from runtime.util.http_retry import RetryError
@@ -84,14 +86,18 @@ def test_fetchers_store_redacted_errors_when_the_exception_is_already_poisoned(m
     monkeypatch.setattr("runtime.data.fetch.fetch_labor_shadow.get_with_retry", boom)
     monkeypatch.setattr("runtime.data.fetch.fetch_food_shadow.get_with_retry", boom)
     monkeypatch.setattr("runtime.data.fetch.fetch_nyc_dhs_shadow.get_with_retry", boom)
+    monkeypatch.setattr("runtime.data.fetch.fetch_ramsey_shelter_shadow.get_with_retry", boom)
+    monkeypatch.setattr("runtime.data.fetch.fetch_sf_shelter_shadow.get_with_retry", boom)
     monkeypatch.setattr("runtime.data.fetch.fetch_revisions.get_with_retry", boom)
 
     labor = fetch_labor()
     food = fetch_food()
     nyc = fetch_nyc_dhs()
+    ramsey = fetch_ramsey()
+    sf_shelter = fetch_sf()
     revisions = fetch_revisions()
 
-    for payload in (labor, food, nyc, revisions):
+    for payload in (labor, food, nyc, ramsey, sf_shelter, revisions):
         blob = json.dumps(payload)
         assert FAKE_KEY not in blob
         assert FAKE_HEADER not in blob
@@ -103,6 +109,12 @@ def test_fetchers_store_redacted_errors_when_the_exception_is_already_poisoned(m
     assert nyc["status"] == "error"
     assert nyc["in_bugout_index"] is False
     assert "NYC Open Data unreachable" in nyc["message"]
+    assert ramsey["status"] == "error"
+    assert ramsey["in_bugout_index"] is False
+    assert "Ramsey County open data unreachable" in ramsey["message"]
+    assert sf_shelter["status"] == "error"
+    assert sf_shelter["in_bugout_index"] is False
+    assert "DataSF unreachable" in sf_shelter["message"]
     assert revisions["status"] == "error"
     assert "ALFRED unreachable" in revisions["message"]
     assert "series_id=UNRATE" in revisions["message"]

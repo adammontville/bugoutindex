@@ -29,3 +29,5 @@ HUD AHAR is a national point-in-time rate, sheltered and unsheltered, about once
 ## Recommendation
 
 **Add as a shadow/companion. Keep the annual HUD checklist for the score.** A later methodology version would be required before this, or any other local series, could enter `compute_index`.
+
+Nashville–Davidson, Austin/Travis County, Ramsey County, Denver, and San Francisco sit in the same U.S. regional panel. The sources that were checked and skipped are in [shelter_census_companions.md](shelter_census_companions.md).

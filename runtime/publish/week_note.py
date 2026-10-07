@@ -270,6 +270,16 @@ def _disclaimer(snapshot: Dict[str, Any]) -> str:
         named.append("the food-price shadow series")
     if _shadow_present(snapshot, "nyc_dhs_shadow", ("nyc_dhs_total_individuals",)):
         named.append("the NYC DHS shelter-census shadow series")
+    if _shadow_present(snapshot, "ramsey_shelter_shadow", ("ramsey_shelter_total_people",)):
+        named.append("the Ramsey County shelter-census shadow series")
+    if _shadow_present(
+        snapshot,
+        "shelter_region_shadow",
+        ("nashville_hmis_people", "austin_sheltered_people", "denver_shelter_occupancy"),
+    ):
+        named.append("the Nashville, Austin, and Denver shelter shadow series")
+    if _shadow_present(snapshot, "sf_shelter_shadow", ("sf_shelter_occupancy_rate",)):
+        named.append("the San Francisco shelter-occupancy shadow series")
     if _shadow_present(snapshot, "pew_trust_shadow", ("pew_public_trust",)):
         named.append("the Pew public-trust shadow series")
     if _shadow_present(

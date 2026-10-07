@@ -10,9 +10,10 @@ Responsibilities:
     2. Fetch all six core BOI metrics and compute the weighted index.
     3. Fetch metals (gold, silver, DXY), the short-term economic pulse,
        and the shadow companions (labor utilization, food prices, the
-       NYC DHS shelter census, Pew public trust, and Gallup confidence
-       in institutions). Shadows are not index inputs; a shadow failure
-       does not refuse the publish.
+       NYC DHS shelter census, the other local shelter companions,
+       Pew public trust, and Gallup confidence in institutions).
+       Shadows are not index inputs; a shadow failure does not refuse
+       the publish.
     4. Append a flat row to the weekly history CSVs.
     5. Emit a single `docs/data/latest.json` snapshot consumed by the
        static-site renderer.
@@ -175,6 +176,74 @@ def fetch_nyc_dhs_shadow() -> Dict[str, Any]:
         return mod.fetch()
     except Exception as exc:  # noqa: BLE001
         return _shadow_fetch_error("NYC DHS shadow", exc)
+
+
+def fetch_ramsey_shelter_shadow() -> Dict[str, Any]:
+    """Ramsey County shelter headcount. Not an index input and not a U.S. rate.
+
+    A raised exception becomes ``status: error`` so the publish can continue.
+    """
+    sys.path.insert(0, str(REPO_ROOT))
+    try:
+        mod = importlib.import_module("runtime.data.fetch.fetch_ramsey_shelter_shadow")
+        return mod.fetch()
+    except Exception as exc:  # noqa: BLE001
+        return _shadow_fetch_error("Ramsey County shelter shadow", exc)
+
+
+def fetch_shelter_region_shadow() -> Dict[str, Any]:
+    """Nashville, Austin, and Denver shelter checklist. Not an index input.
+
+    Reads the manual checklist. A raised exception becomes ``status: error``
+    so the publish can continue. HUD AHAR stays the scored homelessness input.
+    """
+    sys.path.insert(0, str(REPO_ROOT))
+    try:
+        mod = importlib.import_module("runtime.data.fetch.fetch_shelter_region_shadow")
+        return mod.fetch()
+    except Exception as exc:  # noqa: BLE001
+        return _shadow_fetch_error("U.S. regional shelter shadow", exc)
+
+
+def fetch_sf_shelter_shadow() -> Dict[str, Any]:
+    """San Francisco shelter occupancy rate. Not an index input and not a headcount.
+
+    A raised exception becomes ``status: error`` so the publish can continue.
+    """
+    sys.path.insert(0, str(REPO_ROOT))
+    try:
+        mod = importlib.import_module("runtime.data.fetch.fetch_sf_shelter_shadow")
+        return mod.fetch()
+    except Exception as exc:  # noqa: BLE001
+        return _shadow_fetch_error("San Francisco shelter shadow", exc)
+
+
+# Local shelter companions besides the NYC block, which stays on its own
+# argument so existing callers do not have to pass it inside this map.
+# Each failure is logged and does not refuse the publish.
+EXTRA_SHELTER_SHADOWS = (
+    (
+        "fetch_ramsey_shelter_shadow",
+        "Ramsey County shelter census",
+        "ramsey_shelter_shadow",
+        "ramsey_shelter_shadow_history.csv",
+        "runtime.data.fetch.fetch_ramsey_shelter_shadow",
+    ),
+    (
+        "fetch_shelter_region_shadow",
+        "U.S. regional shelter checklist",
+        "shelter_region_shadow",
+        "shelter_region_shadow_history.csv",
+        "runtime.data.fetch.fetch_shelter_region_shadow",
+    ),
+    (
+        "fetch_sf_shelter_shadow",
+        "San Francisco shelter occupancy",
+        "sf_shelter_shadow",
+        "sf_shelter_shadow_history.csv",
+        "runtime.data.fetch.fetch_sf_shelter_shadow",
+    ),
+)
 
 
 def fetch_pew_trust_shadow() -> Dict[str, Any]:
@@ -358,6 +427,16 @@ def _append_nyc_dhs_shadow(run_date: str, nyc_dhs_shadow: Dict[str, Any]) -> Non
     )
 
 
+def _append_extra_shelter_shadows(run_date: str, extra_shadows: Dict[str, Dict[str, Any]]) -> None:
+    by_block = {spec[2]: spec for spec in EXTRA_SHELTER_SHADOWS}
+    for block_key, payload in extra_shadows.items():
+        spec = by_block.get(block_key)
+        if spec is None:
+            continue
+        _csv_name, _module = spec[3], spec[4]
+        _append_shadow_row(_csv_name, _module, run_date, payload)
+
+
 def _append_pew_trust_shadow(run_date: str, pew_trust_shadow: Dict[str, Any]) -> None:
     _append_shadow_row(
         "pew_trust_shadow_history.csv",
@@ -383,7 +462,8 @@ def append_history(run_date: str, boi: Dict[str, Any],
                    food_shadow: Dict[str, Any] | None = None,
                    nyc_dhs_shadow: Dict[str, Any] | None = None,
                    pew_trust_shadow: Dict[str, Any] | None = None,
-                   gallup_confidence_shadow: Dict[str, Any] | None = None) -> None:
+                   gallup_confidence_shadow: Dict[str, Any] | None = None,
+                   extra_shadows: Dict[str, Dict[str, Any]] | None = None) -> None:
     # Flat core metrics history (replaces the old dict-stringified CSV going forward).
     boi_path = DATA_DIR / "weekly_bugout_index.csv"
     # Old files gain the observation-date columns with blank cells. Dates are
@@ -417,6 +497,8 @@ def append_history(run_date: str, boi: Dict[str, Any],
         _append_food_shadow(run_date, food_shadow)
     if nyc_dhs_shadow is not None:
         _append_nyc_dhs_shadow(run_date, nyc_dhs_shadow)
+    if extra_shadows:
+        _append_extra_shelter_shadows(run_date, extra_shadows)
     if pew_trust_shadow is not None:
         _append_pew_trust_shadow(run_date, pew_trust_shadow)
     if gallup_confidence_shadow is not None:
@@ -449,7 +531,8 @@ def build_snapshot(run_date: str, boi: Dict[str, Any],
                    food_shadow: Dict[str, Any] | None = None,
                    nyc_dhs_shadow: Dict[str, Any] | None = None,
                    pew_trust_shadow: Dict[str, Any] | None = None,
-                   gallup_confidence_shadow: Dict[str, Any] | None = None) -> Dict[str, Any]:
+                   gallup_confidence_shadow: Dict[str, Any] | None = None,
+                   extra_shadows: Dict[str, Dict[str, Any]] | None = None) -> Dict[str, Any]:
     band = interpret(boi["index"])
     snapshot = {
         "schema_version": 1,
@@ -486,6 +569,10 @@ def build_snapshot(run_date: str, boi: Dict[str, Any],
         block = dict(nyc_dhs_shadow)
         block["in_bugout_index"] = False
         snapshot["nyc_dhs_shadow"] = block
+    for block_key, payload in (extra_shadows or {}).items():
+        block = dict(payload)
+        block["in_bugout_index"] = False
+        snapshot[block_key] = block
     if pew_trust_shadow is not None:
         block = dict(pew_trust_shadow)
         block["in_bugout_index"] = False
@@ -574,7 +661,7 @@ def main() -> int:
               file=sys.stderr)
 
     # Hard-fail if markets or the pulse returned no usable data at all.
-    # Labor, food, NYC DHS, Pew, and Gallup shadows are companions: their
+    # Labor, food, shelter, Pew, and Gallup shadows are companions: their
     # failure must not refuse the publish. They are fetched only after this check.
     hard_failures = []
     if markets.get("status") == "error":
@@ -632,6 +719,23 @@ def main() -> int:
         )
     nyc_dhs_shadow = _resolve_nyc_dhs_shadow(nyc_dhs_shadow)
 
+    extra_shadows: Dict[str, Any] = {}
+    for fetch_name, label, block_key, _csv_name, _module in EXTRA_SHELTER_SHADOWS:
+        print(f"[weekly_run] fetching {label} (not in the index)…")
+        payload = getattr(sys.modules[__name__], fetch_name)()
+        if payload.get("status") not in ("success", "partial"):
+            print(
+                f"[weekly_run] {label} failed (publishing anyway): "
+                f"{payload.get('message') or payload.get('errors')}",
+                file=sys.stderr,
+            )
+        elif payload.get("errors"):
+            print(
+                f"[weekly_run] {label} partial (publishing anyway): {payload['errors']}",
+                file=sys.stderr,
+            )
+        extra_shadows[block_key] = _resolve_shadow(payload, block_key)
+
     print("[weekly_run] fetching Pew public-trust shadow (not in the index)…")
     pew_trust_shadow = fetch_pew_trust_shadow()
     if pew_trust_shadow.get("status") not in ("success", "partial"):
@@ -673,12 +777,12 @@ def main() -> int:
     print("[weekly_run] appending history…")
     append_history(
         run_date, boi, markets, pulse, core, labor_shadow, food_shadow, nyc_dhs_shadow,
-        pew_trust_shadow, gallup_confidence_shadow,
+        pew_trust_shadow, gallup_confidence_shadow, extra_shadows,
     )
 
     snapshot = build_snapshot(
         run_date, boi, core, markets, pulse, labor_shadow, food_shadow, nyc_dhs_shadow,
-        pew_trust_shadow, gallup_confidence_shadow,
+        pew_trust_shadow, gallup_confidence_shadow, extra_shadows,
     )
 
     # Carry the previous revisions payload forward if this week's fetch failed.
@@ -714,6 +818,8 @@ def main() -> int:
         "pew_trust_shadow": load_history(DATA_DIR / "pew_trust_shadow_history.csv"),
         "gallup_confidence_shadow": load_history(DATA_DIR / "gallup_confidence_shadow_history.csv"),
     }
+    for _fetch_name, _label, block_key, csv_name, _module in EXTRA_SHELTER_SHADOWS:
+        snapshot["history"][block_key] = load_history(DATA_DIR / csv_name)
 
     # Shadow and revision failures are published on exit 0. Scrub the
     # snapshot that both latest.json and the HTML are built from.

@@ -408,6 +408,16 @@ def test_companion_failure_still_publishes_the_locked_score(tmp_path, monkeypatc
         "fetch_nyc_dhs_shadow",
         lambda: {"status": "success", "in_bugout_index": False, "values": {}, "dates": {}, "errors": []},
     )
+    for _name in (
+        "fetch_ramsey_shelter_shadow",
+        "fetch_sf_shelter_shadow",
+        "fetch_shelter_region_shadow",
+    ):
+        monkeypatch.setattr(
+            weekly,
+            _name,
+            lambda: {"status": "success", "in_bugout_index": False, "values": {}, "dates": {}, "errors": []},
+        )
     monkeypatch.setattr(
         weekly,
         "fetch_pew_trust_shadow",

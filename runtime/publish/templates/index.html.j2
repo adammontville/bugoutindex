@@ -195,6 +195,99 @@
 <p class="chart-caption">Each point is a DHS census date, not a BugOut Index publication week. New York City only. Not in the BugOut Index.</p>
 {% endif %}
 
+<div class="section-title">
+  <h3>Ramsey County shelter census — shadow series</h3>
+  <span class="hint">Not in the BugOut Index. No weight. Ramsey County, Minnesota only — not a U.S. total. Monthly sum of people in emergency shelters across published household types. HUD AHAR remains the annual national homelessness input.</span>
+</div>
+<p class="rev-callout">
+  This reading is a companion only. It is not in the BugOut Index and it has no weight.
+  It is a Ramsey County headcount from
+  <a href="https://data.ramseycountymn.gov/dataset/Emergency-shelter-population-and-utilization/9mck-bcqu">Ramsey County open data {{ ramsey_dataset_id }}</a>
+  (field <code>population_enrollees</code>, summed across household types), not a national rate and not a substitute for the HUD AHAR homelessness input.
+  {% if ramsey_reused_from %}
+  This week’s fetch failed; the value is carried forward from the {{ ramsey_reused_from }} publish. The date below is the county month stamp.
+  {% endif %}
+</p>
+<div class="grid nyc">
+  {% for tile in ramsey_tiles %}
+  <div class="tile{% if tile.stale %} stale{% endif %}">
+    <div class="k">{{ tile.label }}{% if tile.stale %} <span class="badge-stale">Stale</span>{% endif %}</div>
+    <div class="v">{{ tile.value|fmt(tile.unit, 0) }}</div>
+    <div class="meta">
+      <span><a href="{{ tile.source_url }}">Ramsey County {{ tile.dataset_id }}</a></span>
+      <span>Ramsey County only · not in the BugOut Index</span>
+    </div>
+    <div class="age">{{ tile.age_text }}</div>
+  </div>
+  {% endfor %}
+</div>
+{% if ramsey_chart %}
+<div class="chart-card">{{ ramsey_chart|safe }}</div>
+<p class="chart-caption">Each point is a county month, not a BugOut Index publication week. Ramsey County only. Not in the BugOut Index.</p>
+{% endif %}
+
+<div class="section-title">
+  <h3>Toronto shelter census — shadow series</h3>
+  <span class="hint">Not in the BugOut Index. No weight. Toronto only — not a U.S. total. Daily sum of service users reported by overnight shelter programs. HUD AHAR remains the annual national homelessness input.</span>
+</div>
+<p class="rev-callout">
+  This reading is a companion only. It is not in the BugOut Index and it has no weight.
+  It is a Toronto headcount from
+  <a href="https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/">Toronto Open Data</a>
+  (field <code>SERVICE_USER_COUNT</code>, summed across programs on the occupancy date). It is not a deduplicated person count, not a U.S. figure, and not a substitute for the HUD AHAR homelessness input.
+  {% if toronto_reused_from %}
+  This week’s fetch failed; the value is carried forward from the {{ toronto_reused_from }} publish. The date below is the occupancy date.
+  {% endif %}
+</p>
+<div class="grid nyc">
+  {% for tile in toronto_tiles %}
+  <div class="tile{% if tile.stale %} stale{% endif %}">
+    <div class="k">{{ tile.label }}{% if tile.stale %} <span class="badge-stale">Stale</span>{% endif %}</div>
+    <div class="v">{{ tile.value|fmt(tile.unit, 0) }}</div>
+    <div class="meta">
+      <span><a href="{{ tile.source_url }}">Toronto Open Data</a></span>
+      <span>Toronto only · not in the BugOut Index</span>
+    </div>
+    <div class="age">{{ tile.age_text }}</div>
+  </div>
+  {% endfor %}
+</div>
+{% if toronto_chart %}
+<div class="chart-card">{{ toronto_chart|safe }}</div>
+<p class="chart-caption">Each point is an occupancy date, not a BugOut Index publication week. Toronto only. Not in the BugOut Index.</p>
+{% endif %}
+
+<div class="section-title">
+  <h3>San Francisco shelter occupancy — shadow series</h3>
+  <span class="hint">Not in the BugOut Index. No weight. San Francisco only — not a U.S. total. This is an occupancy rate, not a headcount. HUD AHAR remains the annual national homelessness input.</span>
+</div>
+<p class="rev-callout">
+  This reading is a companion only. It is not in the BugOut Index and it has no weight.
+  It is the monthly average occupancy rate of year-round temporary shelter and crisis intervention programs from
+  <a href="https://data.sf.gov/City-Management-and-Ethics/Scorecard-Measures/kc49-udxn">DataSF {{ sf_dataset_id }}</a>
+  measure <code>279</code>. The source stores a ratio; this tile shows percent. It is not a person count and not a substitute for the HUD AHAR homelessness input.
+  {% if sf_reused_from %}
+  This week’s fetch failed; the value is carried forward from the {{ sf_reused_from }} publish. The date below is the scorecard month.
+  {% endif %}
+</p>
+<div class="grid nyc">
+  {% for tile in sf_tiles %}
+  <div class="tile{% if tile.stale %} stale{% endif %}">
+    <div class="k">{{ tile.label }}{% if tile.stale %} <span class="badge-stale">Stale</span>{% endif %}</div>
+    <div class="v">{{ tile.value|fmt(tile.unit, 1) }}</div>
+    <div class="meta">
+      <span><a href="{{ tile.source_url }}">DataSF {{ tile.dataset_id }}</a></span>
+      <span>San Francisco only · occupancy rate · not in the BugOut Index</span>
+    </div>
+    <div class="age">{{ tile.age_text }}</div>
+  </div>
+  {% endfor %}
+</div>
+{% if sf_chart %}
+<div class="chart-card">{{ sf_chart|safe }}</div>
+<p class="chart-caption">Each point is a scorecard month, not a BugOut Index publication week. San Francisco only. Not a headcount. Not in the BugOut Index.</p>
+{% endif %}
+
 <div class="section-title"><h3>About this index</h3></div>
 <p style="max-width:70ch;color:var(--muted);">
   The BugOut Index is a directional stress and stability reading
@@ -202,8 +295,8 @@
   fixed endpoints and combine into one 0–100 score. Higher means those conditions are
   less stressed. The number shows how hard the published inputs are pressing. It is not
   a forecast, and it is not an instruction to bug out.
-  Markets, the short-term pulse, labor utilization, food prices, and the NYC DHS shelter census on this page are companions.
-  They are not in the score. The NYC census is New York City only. HUD AHAR remains the annual national homelessness input. Several inputs update monthly, quarterly, or once a year,
+  Markets, the short-term pulse, labor utilization, food prices, and the shelter companions on this page are companions.
+  They are not in the score. The shelter readings are local: New York City, Ramsey County (Minnesota), Toronto, and San Francisco. None of them is a U.S. total. The San Francisco figure is an occupancy rate, not a headcount. HUD AHAR remains the annual national homelessness input. Several inputs update monthly, quarterly, or once a year,
   so many weeks the number does not move.
   See <a href="./methodology.html">methodology</a> for the calculation, weights, and limits.
   The committed weekly files are the record of a past score. Rerunning the publisher

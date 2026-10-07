@@ -2418,6 +2418,618 @@
         "nyc_dhs_total_individuals": "83920",
         "nyc_dhs_total_individuals_observation_date": "2026-10-01"
       }
+    ],
+    "ramsey_shelter_shadow": [
+      {
+        "date": "2026-10-02",
+        "ramsey_shelter_total_people": 480,
+        "ramsey_shelter_total_people_observation_date": "2026-08-01"
+      }
+    ],
+    "toronto_shelter_shadow": [
+      {
+        "date": "2026-10-02",
+        "toronto_shelter_service_users": 7069,
+        "toronto_shelter_service_users_observation_date": "2026-10-05"
+      }
+    ],
+    "sf_shelter_shadow": [
+      {
+        "date": "2026-10-02",
+        "sf_shelter_occupancy_rate": 90.0,
+        "sf_shelter_occupancy_rate_observation_date": "2026-08-31"
+      }
     ]
+  },
+  "ramsey_shelter_shadow": {
+    "status": "success",
+    "in_bugout_index": false,
+    "geography": "Ramsey County, Minnesota",
+    "scope": "Ramsey County only; not a U.S. figure and not the HUD AHAR rate",
+    "dataset_id": "9mck-bcqu",
+    "source_url": "https://data.ramseycountymn.gov/dataset/Emergency-shelter-population-and-utilization/9mck-bcqu",
+    "series_ids": {
+      "ramsey_shelter_total_people": "population_enrollees"
+    },
+    "reading": "total people in Ramsey County emergency shelters, summed across household types",
+    "values": {
+      "ramsey_shelter_total_people": 480
+    },
+    "dates": {
+      "ramsey_shelter_total_people": "2026-08-01"
+    },
+    "observations": {
+      "ramsey_shelter_total_people": [
+        {
+          "date": "2025-05-01",
+          "value": 504
+        },
+        {
+          "date": "2025-06-01",
+          "value": 505
+        },
+        {
+          "date": "2025-07-01",
+          "value": 507
+        },
+        {
+          "date": "2025-08-01",
+          "value": 507
+        },
+        {
+          "date": "2025-09-01",
+          "value": 506
+        },
+        {
+          "date": "2025-10-01",
+          "value": 514
+        },
+        {
+          "date": "2025-11-01",
+          "value": 500
+        },
+        {
+          "date": "2025-12-01",
+          "value": 497
+        },
+        {
+          "date": "2026-01-01",
+          "value": 503
+        },
+        {
+          "date": "2026-02-01",
+          "value": 491
+        },
+        {
+          "date": "2026-03-01",
+          "value": 471
+        },
+        {
+          "date": "2026-04-01",
+          "value": 476
+        },
+        {
+          "date": "2026-05-01",
+          "value": 502
+        },
+        {
+          "date": "2026-06-01",
+          "value": 487
+        },
+        {
+          "date": "2026-07-01",
+          "value": 491
+        },
+        {
+          "date": "2026-08-01",
+          "value": 480
+        }
+      ]
+    },
+    "errors": []
+  },
+  "toronto_shelter_shadow": {
+    "status": "success",
+    "in_bugout_index": false,
+    "geography": "Toronto, Ontario",
+    "scope": "Toronto only; not a U.S. figure and not the HUD AHAR rate",
+    "dataset_id": "daily-shelter-overnight-service-occupancy-capacity",
+    "source_url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/",
+    "series_ids": {
+      "toronto_shelter_service_users": "SERVICE_USER_COUNT"
+    },
+    "reading": "sum of SERVICE_USER_COUNT across Toronto overnight programs on the occupancy date; not a deduplicated person count",
+    "values": {
+      "toronto_shelter_service_users": 7069
+    },
+    "dates": {
+      "toronto_shelter_service_users": "2026-10-05"
+    },
+    "observations": {
+      "toronto_shelter_service_users": [
+        {
+          "date": "2026-07-08",
+          "value": 7732
+        },
+        {
+          "date": "2026-07-09",
+          "value": 7725
+        },
+        {
+          "date": "2026-07-10",
+          "value": 7719
+        },
+        {
+          "date": "2026-07-11",
+          "value": 7721
+        },
+        {
+          "date": "2026-07-12",
+          "value": 7720
+        },
+        {
+          "date": "2026-07-13",
+          "value": 7760
+        },
+        {
+          "date": "2026-07-14",
+          "value": 7783
+        },
+        {
+          "date": "2026-07-15",
+          "value": 7793
+        },
+        {
+          "date": "2026-07-16",
+          "value": 7790
+        },
+        {
+          "date": "2026-07-17",
+          "value": 7777
+        },
+        {
+          "date": "2026-07-18",
+          "value": 7792
+        },
+        {
+          "date": "2026-07-19",
+          "value": 7777
+        },
+        {
+          "date": "2026-07-20",
+          "value": 7741
+        },
+        {
+          "date": "2026-07-21",
+          "value": 7724
+        },
+        {
+          "date": "2026-07-22",
+          "value": 7716
+        },
+        {
+          "date": "2026-07-23",
+          "value": 7728
+        },
+        {
+          "date": "2026-07-24",
+          "value": 7729
+        },
+        {
+          "date": "2026-07-25",
+          "value": 7727
+        },
+        {
+          "date": "2026-07-26",
+          "value": 7712
+        },
+        {
+          "date": "2026-07-27",
+          "value": 7704
+        },
+        {
+          "date": "2026-07-28",
+          "value": 7701
+        },
+        {
+          "date": "2026-07-29",
+          "value": 7708
+        },
+        {
+          "date": "2026-07-30",
+          "value": 7716
+        },
+        {
+          "date": "2026-07-31",
+          "value": 7708
+        },
+        {
+          "date": "2026-08-01",
+          "value": 7693
+        },
+        {
+          "date": "2026-08-02",
+          "value": 7702
+        },
+        {
+          "date": "2026-08-03",
+          "value": 7677
+        },
+        {
+          "date": "2026-08-04",
+          "value": 7687
+        },
+        {
+          "date": "2026-08-05",
+          "value": 7686
+        },
+        {
+          "date": "2026-08-06",
+          "value": 7689
+        },
+        {
+          "date": "2026-08-07",
+          "value": 7687
+        },
+        {
+          "date": "2026-08-08",
+          "value": 7684
+        },
+        {
+          "date": "2026-08-09",
+          "value": 7681
+        },
+        {
+          "date": "2026-08-10",
+          "value": 7656
+        },
+        {
+          "date": "2026-08-11",
+          "value": 7653
+        },
+        {
+          "date": "2026-08-12",
+          "value": 7644
+        },
+        {
+          "date": "2026-08-13",
+          "value": 7650
+        },
+        {
+          "date": "2026-08-14",
+          "value": 7656
+        },
+        {
+          "date": "2026-08-15",
+          "value": 7653
+        },
+        {
+          "date": "2026-08-16",
+          "value": 7648
+        },
+        {
+          "date": "2026-08-17",
+          "value": 7640
+        },
+        {
+          "date": "2026-08-18",
+          "value": 7634
+        },
+        {
+          "date": "2026-08-19",
+          "value": 7619
+        },
+        {
+          "date": "2026-08-20",
+          "value": 7625
+        },
+        {
+          "date": "2026-08-21",
+          "value": 7633
+        },
+        {
+          "date": "2026-08-22",
+          "value": 7626
+        },
+        {
+          "date": "2026-08-23",
+          "value": 7626
+        },
+        {
+          "date": "2026-08-24",
+          "value": 7633
+        },
+        {
+          "date": "2026-08-25",
+          "value": 7619
+        },
+        {
+          "date": "2026-08-26",
+          "value": 7601
+        },
+        {
+          "date": "2026-08-27",
+          "value": 7592
+        },
+        {
+          "date": "2026-08-28",
+          "value": 7574
+        },
+        {
+          "date": "2026-08-29",
+          "value": 7579
+        },
+        {
+          "date": "2026-08-30",
+          "value": 7563
+        },
+        {
+          "date": "2026-08-31",
+          "value": 7542
+        },
+        {
+          "date": "2026-09-01",
+          "value": 7508
+        },
+        {
+          "date": "2026-09-02",
+          "value": 7482
+        },
+        {
+          "date": "2026-09-03",
+          "value": 7463
+        },
+        {
+          "date": "2026-09-04",
+          "value": 7422
+        },
+        {
+          "date": "2026-09-05",
+          "value": 7384
+        },
+        {
+          "date": "2026-09-06",
+          "value": 7380
+        },
+        {
+          "date": "2026-09-07",
+          "value": 7385
+        },
+        {
+          "date": "2026-09-08",
+          "value": 7353
+        },
+        {
+          "date": "2026-09-09",
+          "value": 7339
+        },
+        {
+          "date": "2026-09-10",
+          "value": 7335
+        },
+        {
+          "date": "2026-09-11",
+          "value": 7338
+        },
+        {
+          "date": "2026-09-12",
+          "value": 7343
+        },
+        {
+          "date": "2026-09-13",
+          "value": 7344
+        },
+        {
+          "date": "2026-09-14",
+          "value": 7310
+        },
+        {
+          "date": "2026-09-15",
+          "value": 7307
+        },
+        {
+          "date": "2026-09-16",
+          "value": 7301
+        },
+        {
+          "date": "2026-09-17",
+          "value": 7295
+        },
+        {
+          "date": "2026-09-18",
+          "value": 7289
+        },
+        {
+          "date": "2026-09-19",
+          "value": 7286
+        },
+        {
+          "date": "2026-09-20",
+          "value": 7282
+        },
+        {
+          "date": "2026-09-21",
+          "value": 7288
+        },
+        {
+          "date": "2026-09-22",
+          "value": 7268
+        },
+        {
+          "date": "2026-09-23",
+          "value": 7267
+        },
+        {
+          "date": "2026-09-24",
+          "value": 7262
+        },
+        {
+          "date": "2026-09-25",
+          "value": 7262
+        },
+        {
+          "date": "2026-09-26",
+          "value": 7261
+        },
+        {
+          "date": "2026-09-27",
+          "value": 7255
+        },
+        {
+          "date": "2026-09-28",
+          "value": 7247
+        },
+        {
+          "date": "2026-09-29",
+          "value": 7234
+        },
+        {
+          "date": "2026-09-30",
+          "value": 7221
+        },
+        {
+          "date": "2026-10-01",
+          "value": 7153
+        },
+        {
+          "date": "2026-10-02",
+          "value": 7115
+        },
+        {
+          "date": "2026-10-03",
+          "value": 7093
+        },
+        {
+          "date": "2026-10-04",
+          "value": 7087
+        },
+        {
+          "date": "2026-10-05",
+          "value": 7069
+        }
+      ]
+    },
+    "errors": []
+  },
+  "sf_shelter_shadow": {
+    "status": "success",
+    "in_bugout_index": false,
+    "geography": "San Francisco",
+    "scope": "San Francisco only; an occupancy rate, not a headcount, not a U.S. figure, and not the HUD AHAR rate",
+    "dataset_id": "kc49-udxn",
+    "source_url": "https://data.sf.gov/City-Management-and-Ethics/Scorecard-Measures/kc49-udxn",
+    "series_ids": {
+      "sf_shelter_occupancy_rate": "279"
+    },
+    "reading": "average occupancy rate of San Francisco year-round temporary shelter and crisis intervention programs, in percent",
+    "values": {
+      "sf_shelter_occupancy_rate": 90.0
+    },
+    "dates": {
+      "sf_shelter_occupancy_rate": "2026-08-31"
+    },
+    "observations": {
+      "sf_shelter_occupancy_rate": [
+        {
+          "date": "2024-09-30",
+          "value": 93.0
+        },
+        {
+          "date": "2024-10-31",
+          "value": 92.0
+        },
+        {
+          "date": "2024-11-30",
+          "value": 93.0
+        },
+        {
+          "date": "2024-12-31",
+          "value": 92.0
+        },
+        {
+          "date": "2025-01-31",
+          "value": 90.0
+        },
+        {
+          "date": "2025-02-28",
+          "value": 92.0
+        },
+        {
+          "date": "2025-03-31",
+          "value": 92.0
+        },
+        {
+          "date": "2025-04-30",
+          "value": 92.0
+        },
+        {
+          "date": "2025-05-31",
+          "value": 92.0
+        },
+        {
+          "date": "2025-06-30",
+          "value": 92.0
+        },
+        {
+          "date": "2025-07-31",
+          "value": 90.0
+        },
+        {
+          "date": "2025-08-31",
+          "value": 91.0
+        },
+        {
+          "date": "2025-09-30",
+          "value": 91.0
+        },
+        {
+          "date": "2025-10-31",
+          "value": 89.0
+        },
+        {
+          "date": "2025-11-30",
+          "value": 90.0
+        },
+        {
+          "date": "2025-12-31",
+          "value": 91.0
+        },
+        {
+          "date": "2026-01-31",
+          "value": 91.0
+        },
+        {
+          "date": "2026-02-28",
+          "value": 90.0
+        },
+        {
+          "date": "2026-03-31",
+          "value": 90.0
+        },
+        {
+          "date": "2026-04-30",
+          "value": 90.0
+        },
+        {
+          "date": "2026-05-31",
+          "value": 90.0
+        },
+        {
+          "date": "2026-06-30",
+          "value": 90.0
+        },
+        {
+          "date": "2026-07-31",
+          "value": 90.0
+        },
+        {
+          "date": "2026-08-31",
+          "value": 90.0
+        }
+      ]
+    },
+    "errors": [],
+    "unit": "percent",
+    "measure_code": "279"
   }
 }

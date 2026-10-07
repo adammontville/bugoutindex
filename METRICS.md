@@ -194,6 +194,7 @@ The inventory below is the cut locked by Adam Montville on 2026-09-23. That cut 
 
 ### Shipped companion — NYC DHS shelter census
 - [NYC DHS Daily Shelter Census](./incubating/nyc_dhs_shelter_census.md) — NYC Open Data `k46n-sa2m`, field `total_individuals_in_shelter`. New York City only. Not a U.S. rate and not a substitute for the HUD AHAR homelessness input (issue [#81](https://github.com/adammontville/bugoutindex/issues/81)). No weight. Not in `compute_index`.
+- [Local shelter companions](./incubating/shelter_census_companions.md) — Ramsey County, Minnesota (`9mck-bcqu`, monthly people in emergency shelter), Toronto (daily sum of `SERVICE_USER_COUNT`; not a U.S. figure), and San Francisco DataSF measure `279` (monthly occupancy rate, not a headcount). Same rule as NYC: no weight, not in `compute_index`, HUD AHAR stays the national annual input. Issue [#81](https://github.com/adammontville/bugoutindex/issues/81).
 
 ### Still incubating — Grid outages / energy
 - [Grid Outages](./incubating/grid_outages.md) — kept incubating on purpose (not archived). The note is a theoretical exploration: why grid stress matters now, which public measures are worth researching, and whether any of them would improve a directional weekly reading. No source has been chosen. No weight. The stub fails closed. The weekly job does not call it.

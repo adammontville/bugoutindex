@@ -306,6 +306,47 @@ NYC_DHS_SHADOW_LABELS = {
 NYC_DHS_SOURCE_URL = "https://data.cityofnewyork.us/Social-Services/DHS-Daily-Report/k46n-sa2m"
 NYC_DHS_DATASET_ID = "k46n-sa2m"
 
+# Companion only. IDs match runtime/data/fetch/fetch_ramsey_shelter_shadow.py SERIES.
+# Ramsey County, Minnesota headcount. Not the national HUD AHAR rate.
+RAMSEY_SHELTER_SHADOW_LABELS = {
+    "ramsey_shelter_total_people": (
+        "People in Ramsey County emergency shelters",
+        "people",
+        "population_enrollees",
+    ),
+}
+RAMSEY_SHELTER_SOURCE_URL = (
+    "https://data.ramseycountymn.gov/dataset/"
+    "Emergency-shelter-population-and-utilization/9mck-bcqu"
+)
+RAMSEY_SHELTER_DATASET_ID = "9mck-bcqu"
+
+# Companion only. IDs match runtime/data/fetch/fetch_toronto_shelter_shadow.py SERIES.
+# Toronto overnight programs. Not a U.S. figure and not a deduplicated person count.
+TORONTO_SHELTER_SHADOW_LABELS = {
+    "toronto_shelter_service_users": (
+        "Service users in Toronto overnight shelters",
+        "people",
+        "SERVICE_USER_COUNT",
+    ),
+}
+TORONTO_SHELTER_SOURCE_URL = (
+    "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+)
+TORONTO_SHELTER_DATASET_ID = "daily-shelter-overnight-service-occupancy-capacity"
+
+# Companion only. IDs match runtime/data/fetch/fetch_sf_shelter_shadow.py SERIES.
+# San Francisco occupancy rate, not a headcount and not the HUD AHAR rate.
+SF_SHELTER_SHADOW_LABELS = {
+    "sf_shelter_occupancy_rate": (
+        "SF year-round shelter occupancy rate",
+        "%",
+        "279",
+    ),
+}
+SF_SHELTER_SOURCE_URL = "https://data.sf.gov/City-Management-and-Ethics/Scorecard-Measures/kc49-udxn"
+SF_SHELTER_DATASET_ID = "kc49-udxn"
+
 
 def _fmt(val, unit: str = "", digits: int = 2) -> str:
     if val is None:
@@ -397,11 +438,21 @@ def _food_chart_svg(food: Dict[str, Any]) -> str:
     )
 
 
-def _nyc_dhs_chart_svg(shadow: Dict[str, Any]) -> str:
-    """Daily NYC census dates. The axis is the DHS date, not the publish week."""
+def _headcount_chart_svg(
+    shadow: Dict[str, Any],
+    series_key: str,
+    label: str,
+    color: str,
+    title: str,
+    *,
+    y_digits: int = 0,
+    y_unit: str = "",
+    month_axis: bool = False,
+) -> str:
+    """Observation dates from the source, not the publish week."""
     observations = (shadow or {}).get("observations") or {}
     points: List[dict] = []
-    for row in observations.get("nyc_dhs_total_individuals") or []:
+    for row in observations.get(series_key) or []:
         if not isinstance(row, dict):
             continue
         day = row.get("date")
@@ -415,15 +466,28 @@ def _nyc_dhs_chart_svg(shadow: Dict[str, Any]) -> str:
     points.sort(key=lambda item: item["date"])
     if not points:
         return ""
+    labels = [item["date"][:7] if month_axis else item["date"] for item in points]
     return multiline_chart_svg(
         series=[{
-            "label": "NYC DHS total individuals in shelter",
-            "color": "#7c2d12",
+            "label": label,
+            "color": color,
             "values": [item["value"] for item in points],
         }],
-        x_labels=[item["date"] for item in points],
-        title="NYC DHS shelter census — New York City only, not in the BugOut Index",
-        y_digits=0,
+        x_labels=labels,
+        title=title,
+        y_digits=y_digits,
+        y_unit=y_unit,
+    )
+
+
+def _nyc_dhs_chart_svg(shadow: Dict[str, Any]) -> str:
+    """Daily NYC census dates. The axis is the DHS date, not the publish week."""
+    return _headcount_chart_svg(
+        shadow,
+        "nyc_dhs_total_individuals",
+        "NYC DHS total individuals in shelter",
+        "#7c2d12",
+        "NYC DHS shelter census — New York City only, not in the BugOut Index",
     )
 
 
@@ -581,7 +645,50 @@ def render_site(snapshot: Dict[str, Any]) -> None:
             "source_id": field,
             "dataset_id": nyc.get("dataset_id") or NYC_DHS_DATASET_ID,
             "source_url": nyc.get("source_url") or NYC_DHS_SOURCE_URL,
+            "digits": 0,
+            "place": "NYC only",
         })
+
+    def _local_shelter_tiles(shadow, labels, default_url, default_dataset, digits, place, history_key):
+        dates = (shadow or {}).get("dates") or {}
+        values = (shadow or {}).get("values") or {}
+        history = snapshot.get("history", {}).get(history_key, []) or []
+        tiles = []
+        for key, (label, unit, field) in labels.items():
+            age = describe_pulse_age(
+                dates.get(key),
+                snapshot.get("publication_date"),
+                flat=series_is_flat(_series(history, key)),
+            )
+            tiles.append({
+                "label": label,
+                "unit": unit,
+                "value": values.get(key),
+                "age_text": age["text"],
+                "stale": age["stale"],
+                "source_id": field,
+                "dataset_id": (shadow or {}).get("dataset_id") or default_dataset,
+                "source_url": (shadow or {}).get("source_url") or default_url,
+                "digits": digits,
+                "place": place,
+            })
+        return tiles
+
+    ramsey = snapshot.get("ramsey_shelter_shadow") or {}
+    toronto = snapshot.get("toronto_shelter_shadow") or {}
+    sf_shelter = snapshot.get("sf_shelter_shadow") or {}
+    ramsey_tiles = _local_shelter_tiles(
+        ramsey, RAMSEY_SHELTER_SHADOW_LABELS, RAMSEY_SHELTER_SOURCE_URL,
+        RAMSEY_SHELTER_DATASET_ID, 0, "Ramsey County only", "ramsey_shelter_shadow",
+    )
+    toronto_tiles = _local_shelter_tiles(
+        toronto, TORONTO_SHELTER_SHADOW_LABELS, TORONTO_SHELTER_SOURCE_URL,
+        TORONTO_SHELTER_DATASET_ID, 0, "Toronto only", "toronto_shelter_shadow",
+    )
+    sf_tiles = _local_shelter_tiles(
+        sf_shelter, SF_SHELTER_SHADOW_LABELS, SF_SHELTER_SOURCE_URL,
+        SF_SHELTER_DATASET_ID, 1, "San Francisco only", "sf_shelter_shadow",
+    )
 
     # Week-over-week BOI delta
     boi_delta = None
@@ -605,6 +712,39 @@ def render_site(snapshot: Dict[str, Any]) -> None:
         "nyc_chart": _nyc_dhs_chart_svg(nyc),
         "nyc_reused_from": nyc.get("reused_from"),
         "nyc_dataset_id": nyc.get("dataset_id") or NYC_DHS_DATASET_ID,
+        "ramsey_tiles": ramsey_tiles,
+        "ramsey_chart": _headcount_chart_svg(
+            ramsey,
+            "ramsey_shelter_total_people",
+            "Ramsey County emergency shelter population",
+            "#1d4ed8",
+            "Ramsey County shelter census — Minnesota only, not in the BugOut Index",
+            month_axis=True,
+        ),
+        "ramsey_reused_from": ramsey.get("reused_from"),
+        "ramsey_dataset_id": ramsey.get("dataset_id") or RAMSEY_SHELTER_DATASET_ID,
+        "toronto_tiles": toronto_tiles,
+        "toronto_chart": _headcount_chart_svg(
+            toronto,
+            "toronto_shelter_service_users",
+            "Toronto overnight shelter service users",
+            "#0f766e",
+            "Toronto shelter census — Toronto only, not in the BugOut Index",
+        ),
+        "toronto_reused_from": toronto.get("reused_from"),
+        "sf_tiles": sf_tiles,
+        "sf_chart": _headcount_chart_svg(
+            sf_shelter,
+            "sf_shelter_occupancy_rate",
+            "SF year-round shelter occupancy rate",
+            "#6d28d9",
+            "San Francisco shelter occupancy — San Francisco only, not in the BugOut Index",
+            y_digits=1,
+            y_unit="%",
+            month_axis=True,
+        ),
+        "sf_reused_from": sf_shelter.get("reused_from"),
+        "sf_dataset_id": sf_shelter.get("dataset_id") or SF_SHELTER_DATASET_ID,
         "history_count": len(boi_history),
         "week_note": build_week_note(snapshot),
     }
@@ -616,6 +756,12 @@ def render_site(snapshot: Dict[str, Any]) -> None:
         labor_history=labor_history, labor_labels=LABOR_SHADOW_LABELS,
         food_history=food_history, food_labels=FOOD_SHADOW_LABELS,
         nyc_history=nyc_history, nyc_labels=NYC_DHS_SHADOW_LABELS,
+        ramsey_history=snapshot.get("history", {}).get("ramsey_shelter_shadow", []) or [],
+        ramsey_labels=RAMSEY_SHELTER_SHADOW_LABELS,
+        toronto_history=snapshot.get("history", {}).get("toronto_shelter_shadow", []) or [],
+        toronto_labels=TORONTO_SHELTER_SHADOW_LABELS,
+        sf_history=snapshot.get("history", {}).get("sf_shelter_shadow", []) or [],
+        sf_labels=SF_SHELTER_SHADOW_LABELS,
         metric_labels=METRIC_LABELS, pulse_labels=PULSE_LABELS, snapshot=snapshot,
     ))
 

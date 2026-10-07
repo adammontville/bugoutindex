@@ -156,4 +156,85 @@
 </table>
 </div>
 
+<div class="section-title"><h3>Ramsey County shelter census shadow series</h3></div>
+<p class="chart-caption">These rows are not in the BugOut Index. No weight. Ramsey County, Minnesota only, not a U.S. total. The week column is the publication date. Observed is the county month stamp. The value is people in emergency shelters, summed across household types, not the HUD AHAR rate.</p>
+<div style="overflow-x:auto">
+<table class="hx">
+  <thead>
+    <tr>
+      <th>Date</th>
+      {% for key, tup in ramsey_labels.items() %}
+        <th>{{ tup[0] }}</th>
+        <th>Observed</th>
+      {% endfor %}
+    </tr>
+  </thead>
+  <tbody>
+    {% for row in ramsey_history|reverse %}
+      <tr>
+        <td>{{ row.date }}</td>
+        {% for key, tup in ramsey_labels.items() %}
+          <td>{{ row[key] or '—' }}</td>
+          <td>{{ row[key ~ '_observation_date'] or '—' }}</td>
+        {% endfor %}
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+
+<div class="section-title"><h3>Toronto shelter census shadow series</h3></div>
+<p class="chart-caption">These rows are not in the BugOut Index. No weight. Toronto only, not a U.S. total. The week column is the publication date. Observed is the occupancy date. The value is the sum of service users across overnight programs, not a deduplicated person count and not the HUD AHAR rate.</p>
+<div style="overflow-x:auto">
+<table class="hx">
+  <thead>
+    <tr>
+      <th>Date</th>
+      {% for key, tup in toronto_labels.items() %}
+        <th>{{ tup[0] }}</th>
+        <th>Observed</th>
+      {% endfor %}
+    </tr>
+  </thead>
+  <tbody>
+    {% for row in toronto_history|reverse %}
+      <tr>
+        <td>{{ row.date }}</td>
+        {% for key, tup in toronto_labels.items() %}
+          <td>{{ row[key] or '—' }}</td>
+          <td>{{ row[key ~ '_observation_date'] or '—' }}</td>
+        {% endfor %}
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+
+<div class="section-title"><h3>San Francisco shelter occupancy shadow series</h3></div>
+<p class="chart-caption">These rows are not in the BugOut Index. No weight. San Francisco only, not a U.S. total. The week column is the publication date. Observed is the scorecard month. The value is an occupancy rate in percent, not a headcount and not the HUD AHAR rate.</p>
+<div style="overflow-x:auto">
+<table class="hx">
+  <thead>
+    <tr>
+      <th>Date</th>
+      {% for key, tup in sf_labels.items() %}
+        <th>{{ tup[0] }}</th>
+        <th>Observed</th>
+      {% endfor %}
+    </tr>
+  </thead>
+  <tbody>
+    {% for row in sf_history|reverse %}
+      <tr>
+        <td>{{ row.date }}</td>
+        {% for key, tup in sf_labels.items() %}
+          <td>{{ row[key] or '—' }}</td>
+          <td>{{ row[key ~ '_observation_date'] or '—' }}</td>
+        {% endfor %}
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+
 {% endblock %}

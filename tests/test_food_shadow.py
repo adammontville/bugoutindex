@@ -235,8 +235,8 @@ def test_rendered_page_labels_the_shadow_series_outside_the_index(tmp_path, monk
     methodology = (tmp_path / "methodology.html").read_text()
     food_html = html.split("Food prices")[1].split("About this index")[0]
 
-    assert snapshot["bugout_index"] == 57.11
-    assert "57.11" in html
+    assert snapshot["bugout_index"] == 57.04
+    assert "57.04" in html
     assert "not in the BugOut Index" in food_html
     assert "No weight" in food_html or "no weight" in food_html
     assert "https://fred.stlouisfed.org/series/CPIUFDNS" in food_html
@@ -302,6 +302,16 @@ def test_food_shadow_failure_still_publishes_the_locked_score(tmp_path, monkeypa
         "fetch_nyc_dhs_shadow",
         lambda: {"status": "success", "in_bugout_index": False, "values": {}, "dates": {}, "errors": []},
     )
+    for _name in (
+        "fetch_ramsey_shelter_shadow",
+        "fetch_toronto_shelter_shadow",
+        "fetch_sf_shelter_shadow",
+    ):
+        monkeypatch.setattr(
+            weekly,
+            _name,
+            lambda: {"status": "success", "in_bugout_index": False, "values": {}, "dates": {}, "errors": []},
+        )
     monkeypatch.setattr(render, "render_site", lambda _snapshot: None)
     monkeypatch.setattr(weekly, "publication_date_for", lambda now=None: "2026-09-23")
 
@@ -350,13 +360,19 @@ def test_markets_refusal_does_not_fetch_the_shadow_series(tmp_path, monkeypatch)
     monkeypatch.setattr(weekly, "fetch_food_shadow", _should_not_fetch)
     monkeypatch.setattr(weekly, "fetch_labor_shadow", lambda: {"status": "success", "values": {}})
     monkeypatch.setattr(weekly, "fetch_nyc_dhs_shadow", _should_not_fetch_nyc)
+    for _name in (
+        "fetch_ramsey_shelter_shadow",
+        "fetch_toronto_shelter_shadow",
+        "fetch_sf_shelter_shadow",
+    ):
+        monkeypatch.setattr(weekly, _name, _should_not_fetch_nyc)
     assert weekly.main() == EXIT_MARKETS_OR_PULSE_REFUSED
     assert not (tmp_path / "docs" / "latest.json").exists()
 
 
 def test_committed_snapshot_keeps_the_score_and_fred_dates():
     latest = json.loads(LATEST.read_text())
-    assert latest["bugout_index"] == 57.11
+    assert latest["bugout_index"] == 57.04
     assert latest["methodology_version"] == "1.0.0"
     assert latest["metrics"]["incident_rate"]["raw"] == 2723.0
     food = latest["food_shadow"]

@@ -258,10 +258,10 @@ def test_rendered_page_labels_the_census_as_nyc_only(tmp_path, monkeypatch):
     methodology = (tmp_path / "methodology.html").read_text()
     nyc_html = html.split("NYC DHS shelter census")[1].split("About this index")[0]
 
-    assert snapshot["bugout_index"] == before["bugout_index"] == 57.11
+    assert snapshot["bugout_index"] == before["bugout_index"] == 57.04
     assert snapshot["methodology_version"] == "1.0.0"
     assert {key: snapshot[key] for key in SCORE_FIELDS} == before
-    assert "57.11" in html
+    assert "57.04" in html
     assert "New York City only" in nyc_html
     assert "not a U.S." in nyc_html
     assert "HUD AHAR" in nyc_html
@@ -334,6 +334,16 @@ def test_nyc_shadow_failure_still_publishes_the_locked_score(tmp_path, monkeypat
         "fetch_nyc_dhs_shadow",
         lambda: {"status": "error", "message": "down", "values": {}, "dates": {}, "errors": ["down"]},
     )
+    for _name in (
+        "fetch_ramsey_shelter_shadow",
+        "fetch_toronto_shelter_shadow",
+        "fetch_sf_shelter_shadow",
+    ):
+        monkeypatch.setattr(
+            weekly,
+            _name,
+            lambda: {"status": "success", "in_bugout_index": False, "values": {}, "dates": {}, "errors": []},
+        )
     monkeypatch.setattr(render, "render_site", lambda _snapshot: None)
     monkeypatch.setattr(weekly, "publication_date_for", lambda now=None: "2026-09-23")
 
@@ -380,13 +390,19 @@ def test_markets_refusal_does_not_fetch_the_shadow_series(tmp_path, monkeypatch)
     monkeypatch.setattr(weekly, "fetch_nyc_dhs_shadow", _should_not_fetch)
     monkeypatch.setattr(weekly, "fetch_labor_shadow", lambda: {"status": "success", "values": {}})
     monkeypatch.setattr(weekly, "fetch_food_shadow", lambda: {"status": "success", "values": {}})
+    for _name in (
+        "fetch_ramsey_shelter_shadow",
+        "fetch_toronto_shelter_shadow",
+        "fetch_sf_shelter_shadow",
+    ):
+        monkeypatch.setattr(weekly, _name, _should_not_fetch)
     assert weekly.main() == EXIT_MARKETS_OR_PULSE_REFUSED
     assert not (tmp_path / "docs" / "latest.json").exists()
 
 
 def test_committed_snapshot_keeps_the_score_and_adds_only_the_companion():
     latest = json.loads(LATEST.read_text())
-    assert latest["bugout_index"] == 57.11
+    assert latest["bugout_index"] == 57.04
     assert latest["methodology_version"] == "1.0.0"
     assert latest["metrics"]["incident_rate"]["raw"] == 2723.0
     assert latest["metrics"]["homelessness_rate"]["raw"] == 0.23

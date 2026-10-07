@@ -20,7 +20,7 @@
         </mxCell>
 
         <!-- weekly_run -->
-        <mxCell id="c-weekly" value="&lt;b&gt;weekly_run publisher&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:11px&quot;&gt;Container: Python module&lt;/font&gt;&lt;br&gt;&lt;br&gt;runtime/publish/weekly_run.py&#xa;Orchestrates fetch → score →&#xa;append history → JSON → render.&#xa;Fail-closed: core failure (exit 2)&#xa;or markets/pulse error (exit 3).&#xa;Revisions or labor-shadow failure&#xa;still publishes." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#23a2d9;strokeColor=#0e7090;fontColor=#ffffff;align=center;verticalAlign=middle;" vertex="1" parent="1">
+        <mxCell id="c-weekly" value="&lt;b&gt;weekly_run publisher&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:11px&quot;&gt;Container: Python module&lt;/font&gt;&lt;br&gt;&lt;br&gt;runtime/publish/weekly_run.py&#xa;fetch → score → companions →&#xa;validate → render. No Streamlit.&#xa;Exit 2 core, exit 3 markets/pulse,&#xa;exit 4 bad snapshot. Shadow or&#xa;revision failure still publishes." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#23a2d9;strokeColor=#0e7090;fontColor=#ffffff;align=center;verticalAlign=middle;" vertex="1" parent="1">
           <mxGeometry x="370" y="130" width="280" height="175" as="geometry"/>
         </mxCell>
 
@@ -30,12 +30,12 @@
         </mxCell>
 
         <!-- Fetchers -->
-        <mxCell id="c-fetch" value="&lt;b&gt;Data fetchers&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:11px&quot;&gt;Container: Python modules&lt;/font&gt;&lt;br&gt;&lt;br&gt;runtime/data/fetch/*&#xa;Core: inflation, crime, unemployment,&#xa;debt, homelessness, trust.&#xa;Companions: markets, pulse,&#xa;labor shadow, revisions.&#xa;HTTP retries via http_retry." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#23a2d9;strokeColor=#0e7090;fontColor=#ffffff;align=center;verticalAlign=middle;" vertex="1" parent="1">
+        <mxCell id="c-fetch" value="&lt;b&gt;Data fetchers&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:11px&quot;&gt;Container: Python modules&lt;/font&gt;&lt;br&gt;&lt;br&gt;runtime/data/fetch/*&#xa;Core: inflation, crime, unemployment,&#xa;debt, homelessness, trust.&#xa;Companions: markets, pulse,&#xa;shadows, revisions.&#xa;Key from the environment.&#xa;HTTP retries via http_retry." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#23a2d9;strokeColor=#0e7090;fontColor=#ffffff;align=center;verticalAlign=middle;" vertex="1" parent="1">
           <mxGeometry x="80" y="360" width="280" height="160" as="geometry"/>
         </mxCell>
 
         <!-- Data store -->
-        <mxCell id="c-data" value="&lt;b&gt;Committed data store&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:11px&quot;&gt;Container: files in git&lt;/font&gt;&lt;br&gt;&lt;br&gt;runtime/data/*.csv&#xa;docs/data/latest.json&#xa;annual_inputs.csv checklist&#xa;for HUD and Edelman.&#xa;Observation dates (PR #77)." style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=12;fillColor=#23a2d9;strokeColor=#0e7090;fontColor=#ffffff;align=center;" vertex="1" parent="1">
+        <mxCell id="c-data" value="&lt;b&gt;Committed data store&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:11px&quot;&gt;Container: files in git&lt;/font&gt;&lt;br&gt;&lt;br&gt;runtime/data/*.csv&#xa;docs/data/latest.json&#xa;schema_version 1.&#xa;annual_inputs.csv checklist&#xa;for HUD and Edelman." style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=12;fillColor=#23a2d9;strokeColor=#0e7090;fontColor=#ffffff;align=center;" vertex="1" parent="1">
           <mxGeometry x="420" y="360" width="240" height="160" as="geometry"/>
         </mxCell>
 
@@ -55,8 +55,8 @@
         </mxCell>
 
         <!-- Legacy note box -->
-        <mxCell id="c-legacy" value="&lt;b&gt;Legacy (not public product)&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:11px&quot;&gt;Optional containers in-tree&lt;/font&gt;&lt;br&gt;&lt;br&gt;Streamlit app (runtime/main.py),&#xa;deployment branch / Pi script.&#xa;Not on weekly Pages path." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#b1b1b1;strokeColor=#787878;fontColor=#ffffff;align=center;verticalAlign=middle;dashed=1;" vertex="1" parent="1">
-          <mxGeometry x="1240" y="150" width="240" height="120" as="geometry"/>
+        <mxCell id="c-legacy" value="&lt;b&gt;Optional Streamlit viewer&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:11px&quot;&gt;Not the weekly publisher&lt;/font&gt;&lt;br&gt;&lt;br&gt;runtime/main.py reads latest.json.&#xa;Does not write docs/. The weekly&#xa;job does not import Streamlit.&#xa;Local/Pi: same pipeline, serve docs/." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#b1b1b1;strokeColor=#787878;fontColor=#ffffff;align=center;verticalAlign=middle;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="1240" y="140" width="250" height="160" as="geometry"/>
         </mxCell>
 
         <!-- Externals outside boundary labels -->

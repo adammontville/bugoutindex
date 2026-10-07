@@ -1,9 +1,9 @@
 # Target architecture sketch (pipeline + static site) — deferred
 
 **Audience:** Product Manager  
-**Status:** Sketch only. **Not started.** Deferred pending review after the Saturday morning weekly run. This note does not change the score, the bands, the weights, `CORE_METRICS`, fetchers, Streamlit, workflows, or the live site templates.  
-**Written:** 2026-09-25.  
-**Today’s system:** the C4 diagrams in this folder, and the written review in [`ARCHITECTURE_AND_ROADMAP.md`](../../ARCHITECTURE_AND_ROADMAP.md). Those stay the record of what ships. This file is a possible later shape.
+**Status:** Steps 1–3 are done. Step 4 (remove Streamlit) is not started. Adam approved this cleanup before methodology work. The score, the bands, the weights, `CORE_METRICS`, and the live number were not changed. `schema_version` stays 1. `methodology_version` stays 1.0.0.  
+**Written:** 2026-09-25. Steps 1–3 recorded 2026-10-07.  
+**Shipped path:** pipeline → snapshot → validate → render → GitHub Pages. The contract is [`snapshot-schema.md`](snapshot-schema.md). The C4 diagrams in this folder show that path; the container diagram’s gray box is the optional Streamlit viewer, not a second publisher. [`ARCHITECTURE_AND_ROADMAP.md`](../../ARCHITECTURE_AND_ROADMAP.md) is the longer written review.
 
 The BugOut Index stays a **directional stress and stability reading**. It places published statistics between fixed endpoints so a reader can see how hard those conditions are pressing. Higher is more stable. It is not a forecast and not a bug-out or historical-crisis siren. Methodology **1.0.0** stays the published formula until a separate, versioned decision says otherwise.
 
@@ -70,13 +70,13 @@ annual checklist ┘         │
 
 The weekly Action remains the publisher for the public site. GitHub Pages keeps serving `/docs` on `main`. The site is files. The number is computed in the batch job.
 
-`schema_version` names the JSON shape. `methodology_version` names the formula. Today’s snapshot is already `schema_version` 1 and `methodology_version` 1.0.0 (`docs/data/latest.json`). A later implementation would write that contract down once — field names, required cores, companion blocks — and bump `schema_version` when the shape changes. Old files stay readable under the version they were written with. This note does not bump either version and does not edit `latest.json`.
+`schema_version` names the JSON shape. `methodology_version` names the formula. The published snapshot is `schema_version` 1 and `methodology_version` 1.0.0 (`docs/data/latest.json`). That contract is written down in [`snapshot-schema.md`](snapshot-schema.md) and checked by `runtime/publish/snapshot_schema.py`. Bump `schema_version` when the shape changes. Old files stay readable under the version they were written with. The freeze did not bump either version and did not edit `latest.json`.
 
 ---
 
 ## Fail policies
 
-The policies are explicit. A later implementation would put this table where the pipeline and the tests both read it. The exits below are the ones the weekly job already uses. This sketch does not change them.
+The policies are explicit. Exit 2 and exit 3 are unchanged. Exit 4 is the schema check from step 1: the job scrubs, validates, and refuses before it writes `docs/`. Shadow and revision carry-forward is unchanged. The same table is in [`snapshot-schema.md`](snapshot-schema.md).
 
 | Failure | Policy |
 | --- | --- |
@@ -85,7 +85,7 @@ The policies are explicit. A later implementation would put this table where the
 | The pulse is partial (some series missing) | Log it. The site may still publish. The page says which series are missing. |
 | Labor-utilization or food-price shadow fails | Do not refuse the publish. Carry forward the previous block and its observation dates when one exists. The score does not move because a shadow failed. |
 | Revisions fetch fails | Copy the previous revisions block forward and mark it reused. Do not rewrite stored index history. |
-| Snapshot fails validation (wrong shape, missing required core, secret material in the output) | Refuse the publish. Do not commit partial HTML. |
+| Snapshot fails validation (wrong shape, missing required core, secret material in the output) | Refuse the publish (exit 4). Do not write `docs/`. Do not commit partial HTML. |
 | Render fails | Refuse the publish. Do not push a half-written `docs/`. |
 
 A refused publish leaves last week’s site up. That is the safe outcome. The Actions run stays red so the miss is visible.
@@ -147,24 +147,24 @@ Language models stay off the score, the weights, the bands, and any watch level.
 
 ---
 
-## Migration path, if chosen later
+## Migration path
 
-**Not started.** Deferred until after the Saturday morning weekly run is reviewed. None of these steps are in the change that adds this note. Each one would be its own reviewed change. The formula, `CORE_METRICS`, and the live number stay put through the move.
+The formula, `CORE_METRICS`, and the live number stayed put through steps 1–3.
 
-1. **Freeze the schema.** Record the current snapshot shape as the versioned contract (`schema_version`, `methodology_version`, required core fields, companion blocks). Do not change the formula in that step.
-2. **Move `weekly_run` off Streamlit.** The weekly job is already headless. Remove the Streamlit secrets shim from the publish path so the Action can publish without importing Streamlit. Fetchers read the key from the environment.
-3. **Demote Streamlit to an optional viewer.** It reads the snapshot or `docs/`. A local or Pi box runs the same pipeline and serves `docs/`. The public site is still GitHub Pages.
-4. **Remove Streamlit when it is unused.** Drop the app, the dependency, and the old entry points only after nothing is using the viewer.
+1. **Freeze the schema.** Done. The contract is [`snapshot-schema.md`](snapshot-schema.md). `schema_version` is still 1. `methodology_version` is still 1.0.0. `docs/data/latest.json` was not rewritten.
+2. **Move `weekly_run` off Streamlit.** Done. The weekly job does not import Streamlit. Fetchers read `FRED_API_KEY` from the environment (`runtime/util/secrets_compat.py`). The Action still installs the hashed lockfile, which still lists Streamlit because the viewer is still in the tree.
+3. **Demote Streamlit to an optional viewer.** Done. `runtime/main.py` reads `docs/data/latest.json`. It does not write the weekly site. A local or Pi box runs the same pipeline and serves `docs/`. The public site is still GitHub Pages.
+4. **Remove Streamlit when it is unused.** Not started. Drop the app, the dependency, and the old entry points only after nothing is using the viewer.
 
-Stop after any step. The site at that point is still the static weekly publish.
+Stop here. The site is still the static weekly publish.
 
 ---
 
-## What this note does not do
+## What this work does not do
 
-- It does not change runtime code, the score formula, `CORE_METRICS`, fetchers, Streamlit, workflows, or the Jinja templates.
-- It does not start the migration.
-- It does not replace the C4 diagrams or `ARCHITECTURE_AND_ROADMAP.md`.
+- It does not change the score formula, `CORE_METRICS`, weights, bands, or the live number.
+- It does not remove Streamlit (step 4).
 - It does not decide methodology v1.1, new companions, or a weight change.
+- The C4 container diagram names the viewer and the validate step in the `weekly_run` box. It does not draw a separate box for every shadow series.
 
-The decision in front of this sketch is whether to do it at all, after the Saturday run. Until that review, the shipped path is the one in the C4 container diagram: the weekly Action, `weekly_run`, the v1.0.0 formula, fetchers, committed data, the static renderer, and GitHub Pages.
+The shipped path is the weekly Action, `weekly_run`, the v1.0.0 formula, fetchers, the schema 1 snapshot, validation, the static renderer, and GitHub Pages.

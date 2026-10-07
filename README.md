@@ -7,7 +7,9 @@ The **BugOutIndex** is a directional reading of U.S. stress and stability. It pl
 
 **Live site:** <https://www.bugoutindex.com/> (also <https://adammontville.github.io/bugoutindex/>) — updated every Friday evening after US markets close.
 
-**Weekly pipeline:** See [`runtime/publish/README.md`](./runtime/publish/README.md) for how the automated weekly update works.
+**Weekly pipeline:** See [`runtime/publish/README.md`](./runtime/publish/README.md). The shipped path is pipeline → snapshot → validate → render → GitHub Pages. The snapshot contract is schema 1 ([`docs/architecture/snapshot-schema.md`](./docs/architecture/snapshot-schema.md)).
+
+**Local or Pi:** set `FRED_API_KEY`, run `python -m runtime.publish.weekly_run`, then serve `docs/` (`python -m http.server 8765 --directory docs`). Streamlit (`runtime/main.py`) is an optional viewer of `docs/data/latest.json`. It does not publish.
 
 **Architecture and roadmap:** See [`ARCHITECTURE_AND_ROADMAP.md`](./ARCHITECTURE_AND_ROADMAP.md) for how the score is produced, where the docs disagree, and the decided product framing. That document does not change the calculation.
 

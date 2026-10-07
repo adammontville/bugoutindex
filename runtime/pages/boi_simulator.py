@@ -1,12 +1,11 @@
 import streamlit as st
-import pandas as pd
-import ast  # Converts string representations of dictionaries into actual dictionaries
 from presentation.display_logo import display_logo
 from processing.formula import (
     METRIC_RANGES as metric_ranges,
     calculate_category_score,
     stability_css_class as get_stability_class,
 )
+from viewer_io import load_published_snapshot
 
 CSS_FILE_PATH = "presentation/styles.css"
 
@@ -20,41 +19,23 @@ def load_css(css_file):
 load_css(CSS_FILE_PATH)
 display_logo()
 
-def extract_numeric(value):
-    """Extracts the numeric value from a string or dictionary-like entry."""
-    try:
-        if isinstance(value, str) and value.startswith("{"):
-            parsed_value = ast.literal_eval(value)  # Convert stringified dict
-            return float(list(parsed_value.values())[0])  # Extract first numeric value
-        return float(value)  # If already numeric, return as float
-    except Exception as e:
-        st.error(f"Error parsing value: {value} - {e}")
-        return None  # Default fallback if parsing fails
+def _midpoint(metric):
+    low, high = metric_ranges[metric]
+    return (low + high) / 2
 
 
 def load_latest_values():
-    """Loads the latest values from historical_bugout_index.csv"""
-    csv_path = "data/historical_bugout_index.csv"
-    try:
-        df = pd.read_csv(csv_path)
-
-        # Ensure columns are stripped of spaces and formatted correctly
-        df.columns = df.columns.str.strip().str.lower()
-
-        if df.empty:
-            raise ValueError("Historical CSV is empty")
-
-        latest_entry = df.iloc[-1]  # Get the most recent row
-
-        # Ensure all values are extracted correctly
-        return {
-            metric: extract_numeric(latest_entry[metric]) for metric in metric_ranges.keys()
-        }
-    except KeyError as e:
-        st.error(f"Column missing: {e}")
-    except Exception as e:
-        st.error(f"Error loading historical data: {e}")
-        return {metric: (min_val + max_val) / 2 for metric, (min_val, max_val) in metric_ranges.items()}  # Defaults to mid-range if error
+    """Slider defaults from the published snapshot. Does not write the site."""
+    snapshot = load_published_snapshot()
+    metrics = (snapshot or {}).get("metrics") or {}
+    values = {}
+    for metric, (low, high) in metric_ranges.items():
+        raw = (metrics.get(metric) or {}).get("raw")
+        if isinstance(raw, (int, float)) and not isinstance(raw, bool):
+            values[metric] = min(float(high), max(float(low), float(raw)))
+        else:
+            values[metric] = _midpoint(metric)
+    return values
 
 
 # Load latest values from CSV
@@ -62,6 +43,10 @@ latest_values = load_latest_values()
 
 # Display the title
 st.markdown("<h1 style='text-align: center;'>BugOut Index Simulator</h1>", unsafe_allow_html=True)
+st.caption(
+    "Local what-if on the published raw values. Moving a slider does not "
+    "change the live score and does not write docs/."
+)
 
 # Organize sliders into columns for better layout
 col1, col2 = st.columns(2)

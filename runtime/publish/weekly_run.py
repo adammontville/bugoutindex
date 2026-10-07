@@ -5,53 +5,25 @@
 Headless weekly runner.
 
 Responsibilities:
-    1. Shim `streamlit.secrets` so existing fetchers work without a
-       Streamlit runtime (reading FRED_API_KEY from env vars instead).
-    2. Fetch all six core BOI metrics and compute the weighted index.
-    3. Fetch metals (gold, silver, DXY), the short-term economic pulse,
+    1. Fetch all six core BOI metrics and compute the weighted index.
+       ``FRED_API_KEY`` comes from the environment. This module does not
+       import Streamlit.
+    2. Fetch metals (gold, silver, DXY), the short-term economic pulse,
        and the shadow companions (labor utilization, food prices, the
        NYC DHS shelter census, the other local shelter companions,
        Pew public trust, and Gallup confidence in institutions).
        Shadows are not index inputs; a shadow failure does not refuse
        the publish.
-    4. Append a flat row to the weekly history CSVs.
-    5. Emit a single `docs/data/latest.json` snapshot consumed by the
-       static-site renderer.
+    3. Append a flat row to the weekly history CSVs.
+    4. Emit a single ``docs/data/latest.json`` snapshot (schema_version 1),
+       validate it, then render the static site.
 """
 from __future__ import annotations
-
-# ---------- Streamlit secrets shim (must run BEFORE fetcher imports) ----------
-import os
-import sys
-import types
-
-
-class _SecretsDict(dict):
-    def __getitem__(self, key):  # type: ignore[override]
-        val = os.environ.get(key)
-        if val is None:
-            raise KeyError(key)
-        return val
-
-    def __getattr__(self, item):
-        try:
-            return self[item]
-        except KeyError as exc:
-            raise AttributeError(item) from exc
-
-
-try:
-    import streamlit  # noqa: F401
-    streamlit.secrets = _SecretsDict()  # type: ignore[attr-defined]
-except ImportError:
-    fake = types.ModuleType("streamlit")
-    fake.secrets = _SecretsDict()  # type: ignore[attr-defined]
-    sys.modules["streamlit"] = fake
-# ------------------------------------------------------------------------------
 
 import csv
 import importlib
 import json
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict
@@ -79,6 +51,12 @@ import runtime.processing.formula as _formula  # noqa: E402
 from runtime.publish.failure_notice import (  # noqa: E402
     EXIT_CORE_REFUSED,
     EXIT_MARKETS_OR_PULSE_REFUSED,
+    EXIT_SNAPSHOT_REFUSED,
+)
+from runtime.publish.snapshot_schema import (  # noqa: E402
+    METHODOLOGY_VERSION,
+    SCHEMA_VERSION,
+    validate_published_snapshot,
 )
 from runtime.util.redact import redact_secrets, scrub_published  # noqa: E402
 from runtime.publish.observation_dates import (  # noqa: E402
@@ -535,8 +513,8 @@ def build_snapshot(run_date: str, boi: Dict[str, Any],
                    extra_shadows: Dict[str, Dict[str, Any]] | None = None) -> Dict[str, Any]:
     band = interpret(boi["index"])
     snapshot = {
-        "schema_version": 1,
-        "methodology_version": "1.0.0",
+        "schema_version": SCHEMA_VERSION,
+        "methodology_version": METHODOLOGY_VERSION,
         "generated_at_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "publication_date": run_date,
         "bugout_index": boi["index"],
@@ -823,7 +801,16 @@ def main() -> int:
 
     # Shadow and revision failures are published on exit 0. Scrub the
     # snapshot that both latest.json and the HTML are built from.
+    # Schema failure refuses before any of docs/ is written (exit 4).
+    # History CSVs may already have been appended in this workspace; the
+    # Action does not commit unless this process exits 0.
     snapshot = scrub_published(snapshot)
+    problems = validate_published_snapshot(snapshot)
+    if problems:
+        print("REFUSING TO PUBLISH: snapshot failed validation.", file=sys.stderr)
+        for line in problems:
+            print(f"  - {line}", file=sys.stderr)
+        return EXIT_SNAPSHOT_REFUSED
     DOCS_DATA.mkdir(parents=True, exist_ok=True)
     published = redact_secrets(json.dumps(snapshot, indent=2, default=str))
     (DOCS_DATA / "latest.json").write_text(published)

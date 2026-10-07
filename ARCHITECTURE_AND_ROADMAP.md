@@ -1,7 +1,7 @@
 # BugOut Index — architecture review and roadmap
 
 **Audience:** Product Manager  
-**Status:** Living architecture record. Shipped publisher, formula, companion, and backtest work is described as merged. Later sections still include open proposals. The incubating-metrics inventory was locked by Adam Montville on 2026-09-23 (see Later). This document does not change the score, the bands, or the weekly job.  
+**Status:** Living architecture record. Shipped publisher, formula, companion, and backtest work is described as merged. Later sections still include open proposals. The incubating-metrics inventory was locked by Adam Montville on 2026-09-23 (see Later). Target-architecture steps 1–3 are in effect: schema 1 is frozen, the weekly job does not import Streamlit, and Streamlit is an optional viewer. This document does not change the score, the bands, or the formula.  
 **Reviewed against:** repository `main` as of the 2026-09-19 weekly publish (score **57.11**), with later notes for work merged after that publish.
 **Live site:** [https://www.bugoutindex.com/](https://www.bugoutindex.com/) (GitHub Pages; `bugoutindex.com` redirects there). The same build is at [https://adammontville.github.io/bugoutindex/](https://adammontville.github.io/bugoutindex/).
 
@@ -176,7 +176,7 @@ These are product constraints, not just style notes:
 | Check | What exists | Limit |
 | --- | --- | --- |
 | Public explanation | Methodology page lists this week’s raw value, endpoints, normalized score, weight, and source link | Weights are easy to misread. Trust’s essay does not match the math |
-| Machine-readable snapshot | `docs/data/latest.json` (`schema_version` 1, `methodology_version` 1.0.0) | One current snapshot, plus 52 weeks of history embedded in it |
+| Machine-readable snapshot | `docs/data/latest.json` (`schema_version` 1, `methodology_version` 1.0.0). Contract: [`docs/architecture/snapshot-schema.md`](docs/architecture/snapshot-schema.md) | One current snapshot, plus history rows embedded in it |
 | History | `runtime/data/weekly_bugout_index.csv` stores raw and normalized values | It does **not** store each input’s observation date, so a revision and a new print look the same. In June 2026 debt printed 122.57, then 122.77, then 122.59 while unemployment was unchanged. That pattern is a revision of the same quarter, and it moved the index by a few hundredths |
 | Recompute claim | Methodology page says check out a commit and rerun `weekly_run.py` | **Not true for past weeks.** Fetchers request the latest FRED observation, not the vintage that existed on that Friday. Rerunning today overwrites history with today’s latest. The committed CSV and JSON are the record |
 | Automated tests | `runtime/util/test_http_retry.py`: 5 tests, passing in this review | `tests/test_scoring.py` does not collect. It imports `normalize_metric` from `runtime.processing`, and that package’s `__init__.py` is empty. `runtime/pytest.ini` points `testpaths` at `tests`, which is not where this file lives |
@@ -195,7 +195,7 @@ These are product constraints, not just style notes:
 - **Deflation scores as healthier than low inflation.** −10% CPI maps to 100 and 15% maps to 0, in a straight line. A 2% print scores higher than a 4% print, and a −2% print scores higher than 2%. That is an explicit choice in `inflation_rate.md`. It is also a product question: deflation has been a crisis signal in other eras.
 - **National only.** No state or city score. `about.md` lists geographic breakdown as a future plan.
 - **Thresholds are fixed.** A slow move inside the window changes the score a little. A move past the endpoint does not, once clamped. The methodology page says the endpoints are meant to be historically extreme. The FRED replay in `runtime/backtest/` does not show that for all six inputs: crime, homelessness, and trust are excluded or held constant and labeled. See the product-framing note.
-- **Two products still exist in the tree.** The public site is the static renderer. A Streamlit app (`runtime/main.py`, `runtime/pages/`) still reads the old daily CSV and a different trust essay. `runtime/util/deploy.sh` merges `main` into a `deployment` branch and has a commented Raspberry Pi SSH step. `origin/deployment` still exists. `DEVELOPER.md` tells a new contributor to run `presentation/dashboard.py` and to install `requirements.txt` from the repo root. The app entry is `runtime/main.py`, and requirements live at `runtime/requirements.txt`.
+- **Streamlit is an optional viewer.** The public site is the static renderer: pipeline → snapshot → validate → render → GitHub Pages. `runtime/main.py` reads `docs/data/latest.json` and does not write `docs/`. The weekly job does not import Streamlit. `FRED_API_KEY` comes from the environment. `runtime/util/deploy.sh` still knows about a `deployment` branch and a commented Raspberry Pi SSH step; a Pi run of the product path is the same pipeline, then a static server for `docs/`. Removing Streamlit is step 4 and is not done.
 
 ---
 
@@ -207,12 +207,12 @@ These are product constraints, not just style notes:
 Public sources                          This repository                         Readers
 ─────────────────────                   ───────────────────────────             ───────
 FRED / ALFRED  ──┐                      GitHub Action, Fridays
-gold-api.com  ───┼──► weekly_run.py ──► CSVs under runtime/data/  ──► commit to main
-local CSV/const ─┘         │            docs/data/latest.json
+gold-api.com  ───┼──► weekly_run.py ──► CSVs + docs/data/latest.json
+local CSV/const ─┘         │            validate schema 1 (exit 4)
                            └──────────► render.py (Jinja2 + inline SVG)
                                               │
                                               ▼
-                                        docs/*.html
+                                        docs/*.html ──► commit to main
                                               │
                                               ▼
                                         GitHub Pages
@@ -222,17 +222,17 @@ local CSV/const ─┘         │            docs/data/latest.json
 | Piece | Role | Runs in production? |
 | --- | --- | --- |
 | `.github/workflows/weekly-update.yml` | Scheduled job. Python 3.12. One secret, `FRED_API_KEY`. Commits data and `docs/` back to `main` as `bugout-bot` | Yes |
-| `runtime/publish/weekly_run.py` | Fetch, score, append history, write JSON, call the renderer. Exits 2 or 3 to refuse a bad publish | Yes |
+| `runtime/publish/weekly_run.py` | Fetch, score, append history, validate schema 1, write JSON, call the renderer. Exits 2, 3, or 4 to refuse a bad publish. Does not import Streamlit | Yes |
 | `runtime/publish/render.py` plus `runtime/publish/templates/` | Static HTML. No JavaScript required. Pages: current, history, revisions, methodology | Yes |
 | `runtime/data/fetch/fetch_{inflation,unemployment,debt,incident,homelessness,trust,markets,pulse,labor_shadow,food_shadow,nyc_dhs_shadow,ramsey_shelter_shadow,sf_shelter_shadow,shelter_region_shadow,revisions}.py` | Inputs | Yes, from the weekly job. `fetch_labor_shadow`, `fetch_food_shadow`, `fetch_nyc_dhs_shadow`, and the other shelter companions are not scored |
 | `runtime/data/fetch/fetch_{inflation,unemployment,debt,incident,homelessness,trust,markets,pulse,labor_shadow,food_shadow,nyc_dhs_shadow,pew_trust_shadow,gallup_confidence_shadow,revisions}.py` | Inputs | Yes, from the weekly job. `fetch_labor_shadow`, `fetch_food_shadow`, `fetch_nyc_dhs_shadow`, `fetch_pew_trust_shadow`, and `fetch_gallup_confidence_shadow` are companions and are not scored |
 | `runtime/util/http_retry.py` | Retries timeouts, connection errors, 408, 429, and 5xx. Backoff about 2s, 6s, 14s, 30s, 60s | Yes |
-| `runtime/util/secrets_compat.py` and a Streamlit shim inside `weekly_run.py` | `FRED_API_KEY` from the environment in CI, from Streamlit secrets otherwise | Yes |
+| `runtime/util/secrets_compat.py` | `FRED_API_KEY` from the environment. No Streamlit import | Yes |
 | `docs/CNAME` | Custom domain `www.bugoutindex.com` | Yes. Checked during this review: both hostnames serve the Pages site. `last-modified` on 22 September 2026 was the 19 September publish |
-| Streamlit app, `calculate_index.py`, simulator, incubating fetchers, crime downloader, `deploy.sh` | Older or unfinished paths | No, not on the weekly path |
+| Streamlit viewer (`runtime/main.py`), simulator, `calculate_index.py`, incubating fetchers, crime downloader, `deploy.sh` | Optional viewer reads the snapshot. Not on the weekly path | No |
 | `runtime/data/fetch_data.py` | A cache that would refetch some series every 7–365 days | Not called by the weekly job |
 
-Dependencies (`runtime/requirements.txt`): Streamlit, pytest, requests, python-dotenv, pandas, Jinja2. The weekly site does not need a server process. Hosting cost is GitHub Actions minutes (recent scheduled runs are about 2 minutes) plus GitHub Pages. FRED and gold-api.com are used on their free tiers. There is no database and no paid model call.
+Dependencies (`runtime/requirements.txt`): the hashed lock still includes Streamlit because the optional viewer is in the tree. The weekly job installs that lock and does not import Streamlit. Also pytest, requests, python-dotenv, pandas, Jinja2. The weekly site does not need a server process. Hosting cost is GitHub Actions minutes (recent scheduled runs are about 2 minutes) plus GitHub Pages. FRED and gold-api.com are used on their free tiers. There is no database and no paid model call.
 
 ### Data flow for one Friday
 
@@ -243,7 +243,7 @@ Dependencies (`runtime/requirements.txt`): Streamlit, pytest, requests, python-d
 5. One row is appended to `weekly_bugout_index.csv`, `markets_history.csv`, and `pulse_history.csv`, and, when a shadow series has a value, to `labor_shadow_history.csv`, `food_shadow_history.csv`, `nyc_dhs_shadow_history.csv`, `ramsey_shelter_shadow_history.csv`, `sf_shelter_shadow_history.csv`, and `shelter_region_shadow_history.csv`. The same calendar date can be appended twice; nothing in `_append_row` replaces an existing date.
 4. Markets, pulse, and revisions run. Markets or pulse returning `status: error` abort the publish (exit 3). A **partial** pulse (some series missing) is logged and the site still publishes. The labor-utilization, food-price, NYC DHS, Pew public-trust, and Gallup confidence shadow fetches run only after that check. A failure of any of them does not abort the publish; when a previous shadow block exists, it is carried forward with its observation dates.
 5. One row is appended to `weekly_bugout_index.csv`, `markets_history.csv`, and `pulse_history.csv`, and, when a shadow series has a value, to `labor_shadow_history.csv`, `food_shadow_history.csv`, `nyc_dhs_shadow_history.csv`, `pew_trust_shadow_history.csv`, and `gallup_confidence_shadow_history.csv`. The same calendar date can be appended twice; nothing in `_append_row` replaces an existing date.
-6. `docs/data/latest.json` is rewritten. If the revisions fetch fails, the previous snapshot’s revisions block is copied forward and marked `reused_from`.
+6. The snapshot is checked against schema 1. A failed check exits 4 and does not write `docs/`. On success, `docs/data/latest.json` is rewritten. If the revisions fetch fails, the previous snapshot’s revisions block is copied forward and marked `reused_from`.
 7. HTML and `docs/assets/style.css` are rendered. History charts use the last 52 rows.
 8. The workflow commits those paths and pushes to `main`. GitHub Pages then rebuilds. A recent pages deploy finished in under a minute.
 
@@ -253,7 +253,7 @@ Dependencies (`runtime/requirements.txt`): Streamlit, pytest, requests, python-d
 
 There is no separate deploy step and no CDN configuration in the repo beyond GitHub Pages serving `/docs` on `main`. A green weekly run plus a green `pages-build-deployment` workflow is the whole path. Recent scheduled runs through 19 September 2026 completed successfully, and the live page showed 57.11 when this review fetched it.
 
-The legacy daily file `runtime/data/historical_bugout_index.csv` (stringified Python dicts, starting 2025-03-16, score about 57.62 on the first rows) is not updated by this pipeline. The Streamlit dashboard still reads it. `runtime/util/sync_history.sh` copies that file from the `deployment` branch back to `main`.
+The legacy daily file `runtime/data/historical_bugout_index.csv` (stringified Python dicts, starting 2025-03-16, score about 57.62 on the first rows) is not updated by this pipeline and is not what the Streamlit viewer reads. The viewer reads `docs/data/latest.json`. `runtime/util/sync_history.sh` copies that legacy file from the `deployment` branch back to `main`.
 
 ---
 
@@ -529,7 +529,7 @@ Operating rules if a call is ever added to the Action:
 2. **Deflation.** Should −2% inflation score as more stable than +2%, as the −10 to +15 line does today?
 3. **Crime.** Is “unweighted mean of violent plus property rates in the RTCI file” the definition you want to keep, and which GitHub repo is the source of that file?
 4. **What “weekly” is for.** Confirm the product is a slow index plus a weekly explanation, not faster inputs inside the score. The data supports the first one. Issues #42 and #53 pull toward the second.
-5. **Is the Streamlit app or the Raspberry Pi still in use?** If not, the roadmap treats them as legacy.
+5. **Streamlit.** It stays as an optional viewer of the published snapshot until nothing uses it. It is not the weekly writer. Removing it is step 4 in [`docs/architecture/target-architecture-sketch.md`](docs/architecture/target-architecture-sketch.md).
 6. **Week note voice.** Is a dry, numeric note enough, or do you want a reviewed paragraph later? The roadmap does the dry note first.
 7. **Canonical URL.** `www.bugoutindex.com` is what the CNAME and DNS serve. The README had been pointing only at `github.io`. This review names both. Which should lead?
 8. **Annual owner.** Who updates HUD and Edelman, and in which month?

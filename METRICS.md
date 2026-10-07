@@ -5,9 +5,9 @@
 
 > **Authoritative implementation:** `runtime/processing/formula.py`
 > (`CORE_METRICS`, `METRIC_RANGES`, `WEIGHTS`, `normalize`, `compute_index`, `interpret`).
-> The weekly publisher (`runtime/publish/weekly_run.py`) and the Streamlit
-> simulator import that module. This document describes what the publisher
-> already does. It does not define a separate formula.
+> The weekly publisher (`runtime/publish/weekly_run.py`) imports that module.
+> The optional Streamlit viewer imports it for display only and does not publish.
+> This document describes what the publisher already does. It does not define a separate formula.
 
 ---
 

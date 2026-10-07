@@ -3,10 +3,13 @@
 # Dual-licensed under AGPL-3.0 and a commercial license.
 """Job-summary copy when the weekly GitHub Action does not publish.
 
-weekly_run.main exits with these codes before it writes history or HTML:
+weekly_run.main exits with these codes instead of publishing HTML:
 
-- 2: a core metric did not succeed
-- 3: markets or the short-term pulse failed completely
+- 2: a core metric did not succeed (before history is appended)
+- 3: markets or the short-term pulse failed completely (before history is appended)
+- 4: the snapshot failed validation (shape, a required core, or secret material).
+  History files in the runner workspace may already have been appended.
+  The workflow does not commit, and ``docs/`` is not written.
 - any other non-zero code: the runner crashed
 
 The live site keeps the previous HTML because the workflow does not commit
@@ -22,6 +25,7 @@ import sys
 
 EXIT_CORE_REFUSED = 2
 EXIT_MARKETS_OR_PULSE_REFUSED = 3
+EXIT_SNAPSHOT_REFUSED = 4
 
 
 def _classify(exit_code: str | int | None) -> tuple[str, str]:
@@ -38,6 +42,12 @@ def _classify(exit_code: str | int | None) -> tuple[str, str]:
             "Markets or the short-term pulse failed completely, so weekly_run "
             "stopped before writing history or HTML.",
         )
+    if text == str(EXIT_SNAPSHOT_REFUSED):
+        return (
+            "Refused (exit 4)",
+            "The snapshot failed validation, so weekly_run did not write "
+            "docs/ or HTML. The live site stays on the last good publish.",
+        )
     if text == "0":
         return (
             "Publish step failed after weekly_run",
@@ -53,7 +63,7 @@ def _classify(exit_code: str | int | None) -> tuple[str, str]:
         )
     return (
         f"Crashed (exit {text})",
-        "weekly_run exited without a clean refusal (exit 2 or 3). The "
+        "weekly_run exited without a clean refusal (exit 2, 3, or 4). The "
         "traceback is in the pipeline step log.",
     )
 

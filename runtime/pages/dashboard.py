@@ -1,116 +1,85 @@
 # BugOutIndex
-# Copyright (C) 2025 Your Name or Organization
-#
-# This file is dual-licensed under the AGPL-3.0 and a commercial license.
-#
-# You may use, modify, and distribute this software under the terms of the
-# GNU Affero General Public License v3.0 as published by the Free Software Foundation.
-#
-# For proprietary or commercial use, please contact: your-email@example.com
-import pandas as pd
+# Copyright (C) 2025 Adam Montville
+# Dual-licensed under AGPL-3.0 and a commercial license.
+"""Optional viewer page. Displays the published snapshot. Does not publish."""
 import streamlit as st
-import ast
 from presentation.display_logo import display_logo
-from processing.formula import stability_css_class as get_stability_class
+from processing.formula import CORE_METRICS, stability_css_class as get_stability_class
+from viewer_io import load_published_snapshot
 
-
-# File path to historical data
-CSV_FILE_PATH = "./data/historical_bugout_index.csv"
 CSS_FILE_PATH = "./presentation/styles.css"
 
-
-# Function to load the latest BugOut Index score
-@st.cache_data
-def load_latest_bugout_index():
-    try:
-        df = pd.read_csv(CSV_FILE_PATH, parse_dates=["date"])
-        if df.empty:
-            return None
-        latest_entry = df.sort_values(by="date", ascending=False).iloc[0]  # Get the latest row
-        return latest_entry
-    except FileNotFoundError:
-        print("HERE")
-        return None
+METRIC_LABELS = {
+    "inflation_rate": "Inflation",
+    "incident_rate": "Crime",
+    "unemployment_rate": "Unemployment",
+    "debt_to_gdp_ratio": "Debt to GDP",
+    "homelessness_rate": "Homelessness",
+    "trust_in_government": "Trust in government",
+}
 
 
-# Function to load CSS from an external file
 def load_css(css_file):
-    with open(css_file, "r") as f:
-        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+    with open(css_file, "r", encoding="utf-8") as handle:
+        st.markdown(f"<style>{handle.read()}</style>", unsafe_allow_html=True)
 
 
-# Set up the style and grab latest data
 load_css(CSS_FILE_PATH)
-latest_data = load_latest_bugout_index()
-
+snapshot = load_published_snapshot()
 display_logo()
 
-# Display the title
 st.markdown("<h1 style='text-align: center;'>BugOut Index</h1>", unsafe_allow_html=True)
+st.caption("Read-only view of the published snapshot. This page does not update the site.")
 
-if latest_data is not None:
-    stability_class = get_stability_class(latest_data["bugout_index"])
-
-    # Display BOI with color indicator
-    st.markdown(f'<div class="{stability_class}">{latest_data["bugout_index"]:.2f}</div>',
-                unsafe_allow_html=True)
-
-    freshness = latest_data["date"].strftime("%Y-%m-%d")
-    st.write(f"Last updated: {freshness}")
-
-    current_metrics = {}
-
-    # Get metrics
-    for column in latest_data.index:
-        if column not in ["date", "bugout_index"]:
-            try:
-                # Convert string to dictionary if it's stored as a string representation
-                value = latest_data[column]
-                if isinstance(value, str) and value.startswith("{") and value.endswith("}"):
-                    value = ast.literal_eval(value)  # Convert to real dictionary
-
-                # Extract numerical value from dictionary or convert directly
-                if isinstance(value, dict):
-                    value = float(list(value.values())[0])  # Extract the first numeric value
-                else:
-                    value = float(value)  # Convert to float if it's already numeric
-
-                current_metrics[column] = f"{value:.2f}"
-
-                #st.write(f"**{column.replace('_', ' ').title()}**: {value:.2f}")
-            except (ValueError, SyntaxError):
-                st.write(f"**{column.replace('_', ' ').title()}**: {latest_data[column]}")  # Fallback
+if snapshot is None:
+    st.error("No published snapshot found at docs/data/latest.json.")
+else:
+    score = snapshot.get("bugout_index")
+    stability_class = get_stability_class(score)
+    st.markdown(
+        f'<div class="{stability_class}">{float(score):.2f}</div>',
+        unsafe_allow_html=True,
+    )
+    band = (snapshot.get("interpretation") or {}).get("band", "")
+    risk = (snapshot.get("interpretation") or {}).get("risk", "")
+    st.write(
+        f"Published {snapshot.get('publication_date')} · {band} ({risk}) · "
+        f"methodology {snapshot.get('methodology_version')}"
+    )
 
     st.markdown("---")
     col1, col2 = st.columns(2)
-
     with col1:
-
-        st.write("#### Current Metrics")
-        markdown_table = "| Metric | Value |\n| --- | --- |\n"  # Header and separator
-
-        for key, value in current_metrics.items():
-            markdown_table += f"| {key.replace('_', ' ').title()} | {value} |\n"
-
-        st.markdown(markdown_table)
-
+        st.write("#### Current metrics")
+        lines = ["| Metric | Raw | Normalized | Observed |", "| --- | --- | --- | --- |"]
+        metrics = snapshot.get("metrics") or {}
+        for name in CORE_METRICS:
+            block = metrics.get(name) or {}
+            raw = block.get("raw")
+            normalized = block.get("normalized")
+            observed = block.get("observation_date") or ""
+            raw_text = "" if raw is None else f"{float(raw):.2f}"
+            norm_text = "" if normalized is None else f"{float(normalized):.2f}"
+            lines.append(
+                f"| {METRIC_LABELS.get(name, name)} | {raw_text} | {norm_text} | {observed} |"
+            )
+        st.markdown("\n".join(lines))
     with col2:
         st.markdown(
             """
-            #### Stability Matrix
+            #### Stability matrix
             | **Range** | **Interpretation** |
-            |---------------|--------------------|
-            | **70-100** | High Stability (Low Risk) |
+            | --- | --- |
+            | **70–100** | High Stability (Low Risk) |
             | **55–69** | Moderate Stability (Warning Signs) |
             | **40–54** | Low Stability (Heightened Risk) |
             | **<40** | Critical Instability (Collapse Likely) |
             """
         )
-else:
-    st.error("No historical data found. Run the index calculation first.")
 
 st.markdown("---")
 st.markdown(
-    "\n\n<div class='footnote'>*This product uses the FRED® API but is not endorsed or certified by the Federal Reserve Bank of St. Louis.*</div>",
-    unsafe_allow_html=True
+    "<div class='footnote'>*This product uses the FRED® API but is not endorsed or "
+    "certified by the Federal Reserve Bank of St. Louis.*</div>",
+    unsafe_allow_html=True,
 )

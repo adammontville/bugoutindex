@@ -1,5 +1,7 @@
-# Direct dependencies for the weekly publisher, tests, and the legacy
-# Streamlit app. Versions and hashes are pinned in requirements.txt.
+# Direct dependencies for the weekly publisher, tests, and the optional
+# Streamlit viewer. The weekly job installs this lockfile and does not
+# import Streamlit. Dropping Streamlit is a later step. Versions and hashes
+# are pinned in requirements.txt.
 # Rebuild that lock (from the repo root) with:
 #   uv pip compile runtime/requirements.in --python-version 3.12 --universal --generate-hashes --output-file runtime/requirements.txt
 streamlit

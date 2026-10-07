@@ -83,7 +83,7 @@ def test_failure_summary_distinguishes_refuse_and_crash():
 
     crash = describe_publish_failure(1)
     assert "Crashed (exit 1)" in crash
-    assert "exit 2 or 3" in crash
+    assert "exit 2, 3, or 4" in crash
 
     oneline = describe_publish_failure_oneline(2)
     assert "\n" not in oneline

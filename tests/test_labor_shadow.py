@@ -304,7 +304,7 @@ def test_labor_shadow_failure_still_publishes_the_locked_score(tmp_path, monkeyp
     )
     for _name in (
         "fetch_ramsey_shelter_shadow",
-        "fetch_toronto_shelter_shadow",
+        "fetch_shelter_region_shadow",
         "fetch_sf_shelter_shadow",
     ):
         monkeypatch.setattr(
@@ -361,7 +361,7 @@ def test_markets_refusal_does_not_fetch_the_shadow_series(tmp_path, monkeypatch)
     monkeypatch.setattr(weekly, "fetch_nyc_dhs_shadow", _should_not_fetch_nyc)
     for _name in (
         "fetch_ramsey_shelter_shadow",
-        "fetch_toronto_shelter_shadow",
+        "fetch_shelter_region_shadow",
         "fetch_sf_shelter_shadow",
     ):
         monkeypatch.setattr(weekly, _name, _should_not_fetch_nyc)

@@ -75,8 +75,8 @@ jobs:
                   runtime/data/food_shadow_history.csv \
                   runtime/data/nyc_dhs_shadow_history.csv \
                   runtime/data/ramsey_shelter_shadow_history.csv \
-                  runtime/data/toronto_shelter_shadow_history.csv \
                   runtime/data/sf_shelter_shadow_history.csv \
+                  runtime/data/shelter_region_shadow_history.csv \
                   runtime/data/pew_trust_shadow_history.csv \
                   runtime/data/gallup_confidence_shadow_history.csv \
                   docs/

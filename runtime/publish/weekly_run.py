@@ -191,17 +191,18 @@ def fetch_ramsey_shelter_shadow() -> Dict[str, Any]:
         return _shadow_fetch_error("Ramsey County shelter shadow", exc)
 
 
-def fetch_toronto_shelter_shadow() -> Dict[str, Any]:
-    """Toronto shelter service-user sum. Not an index input and not a U.S. rate.
+def fetch_shelter_region_shadow() -> Dict[str, Any]:
+    """Nashville, Austin, and Denver shelter checklist. Not an index input.
 
-    A raised exception becomes ``status: error`` so the publish can continue.
+    Reads the manual checklist. A raised exception becomes ``status: error``
+    so the publish can continue. HUD AHAR stays the scored homelessness input.
     """
     sys.path.insert(0, str(REPO_ROOT))
     try:
-        mod = importlib.import_module("runtime.data.fetch.fetch_toronto_shelter_shadow")
+        mod = importlib.import_module("runtime.data.fetch.fetch_shelter_region_shadow")
         return mod.fetch()
     except Exception as exc:  # noqa: BLE001
-        return _shadow_fetch_error("Toronto shelter shadow", exc)
+        return _shadow_fetch_error("U.S. regional shelter shadow", exc)
 
 
 def fetch_sf_shelter_shadow() -> Dict[str, Any]:
@@ -229,11 +230,11 @@ EXTRA_SHELTER_SHADOWS = (
         "runtime.data.fetch.fetch_ramsey_shelter_shadow",
     ),
     (
-        "fetch_toronto_shelter_shadow",
-        "Toronto shelter census",
-        "toronto_shelter_shadow",
-        "toronto_shelter_shadow_history.csv",
-        "runtime.data.fetch.fetch_toronto_shelter_shadow",
+        "fetch_shelter_region_shadow",
+        "U.S. regional shelter checklist",
+        "shelter_region_shadow",
+        "shelter_region_shadow_history.csv",
+        "runtime.data.fetch.fetch_shelter_region_shadow",
     ),
     (
         "fetch_sf_shelter_shadow",

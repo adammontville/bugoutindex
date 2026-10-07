@@ -183,24 +183,24 @@
 </table>
 </div>
 
-<div class="section-title"><h3>Toronto shelter census shadow series</h3></div>
-<p class="chart-caption">These rows are not in the BugOut Index. No weight. Toronto only, not a U.S. total. The week column is the publication date. Observed is the occupancy date. The value is the sum of service users across overnight programs, not a deduplicated person count and not the HUD AHAR rate.</p>
+<div class="section-title"><h3>Nashville, Austin, and Denver shelter checklist</h3></div>
+<p class="chart-caption">These rows are not in the BugOut Index. No weight. Nashville–Davidson, Austin/Travis County, and Denver only. None is a U.S. total. The week column is the publication date. Observed is the date in the checklist. Nashville is people who experienced homelessness that month. Austin is the dashboard’s sheltered card. Denver is a pilot occupancy rate, not a headcount.</p>
 <div style="overflow-x:auto">
 <table class="hx">
   <thead>
     <tr>
       <th>Date</th>
-      {% for key, tup in toronto_labels.items() %}
+      {% for key, tup in region_labels.items() %}
         <th>{{ tup[0] }}</th>
         <th>Observed</th>
       {% endfor %}
     </tr>
   </thead>
   <tbody>
-    {% for row in toronto_history|reverse %}
+    {% for row in region_history|reverse %}
       <tr>
         <td>{{ row.date }}</td>
-        {% for key, tup in toronto_labels.items() %}
+        {% for key, tup in region_labels.items() %}
           <td>{{ row[key] or '—' }}</td>
           <td>{{ row[key ~ '_observation_date'] or '—' }}</td>
         {% endfor %}

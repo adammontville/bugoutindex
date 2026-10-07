@@ -321,19 +321,29 @@ RAMSEY_SHELTER_SOURCE_URL = (
 )
 RAMSEY_SHELTER_DATASET_ID = "9mck-bcqu"
 
-# Companion only. IDs match runtime/data/fetch/fetch_toronto_shelter_shadow.py SERIES.
-# Toronto overnight programs. Not a U.S. figure and not a deduplicated person count.
-TORONTO_SHELTER_SHADOW_LABELS = {
-    "toronto_shelter_service_users": (
-        "Service users in Toronto overnight shelters",
+# Companion only. IDs match runtime/data/fetch/fetch_shelter_region_shadow.py SERIES.
+# Manual checklist. Not a U.S. total and not the HUD AHAR rate.
+SHELTER_REGION_SHADOW_LABELS = {
+    "nashville_hmis_people": (
+        "People experiencing homelessness",
         "people",
-        "SERVICE_USER_COUNT",
+        "Nashville–Davidson month",
+    ),
+    "austin_sheltered_people": (
+        "People likely experiencing sheltered homelessness",
+        "people",
+        "Austin/Travis County, six-month card",
+    ),
+    "denver_shelter_occupancy": (
+        "Pilot shelter occupancy rate",
+        "%",
+        "Denver HOST, seven-shelter pilot",
     ),
 }
-TORONTO_SHELTER_SOURCE_URL = (
-    "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/"
+SHELTER_REGION_SOURCE_URL = (
+    "https://www.nashville.gov/departments/office-homeless-services/"
+    "homeless-management-information-system/monthly-data-reports"
 )
-TORONTO_SHELTER_DATASET_ID = "daily-shelter-overnight-service-occupancy-capacity"
 
 # Companion only. IDs match runtime/data/fetch/fetch_sf_shelter_shadow.py SERIES.
 # San Francisco occupancy rate, not a headcount and not the HUD AHAR rate.
@@ -780,15 +790,34 @@ def render_site(snapshot: Dict[str, Any]) -> None:
         return tiles
 
     ramsey = snapshot.get("ramsey_shelter_shadow") or {}
-    toronto = snapshot.get("toronto_shelter_shadow") or {}
+    region = snapshot.get("shelter_region_shadow") or {}
     sf_shelter = snapshot.get("sf_shelter_shadow") or {}
     ramsey_tiles = _local_shelter_tiles(
         ramsey, RAMSEY_SHELTER_SHADOW_LABELS, RAMSEY_SHELTER_SOURCE_URL,
         RAMSEY_SHELTER_DATASET_ID, 0, "Ramsey County only", "ramsey_shelter_shadow",
     )
-    toronto_tiles = _local_shelter_tiles(
-        toronto, TORONTO_SHELTER_SHADOW_LABELS, TORONTO_SHELTER_SOURCE_URL,
-        TORONTO_SHELTER_DATASET_ID, 0, "Toronto only", "toronto_shelter_shadow",
+    publication = snapshot.get("publication_date")
+    nashville_tiles = _checklist_tiles(
+        region,
+        {"nashville_hmis_people": SHELTER_REGION_SHADOW_LABELS["nashville_hmis_people"]},
+        publication,
+        SHELTER_REGION_SOURCE_URL,
+    )
+    austin_tiles = _checklist_tiles(
+        region,
+        {"austin_sheltered_people": SHELTER_REGION_SHADOW_LABELS["austin_sheltered_people"]},
+        publication,
+        "https://echoatx.github.io/hrs-dashboard-site/",
+    )
+    denver_tiles = _checklist_tiles(
+        region,
+        {"denver_shelter_occupancy": SHELTER_REGION_SHADOW_LABELS["denver_shelter_occupancy"]},
+        publication,
+        (
+            "https://www.denvergov.org/Government/Agencies-Departments-Offices/"
+            "Agencies-Departments-Offices-Directory/Mayors-Office/Programs-and-Initiatives/"
+            "Homelessness-Initiative/All-In-Mile-High-Dashboard"
+        ),
     )
     sf_tiles = _local_shelter_tiles(
         sf_shelter, SF_SHELTER_SHADOW_LABELS, SF_SHELTER_SOURCE_URL,
@@ -837,15 +866,18 @@ def render_site(snapshot: Dict[str, Any]) -> None:
         ),
         "ramsey_reused_from": ramsey.get("reused_from"),
         "ramsey_dataset_id": ramsey.get("dataset_id") or RAMSEY_SHELTER_DATASET_ID,
-        "toronto_tiles": toronto_tiles,
-        "toronto_chart": _headcount_chart_svg(
-            toronto,
-            "toronto_shelter_service_users",
-            "Toronto overnight shelter service users",
-            "#0f766e",
-            "Toronto shelter census — Toronto only, not in the BugOut Index",
+        "nashville_tiles": nashville_tiles,
+        "austin_tiles": austin_tiles,
+        "denver_tiles": denver_tiles,
+        "region_reused_from": region.get("reused_from"),
+        "nashville_chart": _headcount_chart_svg(
+            region,
+            "nashville_hmis_people",
+            "Nashville–Davidson people experiencing homelessness",
+            "#9a3412",
+            "Nashville HMIS — Nashville–Davidson only, not in the BugOut Index",
+            month_axis=True,
         ),
-        "toronto_reused_from": toronto.get("reused_from"),
         "sf_tiles": sf_tiles,
         "sf_chart": _headcount_chart_svg(
             sf_shelter,
@@ -878,8 +910,8 @@ def render_site(snapshot: Dict[str, Any]) -> None:
         nyc_history=nyc_history, nyc_labels=NYC_DHS_SHADOW_LABELS,
         ramsey_history=snapshot.get("history", {}).get("ramsey_shelter_shadow", []) or [],
         ramsey_labels=RAMSEY_SHELTER_SHADOW_LABELS,
-        toronto_history=snapshot.get("history", {}).get("toronto_shelter_shadow", []) or [],
-        toronto_labels=TORONTO_SHELTER_SHADOW_LABELS,
+        region_history=snapshot.get("history", {}).get("shelter_region_shadow", []) or [],
+        region_labels=SHELTER_REGION_SHADOW_LABELS,
         sf_history=snapshot.get("history", {}).get("sf_shelter_shadow", []) or [],
         sf_labels=SF_SHELTER_SHADOW_LABELS,
         pew_history=pew_history, pew_labels=PEW_TRUST_SHADOW_LABELS,

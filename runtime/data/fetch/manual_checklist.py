@@ -43,14 +43,19 @@ def load_series(
     required: Iterable[str],
     max_rows_per_series: int,
     label: str,
+    value_kinds: Optional[Mapping[str, str]] = None,
 ) -> Dict[str, List[dict]]:
     """Return checklist points keyed by series, oldest first.
 
     A missing file, a missing required series, a blank value, a bad date,
     a timestamp, a duplicate date, an unknown series name, or too many rows
     raises ``ChecklistError``. Nothing here invents a number or a date.
+
+    ``value_kinds`` maps a series to ``percent`` (0–100, the default) or
+    ``count`` (a non-negative whole number, used for a local headcount).
     """
     required_names = tuple(required)
+    kinds = dict(value_kinds or {})
     table = Path(path)
     rows = _read_rows(table, label)
     grouped: Dict[str, List[dict]] = {name: [] for name in required_names}
@@ -64,7 +69,9 @@ def load_series(
             raise ChecklistError(
                 f"{label} checklist has an unexpected series: {series or '(blank)'}"
             )
-        grouped[series].append(_validate_row(label, series, cleaned))
+        grouped[series].append(
+            _validate_row(label, series, cleaned, kinds.get(series, "percent"))
+        )
 
     missing = [name for name in required_names if not grouped[name]]
     if missing:
@@ -173,14 +180,19 @@ def _read_rows(table: Path, label: str) -> list:
         raise ChecklistError(f"{label} checklist could not be read: {exc}") from exc
 
 
-def _validate_row(label: str, series: str, cleaned: dict) -> dict:
+def _validate_row(label: str, series: str, cleaned: dict, value_kind: str = "percent") -> dict:
     for name in ("value", "observation_date", "reviewed_at"):
         text = cleaned[name]
         if text in _FAKE_TIMESTAMPS or "T" in text:
             raise ChecklistError(
                 f"{label} {name} for {series} must be a date or number a person wrote, not a timestamp"
             )
-    value = _percent(cleaned["value"], label, series)
+    if value_kind == "percent":
+        value = _percent(cleaned["value"], label, series)
+    elif value_kind == "count":
+        value = _count(cleaned["value"], label, series)
+    else:
+        raise ChecklistError(f"{label} has no value rule {value_kind} for {series}")
     if not cleaned["observation_period"]:
         raise ChecklistError(f"{label} observation_period for {series} is blank")
     observed = cleaned["observation_date"]
@@ -211,6 +223,20 @@ def _validate_row(label: str, series: str, cleaned: dict) -> dict:
         "source_url": url,
         "reviewed_at": reviewed,
     }
+
+
+def _count(text: str, label: str, series: str):
+    if not text:
+        raise ChecklistError(f"{label} value for {series} is blank")
+    try:
+        number = Decimal(text)
+    except InvalidOperation:
+        raise ChecklistError(f"{label} value for {series} is not a number") from None
+    if number != number.to_integral_value() or number < 0:
+        raise ChecklistError(
+            f"{label} value for {series} must be a non-negative whole number"
+        )
+    return int(number)
 
 
 def _percent(text: str, label: str, series: str):

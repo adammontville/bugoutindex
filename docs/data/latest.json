@@ -2446,18 +2446,22 @@
         "ramsey_shelter_total_people_observation_date": "2026-08-01"
       }
     ],
-    "toronto_shelter_shadow": [
-      {
-        "date": "2026-10-02",
-        "toronto_shelter_service_users": 7069,
-        "toronto_shelter_service_users_observation_date": "2026-10-05"
-      }
-    ],
     "sf_shelter_shadow": [
       {
         "date": "2026-10-02",
         "sf_shelter_occupancy_rate": 90.0,
         "sf_shelter_occupancy_rate_observation_date": "2026-08-31"
+      }
+    ],
+    "shelter_region_shadow": [
+      {
+        "date": "2026-10-02",
+        "nashville_hmis_people": "2907",
+        "nashville_hmis_people_observation_date": "2026-07-31",
+        "austin_sheltered_people": "1070",
+        "austin_sheltered_people_observation_date": "2025-07-01",
+        "denver_shelter_occupancy": "93",
+        "denver_shelter_occupancy_observation_date": "2026-06-30"
       }
     ]
   },
@@ -2676,389 +2680,6 @@
     },
     "errors": []
   },
-  "toronto_shelter_shadow": {
-    "status": "success",
-    "in_bugout_index": false,
-    "geography": "Toronto, Ontario",
-    "scope": "Toronto only; not a U.S. figure and not the HUD AHAR rate",
-    "dataset_id": "daily-shelter-overnight-service-occupancy-capacity",
-    "source_url": "https://open.toronto.ca/dataset/daily-shelter-overnight-service-occupancy-capacity/",
-    "series_ids": {
-      "toronto_shelter_service_users": "SERVICE_USER_COUNT"
-    },
-    "reading": "sum of SERVICE_USER_COUNT across Toronto overnight programs on the occupancy date; not a deduplicated person count",
-    "values": {
-      "toronto_shelter_service_users": 7069
-    },
-    "dates": {
-      "toronto_shelter_service_users": "2026-10-05"
-    },
-    "observations": {
-      "toronto_shelter_service_users": [
-        {
-          "date": "2026-07-08",
-          "value": 7732
-        },
-        {
-          "date": "2026-07-09",
-          "value": 7725
-        },
-        {
-          "date": "2026-07-10",
-          "value": 7719
-        },
-        {
-          "date": "2026-07-11",
-          "value": 7721
-        },
-        {
-          "date": "2026-07-12",
-          "value": 7720
-        },
-        {
-          "date": "2026-07-13",
-          "value": 7760
-        },
-        {
-          "date": "2026-07-14",
-          "value": 7783
-        },
-        {
-          "date": "2026-07-15",
-          "value": 7793
-        },
-        {
-          "date": "2026-07-16",
-          "value": 7790
-        },
-        {
-          "date": "2026-07-17",
-          "value": 7777
-        },
-        {
-          "date": "2026-07-18",
-          "value": 7792
-        },
-        {
-          "date": "2026-07-19",
-          "value": 7777
-        },
-        {
-          "date": "2026-07-20",
-          "value": 7741
-        },
-        {
-          "date": "2026-07-21",
-          "value": 7724
-        },
-        {
-          "date": "2026-07-22",
-          "value": 7716
-        },
-        {
-          "date": "2026-07-23",
-          "value": 7728
-        },
-        {
-          "date": "2026-07-24",
-          "value": 7729
-        },
-        {
-          "date": "2026-07-25",
-          "value": 7727
-        },
-        {
-          "date": "2026-07-26",
-          "value": 7712
-        },
-        {
-          "date": "2026-07-27",
-          "value": 7704
-        },
-        {
-          "date": "2026-07-28",
-          "value": 7701
-        },
-        {
-          "date": "2026-07-29",
-          "value": 7708
-        },
-        {
-          "date": "2026-07-30",
-          "value": 7716
-        },
-        {
-          "date": "2026-07-31",
-          "value": 7708
-        },
-        {
-          "date": "2026-08-01",
-          "value": 7693
-        },
-        {
-          "date": "2026-08-02",
-          "value": 7702
-        },
-        {
-          "date": "2026-08-03",
-          "value": 7677
-        },
-        {
-          "date": "2026-08-04",
-          "value": 7687
-        },
-        {
-          "date": "2026-08-05",
-          "value": 7686
-        },
-        {
-          "date": "2026-08-06",
-          "value": 7689
-        },
-        {
-          "date": "2026-08-07",
-          "value": 7687
-        },
-        {
-          "date": "2026-08-08",
-          "value": 7684
-        },
-        {
-          "date": "2026-08-09",
-          "value": 7681
-        },
-        {
-          "date": "2026-08-10",
-          "value": 7656
-        },
-        {
-          "date": "2026-08-11",
-          "value": 7653
-        },
-        {
-          "date": "2026-08-12",
-          "value": 7644
-        },
-        {
-          "date": "2026-08-13",
-          "value": 7650
-        },
-        {
-          "date": "2026-08-14",
-          "value": 7656
-        },
-        {
-          "date": "2026-08-15",
-          "value": 7653
-        },
-        {
-          "date": "2026-08-16",
-          "value": 7648
-        },
-        {
-          "date": "2026-08-17",
-          "value": 7640
-        },
-        {
-          "date": "2026-08-18",
-          "value": 7634
-        },
-        {
-          "date": "2026-08-19",
-          "value": 7619
-        },
-        {
-          "date": "2026-08-20",
-          "value": 7625
-        },
-        {
-          "date": "2026-08-21",
-          "value": 7633
-        },
-        {
-          "date": "2026-08-22",
-          "value": 7626
-        },
-        {
-          "date": "2026-08-23",
-          "value": 7626
-        },
-        {
-          "date": "2026-08-24",
-          "value": 7633
-        },
-        {
-          "date": "2026-08-25",
-          "value": 7619
-        },
-        {
-          "date": "2026-08-26",
-          "value": 7601
-        },
-        {
-          "date": "2026-08-27",
-          "value": 7592
-        },
-        {
-          "date": "2026-08-28",
-          "value": 7574
-        },
-        {
-          "date": "2026-08-29",
-          "value": 7579
-        },
-        {
-          "date": "2026-08-30",
-          "value": 7563
-        },
-        {
-          "date": "2026-08-31",
-          "value": 7542
-        },
-        {
-          "date": "2026-09-01",
-          "value": 7508
-        },
-        {
-          "date": "2026-09-02",
-          "value": 7482
-        },
-        {
-          "date": "2026-09-03",
-          "value": 7463
-        },
-        {
-          "date": "2026-09-04",
-          "value": 7422
-        },
-        {
-          "date": "2026-09-05",
-          "value": 7384
-        },
-        {
-          "date": "2026-09-06",
-          "value": 7380
-        },
-        {
-          "date": "2026-09-07",
-          "value": 7385
-        },
-        {
-          "date": "2026-09-08",
-          "value": 7353
-        },
-        {
-          "date": "2026-09-09",
-          "value": 7339
-        },
-        {
-          "date": "2026-09-10",
-          "value": 7335
-        },
-        {
-          "date": "2026-09-11",
-          "value": 7338
-        },
-        {
-          "date": "2026-09-12",
-          "value": 7343
-        },
-        {
-          "date": "2026-09-13",
-          "value": 7344
-        },
-        {
-          "date": "2026-09-14",
-          "value": 7310
-        },
-        {
-          "date": "2026-09-15",
-          "value": 7307
-        },
-        {
-          "date": "2026-09-16",
-          "value": 7301
-        },
-        {
-          "date": "2026-09-17",
-          "value": 7295
-        },
-        {
-          "date": "2026-09-18",
-          "value": 7289
-        },
-        {
-          "date": "2026-09-19",
-          "value": 7286
-        },
-        {
-          "date": "2026-09-20",
-          "value": 7282
-        },
-        {
-          "date": "2026-09-21",
-          "value": 7288
-        },
-        {
-          "date": "2026-09-22",
-          "value": 7268
-        },
-        {
-          "date": "2026-09-23",
-          "value": 7267
-        },
-        {
-          "date": "2026-09-24",
-          "value": 7262
-        },
-        {
-          "date": "2026-09-25",
-          "value": 7262
-        },
-        {
-          "date": "2026-09-26",
-          "value": 7261
-        },
-        {
-          "date": "2026-09-27",
-          "value": 7255
-        },
-        {
-          "date": "2026-09-28",
-          "value": 7247
-        },
-        {
-          "date": "2026-09-29",
-          "value": 7234
-        },
-        {
-          "date": "2026-09-30",
-          "value": 7221
-        },
-        {
-          "date": "2026-10-01",
-          "value": 7153
-        },
-        {
-          "date": "2026-10-02",
-          "value": 7115
-        },
-        {
-          "date": "2026-10-03",
-          "value": 7093
-        },
-        {
-          "date": "2026-10-04",
-          "value": 7087
-        },
-        {
-          "date": "2026-10-05",
-          "value": 7069
-        }
-      ]
-    },
-    "errors": []
-  },
   "sf_shelter_shadow": {
     "status": "success",
     "in_bugout_index": false,
@@ -3179,5 +2800,132 @@
     "errors": [],
     "unit": "percent",
     "measure_code": "279"
+  },
+  "shelter_region_shadow": {
+    "status": "success",
+    "in_bugout_index": false,
+    "series_ids": {
+      "nashville_hmis_people": "people experiencing homelessness in the month",
+      "austin_sheltered_people": "people likely experiencing sheltered homelessness",
+      "denver_shelter_occupancy": "pilot shelter occupancy rate"
+    },
+    "values": {
+      "nashville_hmis_people": 2907,
+      "austin_sheltered_people": 1070,
+      "denver_shelter_occupancy": 93
+    },
+    "dates": {
+      "nashville_hmis_people": "2026-07-31",
+      "austin_sheltered_people": "2025-07-01",
+      "denver_shelter_occupancy": "2026-06-30"
+    },
+    "periods": {
+      "nashville_hmis_people": "July 2026",
+      "austin_sheltered_people": "June 2025 dashboard published 2025-09-10; engaged 2025-01-02 to 2025-07-01",
+      "denver_shelter_occupancy": "Q2 2026"
+    },
+    "sources": {
+      "nashville_hmis_people": "Metro Nashville Office of Homeless Services HMIS monthly report July 2026",
+      "austin_sheltered_people": "ECHO Austin/Travis Homelessness Response System dashboard",
+      "denver_shelter_occupancy": "Denver HOST performance-based contracting six-month results published 2026-08-04"
+    },
+    "source_urls": {
+      "nashville_hmis_people": "https://www.nashville.gov/sites/default/files/2026-09/HPC_Monthly_Report_July_26_v20.pdf",
+      "austin_sheltered_people": "https://echoatx.github.io/hrs-dashboard-site/",
+      "denver_shelter_occupancy": "https://www.denvergov.org/Government/Agencies-Departments-Offices/Agencies-Departments-Offices-Directory/Department-of-Housing-Stability/News/HOST-Announces-Strong-Early-Results-from-Performance-Based-Contracting-Pilot"
+    },
+    "reviewed_at": {
+      "nashville_hmis_people": "2026-10-07",
+      "austin_sheltered_people": "2026-10-07",
+      "denver_shelter_occupancy": "2026-10-07"
+    },
+    "observations": {
+      "nashville_hmis_people": [
+        {
+          "date": "2025-07-31",
+          "value": 3486
+        },
+        {
+          "date": "2025-08-31",
+          "value": 3474
+        },
+        {
+          "date": "2025-09-30",
+          "value": 3585
+        },
+        {
+          "date": "2025-10-31",
+          "value": 3448
+        },
+        {
+          "date": "2025-11-30",
+          "value": 3897
+        },
+        {
+          "date": "2025-12-31",
+          "value": 4318
+        },
+        {
+          "date": "2026-01-31",
+          "value": 3986
+        },
+        {
+          "date": "2026-02-28",
+          "value": 4094
+        },
+        {
+          "date": "2026-03-31",
+          "value": 3849
+        },
+        {
+          "date": "2026-04-30",
+          "value": 3330
+        },
+        {
+          "date": "2026-05-31",
+          "value": 2991
+        },
+        {
+          "date": "2026-06-30",
+          "value": 3108
+        },
+        {
+          "date": "2026-07-31",
+          "value": 2907
+        }
+      ],
+      "austin_sheltered_people": [
+        {
+          "date": "2025-07-01",
+          "value": 1070
+        }
+      ],
+      "denver_shelter_occupancy": [
+        {
+          "date": "2026-06-30",
+          "value": 93
+        }
+      ]
+    },
+    "errors": [],
+    "geography": "U.S. regional bellwethers",
+    "scope": "Local U.S. readings only. None is a U.S. total and none replaces HUD AHAR.",
+    "checklist": "runtime/data/shelter_region_shadow.csv",
+    "cadence": "monthly when the publisher posts a new cited figure",
+    "regions": {
+      "nashville_hmis_people": "Southeast \u2014 Nashville\u2013Davidson, Tennessee",
+      "austin_sheltered_people": "South \u2014 Austin/Travis County, Texas",
+      "denver_shelter_occupancy": "Southwest \u2014 Denver, Colorado"
+    },
+    "measures": {
+      "nashville_hmis_people": "People who experienced homelessness in Nashville-Davidson during the month, from the Metro Nashville Office of Homeless Services HMIS monthly report. The count covers participating HMIS providers (emergency shelter, transitional housing, street outreach, supportive services, and permanent housing). It is not a one-night shelter census. Nashville Rescue Mission rows on the same PDF are separate and are not added. Earlier months in this checklist were read from the chart on the July 2026 report.",
+      "austin_sheltered_people": "People engaged in the Austin/Travis Homelessness Response System in the prior six months and likely experiencing sheltered homelessness, as printed on the ECHO HRS dashboard. Dashboard month June 2025, published September 10, 2025, data effective 2025-07-01. That lag is part of the reading. The references page defines a one-day sheltered snapshot, and that chart was not a readable number on the public pages when this row was entered.",
+      "denver_shelter_occupancy": "Occupancy rate for the seven-shelter HOST performance-based contracting pilot (769 units) in Q2 2026, from the August 4, 2026 HOST release. Occupied rooms divided by available rooms. Not a count of distinct people and not the full Denver shelter system. The All In Mile High citywide dashboard is the monthly page to read next; this checklist stores the occupancy rate HOST published."
+    },
+    "index_pages": {
+      "nashville_hmis_people": "https://www.nashville.gov/departments/office-homeless-services/homeless-management-information-system/monthly-data-reports",
+      "austin_sheltered_people": "https://echoatx.github.io/hrs-dashboard-site/",
+      "denver_shelter_occupancy": "https://www.denvergov.org/Government/Agencies-Departments-Offices/Agencies-Departments-Offices-Directory/Mayors-Office/Programs-and-Initiatives/Homelessness-Initiative/All-In-Mile-High-Dashboard"
+    }
   }
 }

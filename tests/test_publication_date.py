@@ -133,7 +133,7 @@ def test_markets_refusal_does_not_write_a_snapshot(tmp_path, monkeypatch):
     monkeypatch.setattr(weekly, "fetch_nyc_dhs_shadow", _should_not_fetch_nyc)
     for _name in (
         "fetch_ramsey_shelter_shadow",
-        "fetch_toronto_shelter_shadow",
+        "fetch_shelter_region_shadow",
         "fetch_sf_shelter_shadow",
     ):
         monkeypatch.setattr(weekly, _name, _should_not_fetch_nyc)

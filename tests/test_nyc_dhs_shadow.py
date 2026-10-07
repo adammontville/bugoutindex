@@ -336,7 +336,7 @@ def test_nyc_shadow_failure_still_publishes_the_locked_score(tmp_path, monkeypat
     )
     for _name in (
         "fetch_ramsey_shelter_shadow",
-        "fetch_toronto_shelter_shadow",
+        "fetch_shelter_region_shadow",
         "fetch_sf_shelter_shadow",
     ):
         monkeypatch.setattr(
@@ -392,7 +392,7 @@ def test_markets_refusal_does_not_fetch_the_shadow_series(tmp_path, monkeypatch)
     monkeypatch.setattr(weekly, "fetch_food_shadow", lambda: {"status": "success", "values": {}})
     for _name in (
         "fetch_ramsey_shelter_shadow",
-        "fetch_toronto_shelter_shadow",
+        "fetch_shelter_region_shadow",
         "fetch_sf_shelter_shadow",
     ):
         monkeypatch.setattr(weekly, _name, _should_not_fetch)

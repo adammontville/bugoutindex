@@ -27,21 +27,15 @@ from runtime.data.fetch.fetch_sf_shelter_shadow import (
     parse_rows as parse_sf,
     percent_points,
 )
-from runtime.data.fetch.fetch_toronto_shelter_shadow import (
-    FIELD as TORONTO_FIELD,
-    PACKAGE_ID,
-    RESOURCE_NAME,
-    SERIES as TORONTO_SERIES,
-    SOURCE_URL as TORONTO_URL,
-    assemble as assemble_toronto,
-    fetch as fetch_toronto,
-    parse_rows as parse_toronto,
+from runtime.data.fetch.fetch_shelter_region_shadow import (
+    SERIES as REGION_SERIES,
+    fetch as fetch_region,
 )
 from runtime.processing.formula import CORE_METRICS, WEIGHTS, compute_index
 from runtime.publish.render import (
     RAMSEY_SHELTER_SHADOW_LABELS,
     SF_SHELTER_SHADOW_LABELS,
-    TORONTO_SHELTER_SHADOW_LABELS,
+    SHELTER_REGION_SHADOW_LABELS,
     render_site,
 )
 from runtime.publish.week_note import build_week_note, unexplained_numerals
@@ -87,13 +81,15 @@ def test_shadow_series_are_absent_from_compute_index_and_locked_score_holds():
     assert set(CORE_METRICS) == LOCKED_CORE
     for name in (
         "ramsey_shelter_total_people",
-        "toronto_shelter_service_users",
+        "nashville_hmis_people",
+        "austin_sheltered_people",
+        "denver_shelter_occupancy",
         "sf_shelter_occupancy_rate",
     ):
         assert name not in CORE_METRICS
         assert name not in WEIGHTS
     formula = FORMULA.read_text()
-    for token in ("9mck-bcqu", "population_enrollees", "SERVICE_USER_COUNT", "kc49-udxn", "ramsey_shelter", "toronto_shelter", "sf_shelter"):
+    for token in ("9mck-bcqu", "population_enrollees", "kc49-udxn", "ramsey_shelter", "sf_shelter", "nashville_hmis"):
         assert token not in formula
 
     plain = compute_index(_payload(raws))
@@ -104,7 +100,7 @@ def test_shadow_series_are_absent_from_compute_index_and_locked_score_holds():
 
     stuffed = _payload(raws)
     stuffed["ramsey_shelter_total_people"] = {"data": {"ramsey_shelter_total_people": 999}}
-    stuffed["toronto_shelter_service_users"] = {"data": {"toronto_shelter_service_users": 999}}
+    stuffed["nashville_hmis_people"] = {"data": {"nashville_hmis_people": 999}}
     stuffed["sf_shelter_occupancy_rate"] = {"data": {"sf_shelter_occupancy_rate": 99}}
     stuffed["ramsey_shelter_shadow"] = {"data": {"population_enrollees": 999}}
     scored = compute_index(stuffed)
@@ -125,12 +121,12 @@ def test_series_ids_match_the_verified_public_fields():
         "Families", "Single Men", "Single Women", "Youth (18-24)",
     })
 
-    assert PACKAGE_ID == "daily-shelter-overnight-service-occupancy-capacity"
-    assert RESOURCE_NAME == "Daily shelter overnight occupancy"
-    assert TORONTO_FIELD == "SERVICE_USER_COUNT"
-    assert TORONTO_SERIES == {"toronto_shelter_service_users": "SERVICE_USER_COUNT"}
-    assert list(TORONTO_SERIES) == list(TORONTO_SHELTER_SHADOW_LABELS)
-    assert TORONTO_URL.startswith("https://open.toronto.ca/dataset/")
+    assert set(REGION_SERIES) == {
+        "nashville_hmis_people",
+        "austin_sheltered_people",
+        "denver_shelter_occupancy",
+    }
+    assert list(REGION_SERIES) == list(SHELTER_REGION_SHADOW_LABELS)
 
     assert SF_DATASET == "kc49-udxn"
     assert MEASURE_CODE == "279"
@@ -180,26 +176,34 @@ def test_ramsey_sum_requires_every_household_type_and_keeps_the_month_stamp():
     assert "T" not in payload["dates"]["ramsey_shelter_total_people"]
 
 
-def test_toronto_sums_program_rows_and_skips_null_counts():
-    rows = [
-        {"OCCUPANCY_DATE": "2026-10-05", "SERVICE_USER_COUNT": "112", "LOCATION_CITY": "Toronto"},
-        {"OCCUPANCY_DATE": "2026-10-05", "SERVICE_USER_COUNT": "86"},
-        {"OCCUPANCY_DATE": "2026-10-05", "SERVICE_USER_COUNT": None},
-        {"OCCUPANCY_DATE": "2026-10-04", "SERVICE_USER_COUNT": "10"},
-        {"OCCUPANCY_DATE": "not-a-date", "SERVICE_USER_COUNT": "5"},
-        {"OCCUPANCY_DATE": "2026-10-03", "SERVICE_USER_COUNT": "1.5"},
-    ]
-    parsed = parse_toronto(rows)
-    assert parsed == [
-        {"date": "2026-10-04", "value": 10},
-        {"date": "2026-10-05", "value": 198},
-    ]
-    payload = assemble_toronto({"toronto_shelter_service_users": parsed}, [])
+def test_regional_checklist_keeps_cited_figures_and_fails_closed(tmp_path):
+    payload = fetch_region()
+    assert payload["status"] == "success"
     assert payload["in_bugout_index"] is False
-    assert payload["geography"] == "Toronto, Ontario"
-    assert "not a U.S." in payload["scope"]
-    assert "deduplicated" in payload["reading"]
-    assert payload["values"]["toronto_shelter_service_users"] == 198
+    assert payload["values"]["nashville_hmis_people"] == 2907
+    assert payload["dates"]["nashville_hmis_people"] == "2026-07-31"
+    assert payload["values"]["austin_sheltered_people"] == 1070
+    assert payload["dates"]["austin_sheltered_people"] == "2025-07-01"
+    assert "2025-09-10" in payload["periods"]["austin_sheltered_people"]
+    assert payload["values"]["denver_shelter_occupancy"] == 93
+    assert payload["dates"]["denver_shelter_occupancy"] == "2026-06-30"
+    assert "Nashville" in payload["measures"]["nashville_hmis_people"]
+    assert "not a one-night" in payload["measures"]["nashville_hmis_people"]
+    assert "lag" in payload["measures"]["austin_sheltered_people"]
+    assert "Not a count of distinct" in payload["measures"]["denver_shelter_occupancy"]
+
+    broken = tmp_path / "shelter_region_shadow.csv"
+    broken.write_text(
+        "series,value,observation_period,observation_date,source,source_url,reviewed_at\n"
+        "nashville_hmis_people,2907.5,July 2026,2026-07-31,OHS,https://www.nashville.gov/x,2026-10-07\n"
+        "austin_sheltered_people,1070,June 2025,2025-07-01,ECHO,https://echoatx.github.io/hrs-dashboard-site/,2026-10-07\n"
+        "denver_shelter_occupancy,93,Q2 2026,2026-06-30,HOST,https://www.denvergov.org/x,2026-10-07\n"
+    )
+    failed = fetch_region(broken)
+    assert failed["status"] == "error"
+    assert failed["in_bugout_index"] is False
+    assert failed["values"]["nashville_hmis_people"] is None
+    assert "whole number" in failed["message"]
 
 
 def test_sf_ratio_becomes_percent_and_a_headcount_shaped_value_is_dropped():
@@ -234,9 +238,8 @@ def test_fetch_failures_stay_outside_the_score(monkeypatch):
         raise RetryError("down")
 
     monkeypatch.setattr("runtime.data.fetch.fetch_ramsey_shelter_shadow.get_with_retry", boom)
-    monkeypatch.setattr("runtime.data.fetch.fetch_toronto_shelter_shadow.get_with_retry", boom)
     monkeypatch.setattr("runtime.data.fetch.fetch_sf_shelter_shadow.get_with_retry", boom)
-    for payload in (fetch_ramsey(), fetch_toronto(), fetch_sf()):
+    for payload in (fetch_ramsey(), fetch_sf()):
         assert payload["status"] == "error"
         assert payload["in_bugout_index"] is False
         assert next(iter(payload["values"].values())) is None
@@ -249,10 +252,8 @@ def test_snapshot_keeps_the_locked_score_when_companions_are_attached():
         {"ramsey_shelter_total_people": [{"date": "2026-08-01", "value": 480}]},
         [],
     )
-    toronto = assemble_toronto(
-        {"toronto_shelter_service_users": [{"date": "2026-10-05", "value": 9000}]},
-        [],
-    )
+    region = fetch_region()
+    region["in_bugout_index"] = True
     sf_shelter = assemble_sf(
         {"sf_shelter_occupancy_rate": [{"date": "2026-08-31", "value": 90.0}]},
         [],
@@ -269,7 +270,7 @@ def test_snapshot_keeps_the_locked_score_when_companions_are_attached():
         None,
         extra_shadows={
             "ramsey_shelter_shadow": ramsey,
-            "toronto_shelter_shadow": toronto,
+            "shelter_region_shadow": region,
             "sf_shelter_shadow": sf_shelter,
         },
     )
@@ -279,7 +280,7 @@ def test_snapshot_keeps_the_locked_score_when_companions_are_attached():
     assert snapshot["metrics"]["incident_rate"]["raw"] == 2723.0
     assert snapshot["metrics"]["trust_in_government"]["raw"] == 41.0
     assert snapshot["ramsey_shelter_shadow"]["in_bugout_index"] is False
-    assert snapshot["toronto_shelter_shadow"]["in_bugout_index"] is False
+    assert snapshot["shelter_region_shadow"]["in_bugout_index"] is False
     assert snapshot["sf_shelter_shadow"]["in_bugout_index"] is False
     assert "ramsey_shelter_total_people" not in snapshot["metrics"]
 
@@ -293,10 +294,7 @@ def test_rendered_page_labels_each_companion_outside_the_score(tmp_path, monkeyp
         {"ramsey_shelter_total_people": [{"date": "2026-08-01", "value": 480}]},
         [],
     )
-    snapshot["toronto_shelter_shadow"] = assemble_toronto(
-        {"toronto_shelter_service_users": [{"date": "2026-10-04", "value": 8123}]},
-        [],
-    )
+    snapshot["shelter_region_shadow"] = fetch_region()
     snapshot["sf_shelter_shadow"] = assemble_sf(
         {"sf_shelter_occupancy_rate": [{"date": "2026-08-31", "value": 90.0}]},
         [],
@@ -312,8 +310,10 @@ def test_rendered_page_labels_each_companion_outside_the_score(tmp_path, monkeyp
     assert snapshot["metrics"]["incident_rate"]["raw"] == 2723.0
     assert snapshot["metrics"]["trust_in_government"]["raw"] == 41.0
     for heading in (
+        "Nashville–Davidson shelter checklist",
+        "Austin/Travis County shelter checklist",
         "Ramsey County shelter census",
-        "Toronto shelter census",
+        "Denver shelter checklist",
         "San Francisco shelter occupancy",
     ):
         block = html.split(heading)[1].split("<div class=\"section-title\">")[0]
@@ -322,14 +322,17 @@ def test_rendered_page_labels_each_companion_outside_the_score(tmp_path, monkeyp
         assert "HUD AHAR" in block
         assert "Raw weight" not in block
     assert "Ramsey County only" in html
+    assert "Nashville–Davidson only" in html
+    assert "Austin/Travis County only" in html
+    assert "Denver only" in html
     assert "not a U.S. total" in html
     assert "9mck-bcqu" in html
     assert "population_enrollees" in html
     assert "480" in html
-    assert "Toronto only" in html
-    assert "SERVICE_USER_COUNT" in html
-    assert "not a deduplicated person count" in html
-    assert "8,123" in html
+    assert "2,907" in html
+    assert "1,070" in html
+    assert "93 %" in html
+    assert "publication lag" in html.lower() or "Publication lag" in html or "lags" in html
     assert "San Francisco only" in html
     assert "occupancy rate, not a headcount" in html
     assert "kc49-udxn" in html
@@ -344,10 +347,11 @@ def test_rendered_page_labels_each_companion_outside_the_score(tmp_path, monkeyp
     text = " ".join(note)
     assert unexplained_numerals(note, snapshot) == []
     assert "Ramsey County shelter-census shadow series" in note[-1]
-    assert "Toronto shelter-census shadow series" in note[-1]
+    assert "Nashville, Austin, and Denver shelter shadow series" in note[-1]
     assert "San Francisco shelter-occupancy shadow series" in note[-1]
     assert "not inputs to the BugOut Index score" in note[-1]
     assert "480" not in text
-    assert "8123" not in text
-    assert "8,123" not in text
+    assert "2907" not in text
+    assert "2,907" not in text
+    assert "1070" not in text
     assert "90.0" not in text

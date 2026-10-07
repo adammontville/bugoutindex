@@ -13,7 +13,8 @@ This module is the only copy of the live publisher math:
 * aggregation ``Σ(normalized × weight) / Σ weight``
 * four risk bands (``interpret``)
 
-``runtime/publish/weekly_run.py`` and the Streamlit simulator import it.
+``runtime/publish/weekly_run.py`` and the optional Streamlit viewer import it.
+The viewer does not publish.
 In-range inputs match the published weekly numbers, including the
 19 September 2026 index of 57.11.
 """

@@ -1,64 +1,49 @@
 # BugOutIndex
-# Copyright (C) 2025 Your Name or Organization
-#
-# This file is dual-licensed under the AGPL-3.0 and a commercial license.
-#
-# You may use, modify, and distribute this software under the terms of the
-# GNU Affero General Public License v3.0 as published by the Free Software Foundation.
-#
-# For proprietary or commercial use, please contact: your-email@example.com
+# Copyright (C) 2025 Adam Montville
+# Dual-licensed under AGPL-3.0 and a commercial license.
+"""Optional local viewer. Reads the published snapshot. Does not publish."""
 import streamlit as st
 
 st.set_page_config(
     page_title="BugOut Index",
-    page_icon="static/media/favicon.ico"
+    page_icon="static/media/favicon.ico",
 )
 
-# CSS for hamburger menu and Deploy button
-st.markdown("""
+st.markdown(
+    """
     <style>
-    #MainMenu {visibility: hidden;}  /* Hamburger menu */
-    </style>
-""", unsafe_allow_html=True)
-
-# Set toolbar mode based on environment
-env = st.secrets["STREAMLIT_ENV"]
-toolbar_mode = "viewer" if env == "prod" else "auto"
-st.set_option("client.toolbarMode", toolbar_mode)
-
-print(st.secrets["STREAMLIT_ENV"])
-
-# Inject custom CSS for navigation
-st.markdown("""
-    <style>
-    /* Make category headings larger, bold, and spaced out */
+    #MainMenu {visibility: hidden;}
     header[data-testid="stNavSectionHeader"] {
-        font-size: 1.3em !important;  /* Adjust size for categories */
-        font-weight: bold !important; /* Make category labels stand out */
-        margin-top: 12px !important;  /* Add spacing between categories */
+        font-size: 1.3em !important;
+        font-weight: bold !important;
+        margin-top: 12px !important;
     }
-
-    /* Keep individual page links at default size */
     a[data-testid="stSidebarNavLink"] {
         font-size: 1em !important;
     }
     </style>
-""", unsafe_allow_html=True)
+    """,
+    unsafe_allow_html=True,
+)
 
+st.caption(
+    "Optional viewer. It reads docs/data/latest.json and does not write the weekly site. "
+    "To publish, run the weekly pipeline, then serve the docs/ directory."
+)
 
 pages = {
     "🪲 BugOut Index": [
         st.Page("pages/dashboard.py", title="Dashboard", icon="📟"),
         st.Page("pages/about.py", title="About the BOI", icon="ℹ️"),
-        st.Page("pages/boi_simulator.py", title="Index Simulator", icon="🎛️")
-     ],
+        st.Page("pages/boi_simulator.py", title="Index Simulator", icon="🎛️"),
+    ],
     "📓 Metrics Documentation": [
         st.Page("pages/inflation_rate.py", title="Inflation Rate", icon="💰"),
         st.Page("pages/crime_rate.py", title="Crime Rate", icon="🚔"),
         st.Page("pages/unemployment_rate.py", title="Unemployment Rate", icon="📉"),
         st.Page("pages/debt_to_gdp_ratio.py", title="Debt to GDP", icon="💸"),
         st.Page("pages/homeless_rate.py", title="Homelessness Rate", icon="🏠"),
-        st.Page("pages/trust_in_government.py", title="Trust in Government", icon="🏛")
+        st.Page("pages/trust_in_government.py", title="Trust in Government", icon="🏛"),
     ],
 }
 

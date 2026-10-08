@@ -375,7 +375,7 @@ def render_markdown(
                 str(latest["locked_band"]).replace(" Stability", ""),
             ],
             [
-                "Same other inputs, snapshot candidate",
+                "Same other inputs, text-sort month",
                 _num(candidate["crime_value"]),
                 str(candidate["rtci_month"]),
                 _num(candidate["score"]),
@@ -488,11 +488,11 @@ Research only. Methodology stays **1.0.0**. The live score on {latest['date']} s
 
 Giving each published week the newest RTCI month available that day would have raised the index by **{live_low} to {live_high}** points. All {len(publication_rows)} weeks would still have read **{bands[0]}**. The published range in this history is {_num(min(float(row['locked_index']) for row in publication_rows))} to {_num(max(float(row['locked_index']) for row in publication_rows))}. The live-crime range is {_num(min(float(row['live_index']) for row in publication_rows))} to {_num(max(float(row['live_index']) for row in publication_rows))}.
 
-On the {latest['date']} basket the published crime input is **{_num(PUBLISHED_INCIDENT_RATE, 1)}** and the score is **{_num(latest['locked_index'])}**. The snapshot's candidate, **September 2025 at {_num(candidate['crime_value'])}**, scores **{_num(candidate['score'])}**. The newest calendar month in that same file, **April 2026 at {_num(newest['crime_value'])}**, scores **{_num(newest['score'])}**. Both stay Moderate.
+On the {latest['date']} basket the published crime input is **{_num(PUBLISHED_INCIDENT_RATE, 1)}** and the score is **{_num(latest['locked_index'])}**. The text-sort month in that file, **September 2025 at {_num(candidate['crime_value'])}**, scores **{_num(candidate['score'])}**. The newest calendar month in that same file, **April 2026 at {_num(newest['crime_value'])}**, scores **{_num(newest['score'])}**. Both stay Moderate.
 
 {now_table}
 
-The lock was deliberate. [Pull request #78](https://github.com/adammontville/bugoutindex/pull/78) (commit [`9a7594a`](https://github.com/adammontville/bugoutindex/commit/9a7594a85c7b44bbd514438ccbd20959c6d4ad61), merged 22 September 2026) started the weekly download of the AH-Datalytics file and stored **{_num(PUBLISHED_INCIDENT_RATE, 1)}** as `PUBLISHED_INCIDENT_RATE` in the same change. The pull request says accepting another rate is a separate reviewed revision. The weekly job still downloads a fresh file. The candidate and the latest calendar month are diagnostics. `compute_index` still receives {_num(PUBLISHED_INCIDENT_RATE, 1)}.
+The lock was deliberate. [Pull request #78](https://github.com/adammontville/bugoutindex/pull/78) (commit [`9a7594a`](https://github.com/adammontville/bugoutindex/commit/9a7594a85c7b44bbd514438ccbd20959c6d4ad61), merged 22 September 2026) started the weekly download of the AH-Datalytics file and stored **{_num(PUBLISHED_INCIDENT_RATE, 1)}** as `PUBLISHED_INCIDENT_RATE` in the same change. The pull request says accepting another rate is a separate reviewed revision. The weekly job still downloads a fresh file. The candidate is the unweighted mean for the latest calendar month. The population-weighted alternative sits beside it. Both are diagnostics. `compute_index` still receives {_num(PUBLISHED_INCIDENT_RATE, 1)}.
 
 ## Where 2723.0 comes from
 
@@ -506,11 +506,11 @@ The current file's September 2024 rate is **{_num(sep_2024['crime_value'])}** on
 
 The score is `compute_index`. Crime endpoints stay **{lo:g} to {hi:g}**. The crime weight stays **{weight:.2f}**. The other five weights are unchanged, so a full row still divides by **{sum(WEIGHTS.values()):.2f}**. Trust stays inverted. Bands stay 70, 55, and 40.
 
-The crime value is the unweighted mean of agency rates for the latest calendar month in the RTCI cleaned file that was on [AH-Datalytics/rtci](https://github.com/AH-Datalytics/rtci) `main` at the start of that publication date:
+The crime value is the unweighted mean of usable rows for the latest calendar month in the RTCI cleaned file that was on [AH-Datalytics/rtci](https://github.com/AH-Datalytics/rtci) `main` at the start of that publication date:
 
 `(Violent Crime_mvs_12mo + Property Crime_mvs_12mo) / FBI.Population.Covered × 100,000`
 
-Rows with a missing count or a non-positive population are left out. That is the same construction as the crime diagnostic. The population-weighted alternative is stored on the vintage file and is not scored.
+Rows with a missing count or a non-positive population are left out. Each remaining row counts once, including RTCI aggregate rows (state and nationwide Full Sample, and population-band aggregates). That is the same construction as the crime diagnostic, and it is what produces the locked 2723.0 on the old local file. It is not the population-weighted national total. That alternative is the sum of crimes over the sum of population on the same rows; on the cleaned file it matches the Nationwide Full Sample rate. It is stored on the vintage file and is not scored. This replay does not change that construction.
 
 Committed index history runs from **{first['date']}** through **{latest['date']}**. There is no earlier six-metric publication to rescore. Weeks between RTCI releases keep the latest month already in the file.
 
@@ -535,7 +535,7 @@ Live-crime score: the other five published inputs, with crime set to the latest 
 
 ## Text-sort month, for the snapshot figure
 
-The pre-lock fetcher selected `Date.max()`, a text sort. On every file in this window that sort lands on **September 2025**. The snapshot diagnostics still report that month: candidate **{_num(SNAPSHOT_CANDIDATE_RATE)}**. The rate itself moved as the sample grew: 2285.03 (498 agencies), then 2229.84 (612), then **{_num(SNAPSHOT_CANDIDATE_RATE)}** (621). On the {latest['date']} basket, {_num(SNAPSHOT_CANDIDATE_RATE)} scores **{_num(candidate['score'])}** against the published **{_num(latest['locked_index'])}**.
+The pre-lock fetcher selected `Date.max()`, a text sort. On every file in this window that sort lands on **September 2025**. The 2 October publish stored that month as the candidate (**{_num(SNAPSHOT_CANDIDATE_RATE)}**). `latest_month` on the same snapshot was already the calendar month. The fetcher now writes the calendar month into the candidate as well. The scored input stays **{_num(PUBLISHED_INCIDENT_RATE, 1)}**. The text-sort rate itself moved as the sample grew: 2285.03 (498 agencies), then 2229.84 (612), then **{_num(SNAPSHOT_CANDIDATE_RATE)}** (621). On the {latest['date']} basket, {_num(SNAPSHOT_CANDIDATE_RATE)} scores **{_num(candidate['score'])}** against the published **{_num(latest['locked_index'])}**.
 
 Across the {len(publication_rows)} weeks this rule lifts the index by **{_num(min(lex_deltas))} to {_num(max(lex_deltas))}** points. The band stays {bands[0]}.
 
@@ -543,7 +543,7 @@ Across the {len(publication_rows)} weeks this rule lifts the index by **{_num(mi
 
 ## Monthly RTCI on the current file
 
-`runtime/backtest/fixtures/v2/RTCI_monthly.csv` is the June 16 file (commit `bc66ee94`, pull recorded 26 September 2026). It matches the 2 October snapshot: September 2025 **{_num(candidate['crime_value'])}**, April 2026 **{_num(newest['crime_value'])}**, 621 agencies, population-weighted April 2026 **{_num(newest['population_weighted'])}**.
+`runtime/backtest/fixtures/v2/RTCI_monthly.csv` is the June 16 file (commit `bc66ee94`, pull recorded 26 September 2026). It contains September 2025 **{_num(candidate['crime_value'])}** and April 2026 **{_num(newest['crime_value'])}**, 621 agencies, population-weighted April 2026 **{_num(newest['population_weighted'])}**.
 
 The table scores each month from September 2024 through April 2026 on the **{latest['date']}** inputs. Inflation, unemployment, debt, homelessness, and trust stay on that one row. These are revised rates in the current file. An earlier Friday's file had a smaller sample and a different rate for the same month. The publication table above is the rate that was available that day.
 

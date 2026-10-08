@@ -6,6 +6,7 @@ from __future__ import annotations
 
 from runtime.data.fetch.fetch_incident_rate import (
     PUBLISHED_INCIDENT_RATE,
+    crime_file_provenance,
     fetch as fetch_incident_rate,
 )
 from runtime.publish.observation_dates import observation_date_for
@@ -28,8 +29,8 @@ PUBLISHED_RAWS = {
     "trust_in_government": 41.0,
 }
 
-# September sorts after April and December as text, so Date.max() is
-# September 2024. The latest calendar month is April 2026.
+# "September" sorts after "April" and "December" as text. The latest
+# calendar month in this file is April 2026.
 FIXTURE_CSV = """\
 Date,Violent Crime_mvs_12mo,Property Crime_mvs_12mo,FBI.Population.Covered,Last Updated
 September 2024,100,100,10000,2026-06-16 12:00:00 EST
@@ -64,22 +65,23 @@ def test_fixture_csv_parses_and_records_vintage():
     assert payload["status"] == "success"
     provenance = payload["provenance"]
     assert provenance["kind"] == "file"
-    assert provenance["value_month"] == "September 2024"
+    assert provenance["value_month"] == "April 2026"
+    assert provenance["value_month_end"] == "2026-04-30"
     assert provenance["file_through"] == "April 2026"
     assert provenance["file_updated"] == "2026-06-16"
     assert "/blob/" not in provenance["source_url"]
     diagnostics = payload["diagnostics"]
-    # (200/10000 + 20/100000) / 2 * 100000 = 1010; the NA population row is out.
-    assert diagnostics["candidate_incident_rate"] == 1010.0
-    assert diagnostics["candidate_month"] == "September 2024"
-    # 220 crimes / 110000 people * 100000 = 200.
-    assert diagnostics["population_weighted_incident_rate"] == 200.0
+    # 100 crimes / 20000 people * 100000 = 500. September's 1010 is not the candidate.
+    assert diagnostics["candidate_incident_rate"] == 500.0
+    assert diagnostics["candidate_month"] == "April 2026"
+    assert diagnostics["population_weighted_incident_rate"] == 500.0
+    assert diagnostics["agencies"] == 1
     assert diagnostics["latest_month"] == "April 2026"
     assert diagnostics["latest_month_incident_rate"] == 500.0
+    assert diagnostics["latest_month_population_weighted_incident_rate"] == 500.0
     assert diagnostics["index_input"] is False
     assert diagnostics["published_incident_rate"] == PUBLISHED_INCIDENT_RATE
-    # The fixture's value month is September 2024, but that month's rate is
-    # 1010, not the locked 2723. The month-end stays file vintage.
+    # April 2026 is 500, not the locked 2723. The month-end stays file vintage.
     assert payload["observation_date"] is None
     assert observation_date_for("incident_rate", payload) is None
 
@@ -214,8 +216,107 @@ def test_diagnostics_do_not_change_the_locked_score():
     assert snapshot["bugout_index"] == 57.11
     block = snapshot["metrics"]["incident_rate"]
     assert block["raw"] == 2723.0
-    assert block["diagnostics"]["candidate_incident_rate"] == 1010.0
-    assert block["diagnostics"]["population_weighted_incident_rate"] == 200.0
+    assert block["diagnostics"]["candidate_incident_rate"] == 500.0
+    assert block["diagnostics"]["candidate_month"] == "April 2026"
+    assert block["diagnostics"]["population_weighted_incident_rate"] == 500.0
     assert block["diagnostics"]["index_input"] is False
+    assert block["provenance"]["value_month"] == "April 2026"
     assert block["provenance"]["file_through"] == "April 2026"
+    assert block["observation_date"] is None
     assert block["status"] == "success"
+
+
+def test_month_names_order_by_calendar_across_years():
+    """September sorts after April and December as text. The calendar does not."""
+    labels = [
+        "September 2024",
+        "December 2024",
+        "January 2025",
+        "September 2025",
+        "April 2026",
+    ]
+    provenance = crime_file_provenance(labels, [])
+    assert provenance["value_month"] == "April 2026"
+    assert provenance["file_through"] == "April 2026"
+    assert provenance["value_month_end"] == "2026-04-30"
+    # The original lock: September 2024 wins a text sort over December 2024.
+    old_file = crime_file_provenance(
+        ["September 2024", "December 2024", "January 2024"],
+        [],
+    )
+    assert old_file["value_month"] == "December 2024"
+    assert old_file["value_month_end"] == "2024-12-31"
+    assert max(labels) == "September 2025"
+
+
+def test_date_formats_resolve_to_the_same_calendar_month():
+    cases = [
+        (["2025-09-01", "2026-04-15", "2024-12-01"], "April 2026"),
+        (["2025-09", "2026-04", "2024-12"], "April 2026"),
+        (["Sep 2025", "Apr 2026", "Dec 2024"], "April 2026"),
+        (["09/2025", "4/2026", "12/2024"], "April 2026"),
+        (["2025/09/01", "2026/04/01"], "April 2026"),
+        (["September, 2025", "April, 2026"], "April 2026"),
+        (["30 September 2025", "15 April 2026"], "April 2026"),
+    ]
+    for labels, expected in cases:
+        found = crime_file_provenance(labels, [])
+        assert found["value_month"] == expected, labels
+        assert found["file_through"] == expected
+
+
+def test_month_and_year_columns_beat_a_misleading_date_string():
+    csv_text = """\
+Month,Year,Date,Violent Crime_mvs_12mo,Property Crime_mvs_12mo,FBI.Population.Covered,Last Updated
+9,2025,September 2025,10,10,10000,2026-06-16 12:00:00 EST
+4,2026,September 2025,40,60,20000,2026-06-16 12:00:00 EST
+"""
+    payload = fetch_incident_rate(csv_text=csv_text)
+    assert payload["status"] == "success"
+    assert payload["provenance"]["value_month"] == "April 2026"
+    assert payload["diagnostics"]["candidate_month"] == "April 2026"
+    assert payload["diagnostics"]["candidate_incident_rate"] == 500.0
+    assert payload["diagnostics"]["latest_month"] == "April 2026"
+    assert payload["data"]["incident_rate"] == 2723.0
+    assert payload["observation_date"] is None
+
+
+def test_iso_dates_pick_april_over_september():
+    csv_text = """\
+Date,Violent Crime_mvs_12mo,Property Crime_mvs_12mo,FBI.Population.Covered,Last Updated
+2025-09-01,10,10,10000,2026-06-16 12:00:00 EST
+2026-04-01,40,60,20000,2026-06-16 12:00:00 EST
+2024-12-01,1,1,10000,2026-06-16 12:00:00 EST
+"""
+    payload = fetch_incident_rate(csv_text=csv_text)
+    assert payload["diagnostics"]["candidate_month"] == "April 2026"
+    assert payload["diagnostics"]["latest_month_incident_rate"] == 500.0
+    assert payload["provenance"]["value_month_end"] == "2026-04-30"
+
+
+# April 2026 is exactly 2723. September 2025 sorts later as text and is not the lock.
+LOCKED_LATEST_CSV = """\
+Date,Violent Crime_mvs_12mo,Property Crime_mvs_12mo,FBI.Population.Covered,Last Updated
+September 2025,10,10,10000,2026-06-16 12:00:00 EST
+April 2026,200,72.3,10000,2026-06-16 12:00:00 EST
+"""
+
+
+def test_observation_date_follows_the_latest_month_only_when_it_matches_the_lock():
+    crime = fetch_incident_rate(csv_text=LOCKED_LATEST_CSV)
+    assert crime["data"]["incident_rate"] == 2723.0
+    assert crime["diagnostics"]["candidate_month"] == "April 2026"
+    assert crime["diagnostics"]["candidate_incident_rate"] == 2723.0
+    assert crime["observation_date"] == "2026-04-30"
+    assert observation_date_for("incident_rate", crime) == "2026-04-30"
+
+    results = {
+        metric: {"status": "success", "data": {metric: raw}}
+        for metric, raw in PUBLISHED_RAWS.items()
+    }
+    results["incident_rate"] = crime
+    scored = compute_index(results)
+    assert scored["index"] == 57.11
+    row = core_history_row("2026-10-02", scored, results)
+    assert row["incident_rate"] == 2723.0
+    assert row["incident_rate_observation_date"] == "2026-04-30"

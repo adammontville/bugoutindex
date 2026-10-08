@@ -27,16 +27,16 @@
       "status": "success",
       "provenance": {
         "kind": "file",
-        "value_month": "September 2025",
-        "value_month_end": "2025-09-30",
+        "value_month": "April 2026",
+        "value_month_end": "2026-04-30",
         "file_through": "April 2026",
         "file_updated": "2026-06-16",
         "source_url": "https://raw.githubusercontent.com/AH-Datalytics/rtci/main/docs/app_data/final_sample.csv"
       },
       "diagnostics": {
-        "candidate_incident_rate": 2234.66,
-        "candidate_month": "September 2025",
-        "population_weighted_incident_rate": 2622.84,
+        "candidate_incident_rate": 2074.97,
+        "candidate_month": "April 2026",
+        "population_weighted_incident_rate": 2443.27,
         "agencies": 621,
         "published_incident_rate": 2723.0,
         "index_input": false,

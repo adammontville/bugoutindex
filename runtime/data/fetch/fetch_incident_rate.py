@@ -14,28 +14,41 @@ from datetime import datetime
 from typing import Optional, Sequence
 
 """
-Fetcher for violent crime incident rate.
+Fetcher for the violent-plus-property crime incident rate.
 
-The published index input is locked at ``PUBLISHED_INCIDENT_RATE``. A weekly
-run downloads the AH-Datalytics RTCI cleaned file, records its vintage, and
-stores an unweighted candidate plus a population-weighted alternative as
-diagnostics. Those diagnostics are not ``compute_index`` inputs. Replacing
-2723.0 is a separate reviewed revision.
+Methodology 1.1.0 scores the population-weighted national rate for the latest
+calendar month in the AH-Datalytics RTCI cleaned file. That rate is RTCI's
+Nationwide Full Sample row when the row is reliable. Otherwise it is the
+population-weighted total of the other usable rows, which matches the
+Nationwide row when the row is good. ``PUBLISHED_INCIDENT_RATE`` (2723.0) is
+the methodology 1.0.0 lock. It is not the scored input.
 
-The candidate month is the latest calendar month in the file. RTCI writes
-``Date`` as a month name (``format(as.Date(date), "%B %Y")`` in
-``final_sample_to_viz.R``) and also writes numeric ``Month`` and ``Year``.
-Sorting the ``Date`` text picks September over April and over December.
-The month is parsed instead.
+The month is the latest calendar month in the file. RTCI writes ``Date`` as
+a month name (``format(as.Date(date), "%B %Y")`` in ``final_sample_to_viz.R``)
+and also writes numeric ``Month`` and ``Year``. Sorting the ``Date`` text
+picks September over April and over December. The month is parsed instead.
+The observation date is the last day of that month. It comes from the file.
+A download failure or a month with no usable rate fails the fetch. The weekly
+job then refuses to publish. It does not invent a rate or a date, and it does
+not carry the previous crime value forward.
 """
 
 # Resolve path relative to this file so it works from any CWD.
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _DATA_DIR = os.path.abspath(os.path.join(_HERE, ".."))
 
-# v1.0.0 published crime input. Do not replace this from the RTCI file
-# until a reviewed data revision says so.
+# Methodology 1.0.0 crime lock (old unweighted print). The backtest holds
+# this as the 19 September 2026 baseline. Methodology 1.1.0 does not score it.
 PUBLISHED_INCIDENT_RATE = 2723.0
+
+# RTCI aggregate identity for the national figure. One row per month on the
+# cleaned file: Agency "Full Sample", State "Nationwide".
+NATIONWIDE_FULL_SAMPLE_AGENCY = "Full Sample"
+NATIONWIDE_FULL_SAMPLE_STATE = "Nationwide"
+RATE_SOURCE_NATIONWIDE = "nationwide_full_sample"
+RATE_SOURCE_WEIGHTED = "population_weighted"
+# One cent is rounding. A wider gap means the row is not the weighted total.
+NATIONWIDE_RATE_TOLERANCE = 0.02
 
 # Full and abbreviated English month names, plus the numeric month RTCI
 # stores in the Month column. Text order of these names is not calendar order.
@@ -238,14 +251,15 @@ def _rates_for_month(frame, month: str) -> dict:
     A row is usable when both 12-month counts are present and population is
     positive. The cleaned file also contains RTCI aggregate rows (state and
     nationwide "Full Sample", and population-band aggregates). Those rows stay
-    in the mean. That inclusion is the construction behind the locked 2723.0
-    print (399 usable rows on the old local file) and the current diagnostics
-    (621 usable rows). Dropping the aggregate rows would change both numbers.
-    This function does not drop them.
+    in this mean. That inclusion is the construction behind the methodology
+    1.0.0 lock of 2723.0 (399 usable rows on the old local file, September
+    2024). The unweighted mean is diagnostic under 1.1.0. It is not the scored
+    input.
 
-    The population-weighted alternative is the sum of crimes divided by the
-    sum of population on the same rows. On the cleaned file that figure
-    matches the Nationwide Full Sample row. It is diagnostic only.
+    The population-weighted figure is the sum of crimes divided by the sum of
+    population on the same rows. On the cleaned file that figure matches the
+    Nationwide Full Sample row, because the aggregate rows are partitions of
+    the same counts and do not change the ratio.
 
     ``month`` is matched by parsed calendar month, so ``April 2026``,
     ``Apr 2026``, and ``2026-04-01`` describe the same month.
@@ -275,25 +289,185 @@ def _rates_for_month(frame, month: str) -> dict:
     }
 
 
+def _nationwide_full_sample_mask(frame):
+    """Rows RTCI labels as the Nationwide Full Sample, or None if those columns are absent."""
+    if "Agency" not in frame.columns or "State" not in frame.columns:
+        return None
+    agency = frame["Agency"].map(lambda value: _clean_text(value).casefold())
+    state = frame["State"].map(lambda value: _clean_text(value).casefold())
+    return (agency == NATIONWIDE_FULL_SAMPLE_AGENCY.casefold()) & (
+        state == NATIONWIDE_FULL_SAMPLE_STATE.casefold()
+    )
+
+
+def _without_nationwide_full_sample(frame):
+    mask = _nationwide_full_sample_mask(frame)
+    if mask is None:
+        return frame
+    return frame.loc[~mask]
+
+
+def _finite_number(value):
+    import pandas as pd
+
+    number = pd.to_numeric(value, errors="coerce")
+    try:
+        number = float(number)
+    except (TypeError, ValueError):
+        return None
+    if number != number:  # NaN
+        return None
+    return number
+
+
+def _month_slice(frame, month: str):
+    import pandas as pd
+
+    target = _period_from_label(month)
+    if target is None:
+        raise ValueError(f"no parseable month for {month}")
+    periods = _frame_periods(frame)
+    mask = pd.Series([period == target for period in periods], index=frame.index)
+    return frame.loc[mask]
+
+
+def _nationwide_rate_for_month(frame, month: str):
+    """``(rate or None, row_count)`` for Nationwide Full Sample rows in ``month``.
+
+    ``row_count`` includes unusable rows. ``rate`` is set only when exactly
+    one row matches and both 12-month counts and a positive population are
+    present. The rate is rounded to two decimals, same as the weighted total.
+    """
+    if _nationwide_full_sample_mask(frame) is None:
+        return None, 0
+    slice_ = _month_slice(frame, month)
+    mask = _nationwide_full_sample_mask(slice_)
+    rows = slice_.loc[mask]
+    count = int(len(rows))
+    if count != 1:
+        return None, count
+    row = rows.iloc[0]
+    violent = _finite_number(row.get("Violent Crime_mvs_12mo"))
+    prop = _finite_number(row.get("Property Crime_mvs_12mo"))
+    pop = _finite_number(row.get("FBI.Population.Covered"))
+    if violent is None or prop is None or pop is None or pop <= 0:
+        return None, count
+    return float(round((violent + prop) / pop * 100000, 2)), count
+
+
+def select_scored_incident_rate(frame) -> dict:
+    """Population-weighted national rate for the latest calendar month.
+
+    The RTCI Nationwide Full Sample row is the scored rate when it is the
+    only such row for that month, its counts are usable, and its rate is
+    within ``NATIONWIDE_RATE_TOLERANCE`` of the population-weighted total of
+    the other usable rows. On the file the weekly job downloads, that row
+    matches the weighted total exactly, including the agency crime and
+    population totals, so 1.1.0 uses the row directly. It is the national
+    figure RTCI publishes.
+
+    If the row is missing, duplicated, unusable, or outside that tolerance,
+    the scored rate is the population-weighted total of the other usable
+    rows. A file with no Agency/State columns has no Nationwide row, so it
+    takes this path. If the Nationwide row is the only usable row, it is
+    used: nothing disagrees with it.
+
+    Raises ``ValueError`` when the month cannot be parsed or no usable rate
+    exists. Callers fail the fetch. They do not invent a rate or a date.
+    """
+    provenance = _provenance_from_frame(frame)
+    month = provenance.get("value_month")
+    month_end = provenance.get("value_month_end")
+    if not month or not month_end:
+        raise ValueError("crime file has no parseable month")
+
+    nationwide_rate, nationwide_count = _nationwide_rate_for_month(frame, month)
+    try:
+        weighted = _rates_for_month(
+            _without_nationwide_full_sample(frame), month
+        )["population_weighted"]
+    except ValueError:
+        weighted = None
+
+    if nationwide_rate is not None and (
+        weighted is None or abs(nationwide_rate - weighted) <= NATIONWIDE_RATE_TOLERANCE
+    ):
+        source = RATE_SOURCE_NATIONWIDE
+        scored = nationwide_rate
+        if weighted is None:
+            detail = (
+                "RTCI Nationwide Full Sample row; no other usable rows to cross-check"
+            )
+        else:
+            detail = (
+                "RTCI Nationwide Full Sample row; it matches the population-weighted "
+                "total of the other usable rows"
+            )
+    elif weighted is not None:
+        source = RATE_SOURCE_WEIGHTED
+        scored = weighted
+        if nationwide_count == 0:
+            detail = (
+                "No Nationwide Full Sample row for the latest month; "
+                "scored the population-weighted total of usable rows"
+            )
+        elif nationwide_count > 1:
+            detail = (
+                "More than one Nationwide Full Sample row for the latest month; "
+                "scored the population-weighted total of the other usable rows"
+            )
+        elif nationwide_rate is None:
+            detail = (
+                "Nationwide Full Sample row was not usable; "
+                "scored the population-weighted total of the other usable rows"
+            )
+        else:
+            detail = (
+                "Nationwide Full Sample rate disagreed with the population-weighted "
+                "total; scored the weighted total"
+            )
+    else:
+        raise ValueError(f"no usable national crime rate for {month}")
+
+    return {
+        "incident_rate": scored,
+        "rate_source": source,
+        "rate_source_detail": detail,
+        "nationwide_full_sample_incident_rate": nationwide_rate,
+        "population_weighted_excluding_nationwide": weighted,
+        "observation_date": month_end,
+    }
+
+
 def crime_rate_diagnostics(frame) -> dict:
-    """Candidate rates from an RTCI frame. Not an index input.
+    """Rates for the latest calendar month, plus which one is scored.
 
     ``candidate_month`` and ``latest_month`` are both the latest calendar
     month in the file. The candidate used to be ``Date.max()``, a text sort,
     which reported September while April or December was already in the file.
+    ``candidate_incident_rate`` is still the unweighted mean. It is not the
+    1.1.0 input. ``scored_incident_rate`` is.
     """
     provenance = _provenance_from_frame(frame)
     candidate_month = provenance.get("value_month")
     if not candidate_month:
         raise ValueError("crime file has no parseable month")
     candidate = _rates_for_month(frame, candidate_month)
+    selected = select_scored_incident_rate(frame)
     diagnostics = {
         "candidate_incident_rate": candidate["unweighted"],
         "candidate_month": candidate_month,
         "population_weighted_incident_rate": candidate["population_weighted"],
         "agencies": candidate["agencies"],
-        "published_incident_rate": PUBLISHED_INCIDENT_RATE,
-        "index_input": False,
+        "v1_0_0_locked_incident_rate": PUBLISHED_INCIDENT_RATE,
+        "index_input": True,
+        "scored_incident_rate": selected["incident_rate"],
+        "rate_source": selected["rate_source"],
+        "rate_source_detail": selected["rate_source_detail"],
+        "nationwide_full_sample_incident_rate": selected["nationwide_full_sample_incident_rate"],
+        "population_weighted_excluding_nationwide": selected[
+            "population_weighted_excluding_nationwide"
+        ],
         "latest_month": candidate_month,
         "latest_month_incident_rate": candidate["unweighted"],
         "latest_month_population_weighted_incident_rate": candidate["population_weighted"],
@@ -302,38 +476,21 @@ def crime_rate_diagnostics(frame) -> dict:
     return diagnostics
 
 
-def locked_rate_observation_date(candidate_rate, value_month_end):
-    """Month-end of the locked rate, or None when this file's latest month is not that rate.
-
-    ``candidate_rate`` is the unweighted mean for the latest calendar month.
-    The published input stays ``PUBLISHED_INCIDENT_RATE``. A newer month in
-    the file moves the candidate without changing 2723.0. That month-end is
-    file vintage, not an observation date for the locked rate, unless the
-    candidate is still 2723.0.
-    """
-    try:
-        candidate = float(candidate_rate)
-    except (TypeError, ValueError):
-        return None
-    locked = float(PUBLISHED_INCIDENT_RATE)
-    if abs(candidate - locked) > 1e-6 * max(1.0, abs(locked)):
-        return None
-    return value_month_end
-
-
 def _error(message: str) -> dict:
     return {"status": "error", "message": message, "data": {}}
 
 
 def fetch(csv_text: Optional[str] = None, csv_path: Optional[str] = None):
     """
-    Fetch RTCI diagnostics and return the locked published incident rate.
+    Fetch the RTCI file and return the 1.1.0 national incident rate.
 
     With no arguments, download the cleaned file from the raw RTCI URL.
     Tests pass ``csv_text`` or ``csv_path`` and do not touch the network.
 
-    An unreadable file or a non-CSV body (HTML included) returns
-    ``status: error`` and no incident rate. It does not return success.
+    An unreadable file, a non-CSV body (HTML included), or a latest month
+    with no usable national rate returns ``status: error`` and no incident
+    rate. It does not return success, and it does not invent an observation
+    date. The weekly job treats that as a core failure and refuses to publish.
     """
     from runtime.util.download_crime_rate_data import (
         CrimeFileError,
@@ -361,21 +518,20 @@ def fetch(csv_text: Optional[str] = None, csv_path: Optional[str] = None):
 
     provenance = _provenance_from_frame(frame)
     provenance["source_url"] = source_url
-    # Observation date is the last day of the month the locked rate describes.
-    # That is the latest calendar month's end only when that month's
-    # unweighted rate is still 2723.0. Diagnostics are not the index input.
+    # The observation date is the last day of the month the scored rate
+    # describes. period_end() builds it from a parsed calendar month.
     # fetched_at stays empty: this is a file vintage, not a clock time.
+    observation_date = provenance.get("value_month_end")
+    if not observation_date or diagnostics.get("scored_incident_rate") is None:
+        return _error("crime file has no value-month end")
     return {
         "status": "success",
         "fetched_at": None,
-        "observation_date": locked_rate_observation_date(
-            diagnostics.get("candidate_incident_rate"),
-            provenance.get("value_month_end"),
-        ),
+        "observation_date": observation_date,
         "provenance": provenance,
         "diagnostics": diagnostics,
         "data": {
-            "incident_rate": PUBLISHED_INCIDENT_RATE,
+            "incident_rate": diagnostics["scored_incident_rate"],
         },
     }
 

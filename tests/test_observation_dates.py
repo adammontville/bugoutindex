@@ -282,21 +282,24 @@ def test_manual_fetchers_keep_published_raws_and_record_periods():
     assert trust["data"]["trust_in_government"] == 41.0
     assert trust["observation_date"] == "2025"
 
-    # Local file, not a network download. The locked input stays 2723, which
-    # is the September 2024 unweighted mean. December 2024 is the latest
-    # calendar month and its rate is not 2723, so the observation date stays
-    # blank. The candidate is not the observation used for scoring.
+    # Local file, not a network download. December 2024 is the latest
+    # calendar month. Its Nationwide Full Sample rate is the scored input.
+    # The September 2024 unweighted mean (2723.0) is the 1.0.0 lock, not
+    # this file's latest month. The date is that month's last day.
     crime = fetch_crime(csv_path=str(ROOT / "runtime" / "data" / "final_sample.csv"))
-    assert crime["data"]["incident_rate"] == 2723.0
+    assert crime["data"]["incident_rate"] == 3006.85
+    assert crime["data"]["incident_rate"] != 2723.0
     assert crime["fetched_at"] is None
-    assert crime["observation_date"] is None
+    assert crime["observation_date"] == "2024-12-31"
     assert crime["provenance"]["value_month"] == "December 2024"
     assert crime["provenance"]["value_month_end"] == "2024-12-31"
     assert crime["diagnostics"]["candidate_month"] == "December 2024"
     assert crime["diagnostics"]["candidate_incident_rate"] == 2654.48
     assert crime["diagnostics"]["latest_month"] == "December 2024"
-    assert crime["diagnostics"]["index_input"] is False
-    assert crime["diagnostics"]["published_incident_rate"] == 2723.0
+    assert crime["diagnostics"]["rate_source"] == "nationwide_full_sample"
+    assert crime["diagnostics"]["nationwide_full_sample_incident_rate"] == 3006.85
+    assert crime["diagnostics"]["index_input"] is True
+    assert crime["diagnostics"]["v1_0_0_locked_incident_rate"] == 2723.0
     assert "AH-Datalytics/rtci" in crime["provenance"]["source_url"]
 
 

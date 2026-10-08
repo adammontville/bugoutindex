@@ -147,7 +147,7 @@ It reads `docs/data/latest.json`. It does not write the weekly site.
 
 The snapshot contract is
 [`docs/architecture/snapshot-schema.md`](../../docs/architecture/snapshot-schema.md)
-(`schema_version` 1, `methodology_version` 1.0.0). A snapshot that fails
+(`schema_version` 1; new publishes stamp `methodology_version` 1.1.0, and 1.0.0 files stay valid). A snapshot that fails
 that check exits 4 and does not write `docs/`.
 
 ## Files
@@ -165,7 +165,7 @@ that check exits 4 and does not write `docs/`.
 | Metric | Module | Source |
 | --- | --- | --- |
 | inflation_rate | `fetch_inflation_rate` | FRED `CPIAUCSL` |
-| incident_rate | `fetch_incident_rate` | Real-Time Crime Index cleaned file (`AH-Datalytics/rtci` `docs/app_data/final_sample.csv` via raw.githubusercontent.com). Published input stays 2723.0; the file’s candidate rate is a diagnostic only. |
+| incident_rate | `fetch_incident_rate` | Real-Time Crime Index cleaned file (`AH-Datalytics/rtci` `docs/app_data/final_sample.csv` via raw.githubusercontent.com). Methodology 1.1.0 scores the Nationwide Full Sample rate for the latest calendar month, or the matching population-weighted total when that row is not reliable. A bad download refuses the publish. Weeks through 2026-10-02 stay the 1.0.0 lock of 2723.0. |
 | unemployment_rate | `fetch_unemployment_rate` | FRED `UNRATE` |
 | debt_to_gdp_ratio | `fetch_debt_to_gdp_ratio` | FRED `GFDEGDQ188S` |
 | homelessness_rate | `fetch_homelessness_rate` | HUD AHAR row in `runtime/data/annual_inputs.csv` |

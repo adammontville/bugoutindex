@@ -1,7 +1,7 @@
 # BugOutIndex Metrics and Methodology
 
-**Version**: 1.0.0  
-**Effective Date**: January 1, 2025  
+**Version**: 1.1.0  
+**Effective Date**: October 8, 2026 (weekly publishes after 2026-10-02)  
 
 > **Authoritative implementation:** `runtime/processing/formula.py`
 > (`CORE_METRICS`, `METRIC_RANGES`, `WEIGHTS`, `normalize`, `compute_index`, `interpret`).
@@ -13,7 +13,7 @@
 
 ## Introduction
 
-The BugOutIndex is a societal stability scoring system designed to help individuals and communities assess when conditions may deteriorate to a critical point. This document describes the metrics and methodology for **BugOutIndex Version 1.0.0**, the initial release of the system. Each version of the methodology will be documented, ensuring transparency and allowing for historical recalculations.
+The BugOutIndex is a societal stability scoring system designed to help individuals and communities assess when conditions may deteriorate to a critical point. This document describes the metrics and methodology for **BugOutIndex Version 1.1.0**. Version 1.0.0 remains the record of weeks published through 2026-10-02. Each version of the methodology is documented so a past score can be read under the version that produced it. 1.1.0 does not rewrite those weeks.
 
 On a perfect week (every core metric at its most stable endpoint), the index scores **100**. Raw weights sum to **0.72**; the publisher divides by that sum so the six relative weights always fill the 0–100 scale.
 
@@ -29,7 +29,7 @@ The BugOutIndex incorporates six core metrics:
 - **Debt-to-GDP Ratio**: Federal debt as a percentage of GDP (FRED).
 
 ### Social Health Metrics
-- **Crime Rate** (`incident_rate`): Violent **plus** property crime incidents per 100,000 people (Real-Time Crime Index sample; unweighted mean of usable rows, including RTCI aggregate rows, for the latest calendar month). The population-weighted Nationwide Full Sample rate is diagnostic only. The scored input stays 2723.0.
+- **Crime Rate** (`incident_rate`): Violent **plus** property crime incidents per 100,000 people. Methodology 1.1.0 uses RTCI’s population-weighted national rate for the latest calendar month in the cleaned file: the Nationwide Full Sample row when that row is reliable, otherwise the weighted total of the other usable rows that matches it. The observation date is that month’s last day. Methodology 1.0.0 scored a locked 2723.0. Weeks through 2026-10-02 keep that lock.
 - **Homelessness Rate**: Percentage of the population experiencing homelessness (HUD PIT / AHAR).
 
 ### Governance Metrics
@@ -141,7 +141,7 @@ BugOutIndex = 41.1177 / 0.72 ≈ 57.11
 
 Interpretation: **Moderate Stability / Warning Signs** (55–69.99).
 
-A plain sum of the weighted contributions **without** dividing by 0.72 would yield about **41.12** (Low Stability). That is **not** how v1.0.0 publishes.
+A plain sum of the weighted contributions **without** dividing by 0.72 would yield about **41.12** (Low Stability). That is **not** how v1.0.0 publishes, and it is not how v1.1.0 publishes either. The endpoints, the weights, the trust inversion, and the divide-by-0.72 step are unchanged. 1.1.0 changes the crime series only.
 
 ---
 
@@ -164,7 +164,8 @@ Band wording and thresholds are unchanged from the live site. Recalibrating how 
 
 | Version | Date | Changes |
 |---------|------|---------|
-| 1.0.0 | March 16, 2025 | Initial release with core metrics and methodology. |
+| 1.1.0 | October 8, 2026 | Crime input unlocked. Weekly publishes after 2026-10-02 score RTCI’s Nationwide Full Sample rate (population-weighted violent plus property per 100,000) for the latest calendar month in the file. If that row is missing, duplicated, or disagrees with the weighted total of the other usable rows, the weighted total is scored and the choice is recorded. The observation date is that month’s last day, parsed from the file. Endpoints stay 500–8,000 (inverted) and the weight stays 0.12. An RTCI failure refuses the publish (core fail policy). Weeks through 2026-10-02 stay 1.0.0 with crime locked at 2723.0. |
+| 1.0.0 | March 16, 2025 | Initial release with core metrics and methodology. Crime input later locked at 2723.0. |
 
 ---
 
@@ -172,7 +173,7 @@ Band wording and thresholds are unchanged from the live site. Recalibrating how 
 
 The BugOutIndex uses a versioning system to ensure transparency as the methodology evolves. Historical scores can be recalculated using past versions.
 
-A mechanical replay of v1.0.0 on historical FRED inflation, unemployment, and debt-to-GDP lives in [`runtime/backtest/`](./runtime/backtest/README.md). It is not a new methodology version. Crime, homelessness, and trust are excluded or held at the published 19 September 2026 baselines and labeled; they are not filled in from a guessed history.
+A mechanical replay of v1.0.0 on historical FRED inflation, unemployment, and debt-to-GDP lives in [`runtime/backtest/`](./runtime/backtest/README.md). It stays a 1.0.0 replay. Crime, homelessness, and trust are excluded or held at the published 19 September 2026 baselines (crime 2723.0) and labeled; they are not filled in from a guessed history. The unweighted crime counterfactual in [`runtime/backtest/CRIME_LIVE_REPLAY.md`](./runtime/backtest/CRIME_LIVE_REPLAY.md) is research. 1.1.0 scores the population-weighted Nationwide Full Sample rate, not that unweighted column.
 
 BugOutIndex is dual-licensed:
 - **AGPL-3.0** for open-source use.
@@ -182,15 +183,15 @@ For more information, see the [LICENSE](./LICENSE.md) file.
 
 ## Future metrics (incubating inventory)
 
-Nothing in this section is part of the v1.0.0 score. Companions stay outside the score unless an explicit, versioned methodology change says otherwise. The index is a directional stress reading of published statistics, not a historical bug-out siren.
+Nothing in this section is part of the score. Methodology 1.1.0 changes the crime input only. Companions stay outside the score unless an explicit, versioned methodology change says otherwise. The index is a directional stress reading of published statistics, not a historical bug-out siren.
 
-The inventory below is the cut locked by Adam Montville on 2026-09-23. That cut does not add a series to the score. The NYC DHS shelter census was added later as a companion only. It is not in v1.0.0.
+The inventory below is the cut locked by Adam Montville on 2026-09-23. That cut does not add a series to the score. The NYC DHS shelter census was added later as a companion only. It is not in the score.
 
 ### Keep-shadow — Labor utilization
-- [Labor Utilization](./incubating/boi-labor-utilization-incubating.md) — prime-age EPOP (`LNS12300060`) and participation (`LNS11300060`) stay on the weekly site as a shadow series. They are not in v1.0.0. The composite formula stays incubating. A backtest is still required before any v1.1 promotion into the score.
+- [Labor Utilization](./incubating/boi-labor-utilization-incubating.md) — prime-age EPOP (`LNS12300060`) and participation (`LNS11300060`) stay on the weekly site as a shadow series. They are not in the score. Methodology 1.1.0 did not promote them. The composite formula stays incubating. A backtest is still required before any later methodology version puts them in the score.
 
 ### Keep-shadow — Food prices
-- [Food Price Index](./incubating/food_price_index.md) — food CPI year-over-year (FRED `CPIUFDNS`, BLS `CUUR0000SAF1`, not seasonally adjusted, 12-month percent change) is on the weekly site as a shadow series. It is not in v1.0.0. No weight. The draft 0–10% normalization is not applied. The old `fetch_food_price_index` stub stays fail-closed; the weekly job calls `fetch_food_shadow`.
+- [Food Price Index](./incubating/food_price_index.md) — food CPI year-over-year (FRED `CPIUFDNS`, BLS `CUUR0000SAF1`, not seasonally adjusted, 12-month percent change) is on the weekly site as a shadow series. It is not in the score. No weight. The draft 0–10% normalization is not applied. The old `fetch_food_price_index` stub stays fail-closed; the weekly job calls `fetch_food_shadow`.
 
 ### Shipped companion — NYC DHS shelter census
 - [NYC DHS Daily Shelter Census](./incubating/nyc_dhs_shelter_census.md) — NYC Open Data `k46n-sa2m`, field `total_individuals_in_shelter`. New York City only. Not a U.S. rate and not a substitute for the HUD AHAR homelessness input (issue [#81](https://github.com/adammontville/bugoutindex/issues/81)). No weight. Not in `compute_index`.

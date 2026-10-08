@@ -17,6 +17,7 @@ from runtime.publish.failure_notice import (
 from runtime.publish.snapshot_schema import (
     COMPANION_BLOCKS,
     HISTORY_SERIES,
+    ACCEPTED_METHODOLOGY_VERSIONS,
     METHODOLOGY_VERSION,
     REQUIRED_TOP_LEVEL,
     SCHEMA_VERSION,
@@ -45,8 +46,10 @@ def test_live_snapshot_matches_schema_1_and_the_score_is_unchanged():
     assert raw["schema_version"] == 1
     assert raw["methodology_version"] == "1.0.0"
     assert raw["bugout_index"] == 57.04
+    assert raw["metrics"]["incident_rate"]["raw"] == 2723.0
     assert SCHEMA_VERSION == 1
-    assert METHODOLOGY_VERSION == "1.0.0"
+    assert METHODOLOGY_VERSION == "1.1.0"
+    assert ACCEPTED_METHODOLOGY_VERSIONS == ("1.0.0", "1.1.0")
     assert list(CORE_METRICS) == [
         "inflation_rate",
         "incident_rate",
@@ -85,6 +88,13 @@ def test_schema_rejects_a_shape_change_a_folded_companion_and_a_secret():
     leaked = copy.deepcopy(snapshot)
     leaked["pulse"]["note"] = "upstream said api_key=abcdefghijklmnop"
     assert any("secret" in item for item in validate_published_snapshot(leaked))
+
+    current = copy.deepcopy(snapshot)
+    current["methodology_version"] = "1.1.0"
+    assert validate_published_snapshot(current) == []
+    unknown = copy.deepcopy(snapshot)
+    unknown["methodology_version"] = "1.2.0"
+    assert any("methodology_version" in item for item in validate_published_snapshot(unknown))
 
 
 def test_publish_path_does_not_import_streamlit():

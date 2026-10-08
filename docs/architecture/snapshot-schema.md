@@ -2,16 +2,16 @@
 
 **Status:** Frozen contract for the published weekly snapshot.  
 **Machine check:** `runtime/publish/snapshot_schema.py` (`validate_published_snapshot`).  
-**Example:** [`docs/data/latest.json`](../data/latest.json) — `schema_version` 1, `methodology_version` 1.0.0, `bugout_index` 57.04, `publication_date` 2026-10-02.
+**Example:** [`docs/data/latest.json`](../data/latest.json) — `schema_version` 1, `methodology_version` 1.0.0, `bugout_index` 57.04, `publication_date` 2026-10-02. That file is the published 1.0.0 week. It is not rewritten by methodology 1.1.0.
 
-`schema_version` names this JSON shape. `methodology_version` names the formula in `runtime/processing/formula.py`. This freeze does not change the formula, `CORE_METRICS`, weights, bands, or the live number. A new top-level field is a shape change and needs `schema_version` 2. Old files stay readable under the version they were written with.
+`schema_version` names this JSON shape. `methodology_version` names the formula and the crime input. Methodology 1.1.0 keeps `CORE_METRICS`, the endpoints, the weights, and the bands. It changes the crime series. A new top-level field is a shape change and needs `schema_version` 2. The crime unlock did not add one, so `schema_version` stays 1. Old files stay readable under the version they were written with. New publishes stamp `methodology_version` `"1.1.0"`.
 
 ## Envelope
 
 | Field | Required | Role |
 | --- | --- | --- |
 | `schema_version` | yes | Integer `1` |
-| `methodology_version` | yes | String `"1.0.0"` |
+| `methodology_version` | yes | String. New publishes stamp `"1.1.0"`. `"1.0.0"` remains valid |
 | `generated_at_utc` | yes | ISO-8601 timestamp string |
 | `publication_date` | yes | `YYYY-MM-DD` in America/Chicago |
 | `bugout_index` | yes | Headline number. Not an object |
@@ -44,7 +44,7 @@ Each object has:
 | --- | --- |
 | `raw` | Number fed to the formula |
 | `normalized` | 0–100 stability score for that input |
-| `weight` | Raw weight from methodology 1.0.0 (the publisher still divides by 0.72) |
+| `weight` | Raw weight (the publisher still divides by 0.72). Unchanged in 1.1.0 |
 | `observation_date` | Period the number describes, or null |
 | `source_fetched_at` | Fetcher timestamp when one exists, or null |
 | `status` | `"success"` on a snapshot that is allowed to publish |
@@ -52,7 +52,7 @@ Each object has:
 Optional, and not inputs to `compute_index`:
 
 - `provenance` on crime, homelessness, and trust
-- `diagnostics` on crime (candidate rates). `index_input` inside diagnostics is false
+- `diagnostics` on crime (candidate rates and which national rate was scored). On a 1.0.0 snapshot `index_input` is false and `raw` is the locked 2723.0. On a 1.1.0 snapshot `index_input` is true and `raw` is the selected national rate. Validation does not require either flag; the shape is the same
 
 A publish requires every core `status` to be `"success"`. Fewer than six successes is exit 2, before history is appended.
 
@@ -98,5 +98,7 @@ The weekly job scrubs secrets, then validates, then writes `docs/data/latest.jso
 | Revisions fetch fails | 0 | Copy the previous revisions block forward and mark it reused. Do not rewrite stored index history |
 | Snapshot fails validation (wrong shape, missing required core, companion folded into the score, secret material left in the output) | 4 | Do not write `docs/`. Do not commit |
 | Render fails | non-zero | The Action does not commit a half-written `docs/` |
+
+An RTCI download failure, an unreadable crime file, or a latest month with no usable national rate is a core failure (exit 2). The job does not carry the previous crime value forward and does not invent an observation date. That is the core-input row above. Shadows and revisions still carry forward. Crime does not.
 
 `FRED_API_KEY` is read from the environment. The weekly job does not import Streamlit.

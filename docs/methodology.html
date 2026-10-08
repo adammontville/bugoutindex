@@ -119,6 +119,40 @@
   </tbody>
 </table>
 
+<div class="section-title"><h3>Crime input, methodology 1.1.0</h3></div>
+<p style="max-width:70ch;color:var(--muted)">
+  Publications through <strong>2026-10-02</strong> are methodology <strong>1.0.0</strong>.
+  Crime in those weeks is the locked input <strong>2,723.0</strong>, an old unweighted
+  print of the Real-Time Crime Index file. Those history rows are not rewritten.
+</p>
+<p style="max-width:70ch;color:var(--muted)">
+  Methodology <strong>1.1.0</strong> scores crime from RTCI’s cleaned file
+  (<a href="https://github.com/AH-Datalytics/rtci">AH-Datalytics/rtci</a>,
+  <code>docs/app_data/final_sample.csv</code> on <code>main</code>).
+  The rate is violent plus property incidents per 100,000 people for the
+  <strong>latest calendar month</strong> in that file. The weekly job uses RTCI’s
+  <strong>Nationwide Full Sample</strong> row when that row appears once, its counts
+  are usable, and its rate matches the population-weighted total of the other usable
+  rows (within 0.02). That is the national figure RTCI publishes. On the current file
+  the two figures match, including the agency crime and population totals.
+  If the row is missing, duplicated, or outside that tolerance, the job scores the
+  population-weighted total instead and records which one it used.
+</p>
+<p style="max-width:70ch;color:var(--muted)">
+  The crime observation date is the last day of that month, taken from the file
+  (for example <strong>2026-04-30</strong>). It is not the download time, and it is
+  not filled in for weeks that were published under 1.0.0.
+  The normalization range stays <strong>500 to 8,000</strong>, inverted, and the raw
+  weight stays <strong>0.12</strong>. If the RTCI download fails or that rate cannot
+  be computed, the weekly job refuses to publish, the same way it refuses when
+  another core input fails. It does not carry the previous crime value forward.
+</p>
+<p style="max-width:70ch;color:var(--muted)">
+  The table above is this published week, methodology 1.0.0. Crime in that table is
+  the locked 2,723.0. The next weekly publish stamps methodology 1.1.0 and scores
+  the live RTCI rate. Past weeks stay as published.
+</p>
+
 <div class="section-title"><h3>2. Normalization</h3></div>
 <p>Each metric is normalized to 0–100 using predefined thresholds:</p>
 <pre class="json">normalized = (1 − (raw − min) / (max − min)) × 100</pre>
@@ -145,8 +179,8 @@
 
 <div class="section-title"><h3>5. Limitations and caveats</h3></div>
 <ul style="max-width:70ch;color:var(--muted);line-height:1.7">
-  <li><strong>Freshness mismatch.</strong> Inflation, unemployment, and debt-to-GDP update monthly or quarterly; the Edelman trust score updates annually; homelessness is annual (HUD PIT). The BOI is recomputed weekly but will only move when underlying data publishes.</li>
-  <li><strong>National scope.</strong> Crime and homelessness figures are national averages or approximations; local conditions vary substantially.</li>
+  <li><strong>Freshness mismatch.</strong> Inflation, unemployment, and debt-to-GDP update monthly or quarterly. Crime updates when RTCI adds a month to the cleaned file; the value is that month, not the week of the BugOut publish. The Edelman trust score updates annually. Homelessness is annual (HUD PIT). The BOI is recomputed weekly but will only move when underlying data publishes.</li>
+  <li><strong>National scope.</strong> From methodology 1.1.0, crime is the RTCI sample’s population-weighted national rate (the Nationwide Full Sample), not a census of every U.S. agency. Homelessness is a national point-in-time rate. Local conditions vary substantially.</li>
   <li><strong>Not a forecast, and not a bug-out order.</strong> The index is a directional reading of published statistics relative to fixed endpoints. It shows how hard those conditions are pressing now. It does not say what happens next, and a lower band is not an instruction to leave.</li>
   <li><strong>Not a historical crisis siren.</strong> Do not judge the index mainly by whether it would have flipped in every past recession. A mechanical FRED replay of methodology v1.0.0 — inflation, unemployment, and debt-to-GDP only, with crime, homelessness, and trust excluded or held constant and labeled — is in the source repository (<a href="https://github.com/adammontville/bugoutindex/blob/main/runtime/backtest/README.md">results at a glance</a>). It is not a full six-metric historical BugOut Index. In that replay, a Great Recession–shaped path stays in Moderate Stability, which is consistent with “2008 should not have been bug-out level.” A COVID-scale unemployment spike moves toward Low Stability, which is closer to “take this seriously.”</li>
   <li><strong>Labor utilization is not in the score.</strong> The homepage charts prime-age employment-population ratio (FRED LNS12300060) and prime-age participation (FRED LNS11300060) as a shadow series. They are not in the BugOut Index and they have no weight. Replacing headline unemployment would be a versioned change after a backtest.</li>

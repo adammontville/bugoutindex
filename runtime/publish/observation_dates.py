@@ -12,7 +12,7 @@ placeholder timestamp, which is not an observation date.
 ``observation_date`` is the period the raw value describes:
 
 * inflation, unemployment, debt-to-GDP — FRED observation date (``YYYY-MM-DD``)
-* crime — last day of the value month, only when that month's rate is the locked input
+* crime — last day of the value month the scored rate describes, parsed from the file
 * homelessness — reference date of the point-in-time count
 * trust — Edelman survey year (``YYYY``)
 
@@ -94,23 +94,31 @@ def observation_date_for(_metric: str, payload: Optional[Mapping[str, Any]]) -> 
 
     The metric name is part of the call so the CSV column and the payload
     stay paired. Dating itself comes from the payload. Explicit
-    ``observation_date`` wins. An explicit blank on a file payload is kept
-    blank: the value-month end is file vintage, not a substitute period.
-    Otherwise the date is recovered from provenance, then from
-    ``fetched_at`` / ``source_fetched_at`` when that field is actually a
-    period (FRED date or survey year).
+    ``observation_date`` wins, except a file date that is not the file's
+    value-month end. An explicit blank on a file payload is kept blank so
+    a 1.0.0 locked rate does not inherit a later month. Otherwise the date
+    is recovered from provenance, then from ``fetched_at`` /
+    ``source_fetched_at`` when that field is actually a period (FRED date
+    or survey year).
     """
     payload = payload or {}
-    explicit = normalize_observation_date(payload.get("observation_date"))
-    if explicit:
-        return explicit
-
     provenance = payload.get("provenance") or {}
     kind = provenance.get("kind")
-    # An explicit blank means this payload has no period for the raw value.
-    # The RTCI value-month end is file vintage. It moves when a later
-    # September appears, while the locked rate stays 2723.0. Do not copy it
-    # into the observation column.
+    explicit = normalize_observation_date(payload.get("observation_date"))
+    if explicit:
+        # A file date has to be the month-end parsed from that file. A
+        # different day would describe some other period than the rate.
+        if kind == "file":
+            vintage = normalize_observation_date(provenance.get("value_month_end"))
+            if vintage and vintage != explicit:
+                return None
+        return explicit
+
+    # An explicit blank means this payload refused to date the raw value.
+    # Methodology 1.0.0 did that for the locked 2723.0 rate: the file's
+    # later month-end was vintage, not an observation of 2723.0. Do not
+    # copy value_month_end onto those rows. A 1.1.0 payload sets
+    # observation_date to the parsed month-end instead of leaving it blank.
     if (
         kind == "file"
         and "observation_date" in payload

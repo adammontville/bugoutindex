@@ -11,20 +11,19 @@ Crime is one of the most **visible and immediate indicators of societal distress
 ## **3. Source & Attribution**
 - **Primary Source:** [Real-Time Crime Index (RTCI)](https://realtimecrimeindex.com/)
 - **Data file:** [AH-Datalytics/rtci `docs/app_data/final_sample.csv` on main](https://raw.githubusercontent.com/AH-Datalytics/rtci/main/docs/app_data/final_sample.csv) (raw CSV, not a GitHub blob page). Repository: [AH-Datalytics/rtci](https://github.com/AH-Datalytics/rtci).
-- **Last Updated:** RTCI refreshes the cleaned file on its own cadence. The weekly job records that file’s latest month. The published index input stays **2723.0** until a reviewed revision accepts a new rate.
+- **Last Updated:** RTCI refreshes the cleaned file on its own cadence. Each weekly run scores the latest calendar month in the file it downloads that week.
 - **Data Collection Method:** RTCI aggregates data from **500 law enforcement agencies**, most of which use **state-level Uniform Crime Reporting (UCR) standards**.
 
 ---
 
 ## **4. Acquisition Method**
 - The weekly publisher downloads the RTCI cleaned sample from the raw URL above via `download_crime_rate_data.py`, then `fetch_incident_rate.py` reads it.
-- A download that is empty, HTML, or not the RTCI CSV fails the crime fetcher. The weekly job then refuses to publish. It does not treat that body as a successful crime reading.
-- The diagnostic month is the **latest calendar month** in the file. RTCI stores `Date` as a month name (`April 2026`) and also stores numeric `Month` and `Year`. The fetcher parses those fields. It does not take `Date.max()`, which is a text sort: "September" sorts after "April" and "December".
-- The fetcher computes an **unweighted mean of usable rows** of violent-plus-property rates on a **per 100,000 people** basis (12-month moving sums in the file) and a population-weighted alternative. Both are **diagnostic fields**. They are not inputs to `compute_index`.
-- A row is usable when both 12-month counts are present and `FBI.Population.Covered` is positive. The cleaned file also contains RTCI **aggregate rows** (state and nationwide Full Sample, and population-band aggregates). Those rows are included. Each usable row counts once, so a small agency counts the same as a large one, and an aggregate row counts the same as an agency row. That is the construction behind the locked **2723.0** (399 usable rows on the old local file, September 2024) and the current-file diagnostics (621 usable rows). Dropping the aggregate rows would change the rate. This note does not do that.
-- The population-weighted alternative is the sum of violent-plus-property counts divided by the sum of population on those same rows. On the cleaned file it matches RTCI's Nationwide Full Sample rate. It is not the candidate.
-- The headline crime input remains the locked **2723.0** until that diagnostic is accepted in a later reviewed change.
-- Coverage is the Real-Time Crime Index sample, not a population-weighted national census of every agency.
+- A download that is empty, HTML, or not the RTCI CSV fails the crime fetcher. A latest month with no usable national rate fails it too. The weekly job then refuses to publish. It does not carry the previous crime value forward, and it does not invent an observation date.
+- The scored month is the **latest calendar month** in the file. RTCI stores `Date` as a month name (`April 2026`) and also stores numeric `Month` and `Year`. The fetcher parses those fields. It does not take `Date.max()`, which is a text sort: "September" sorts after "April" and "December".
+- The scored rate is RTCI’s **Nationwide Full Sample** row for that month (Agency `Full Sample`, State `Nationwide`): violent-plus-property 12-month counts divided by `FBI.Population.Covered`, times 100,000. The row is used when it is the only such row, the counts are usable, and the rate is within 0.02 of the population-weighted total of the other usable rows. On the file the weekly job downloads, those two figures match exactly, so the row is the input. If the row is missing, duplicated, or outside that tolerance, the population-weighted total is scored instead, and the snapshot records which one was used.
+- The unweighted mean of usable rows stays in the diagnostics. That mean, including RTCI aggregate rows, is the construction behind the methodology 1.0.0 lock of **2723.0**. It is not the 1.1.0 input.
+- The observation date is the last day of the scored month (`2026-04-30` for April 2026). It is parsed from the file. Weeks published under 1.0.0 are not given a new date.
+- Coverage is the Real-Time Crime Index sample. The Nationwide Full Sample is population-weighted inside that sample. It is not a census of every U.S. agency.
 
 ---
 
@@ -47,7 +46,7 @@ The **Crime Rate** is calculated using the following approach:
    - If available, a **12-month moving average (`mvs_12mo`)** is used instead of raw monthly counts to account for **seasonal variations and reporting delays**.
 
 4. **National Crime Rate Estimation**
-   - Since RTCI does not cover the entire U.S., the **national figure is the unweighted mean of usable rows** in the latest calendar month (agency rows and RTCI aggregate rows together). It is not the population-weighted Nationwide Full Sample rate. That weighted total is stored beside the candidate and is not the index input.
+   - Since RTCI does not cover the entire U.S., the **national figure is the Nationwide Full Sample rate** for the latest calendar month: the population-weighted total of violent-plus-property crime in the RTCI sample. The unweighted mean of agency and aggregate rows is stored beside it and is not the index input. Methodology 1.0.0 used a locked unweighted print of **2723.0**. Weeks through 2026-10-02 keep that print.
 
 ---
 
@@ -82,4 +81,4 @@ Normalized Score = (1 - (Crime Rate - 500) / (8000 - 500)) * 100
 ---
 
 ## **Summary**
-The **Crime Rate** metric provides a weekly public-safety input based on **violent plus property** crime in the RTCI sample. By normalizing on **500–8,000 per 100k** and weighting at **0.12 / 0.72**, the BugOut Index reflects crime fluctuations in line with the weekly publisher.
+The **Crime Rate** metric provides a public-safety input based on **violent plus property** crime in the RTCI sample. Methodology 1.1.0 updates it from the Nationwide Full Sample rate for the latest month in the file. By normalizing on **500–8,000 per 100k** and weighting at **0.12 / 0.72**, the BugOut Index reflects that rate in line with the weekly publisher.

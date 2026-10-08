@@ -204,7 +204,7 @@ def test_snapshot_records_the_shadow_series_without_changing_the_index():
         nyc,
     )
     assert snapshot["bugout_index"] == 57.11
-    assert snapshot["methodology_version"] == "1.0.0"
+    assert snapshot["methodology_version"] == "1.1.0"
     assert snapshot["metrics"]["incident_rate"]["raw"] == 2723.0
     assert snapshot["metrics"]["homelessness_rate"]["raw"] == 0.23
     assert snapshot["nyc_dhs_shadow"]["in_bugout_index"] is False
@@ -350,7 +350,7 @@ def test_nyc_shadow_failure_still_publishes_the_locked_score(tmp_path, monkeypat
     assert weekly.main() == 0
     snapshot = json.loads((docs / "latest.json").read_text())
     assert snapshot["bugout_index"] == 57.11
-    assert snapshot["methodology_version"] == "1.0.0"
+    assert snapshot["methodology_version"] == "1.1.0"
     assert snapshot["metrics"]["incident_rate"]["raw"] == 2723.0
     assert snapshot["metrics"]["homelessness_rate"]["raw"] == 0.23
     assert snapshot["metrics"]["trust_in_government"]["raw"] == 41.0

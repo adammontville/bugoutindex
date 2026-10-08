@@ -15,7 +15,7 @@ The **BugOutIndex** is a directional reading of U.S. stress and stability. It pl
 
 ## **How It Works**
 1. **Six published inputs**: inflation, crime, unemployment, debt-to-GDP, homelessness, and trust in government. Markets, the short-term pulse, labor utilization, food prices, and the local shelter companions are not in the score. Those shelter readings are U.S. regional bellwethers: New York City, Nashville–Davidson, Austin/Travis County, Ramsey County (Minnesota), Denver, and San Francisco. None of them is a U.S. total. HUD AHAR remains the annual national homelessness input.
-2. **Scoring**: Each of the six is normalized between fixed endpoints, weighted, and aggregated into one 0–100 score (methodology 1.0.0). Higher is more stable.
+2. **Scoring**: Each of the six is normalized between fixed endpoints, weighted, and aggregated into one 0–100 score (methodology 1.1.0). Higher is more stable. Weeks published through 2026-10-02 remain methodology 1.0.0. 1.1.0 unlocks the crime input; the endpoints and weights are unchanged.
 3. **What the score is for**: a weekly reading of pressure in those statistics. It does not say when to leave.
 
 For detailed information on the metrics and methodology, see the [Metrics Documentation](./METRICS.md).

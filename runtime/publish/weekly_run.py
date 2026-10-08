@@ -45,7 +45,8 @@ sys.path.insert(0, str(RUNTIME_DIR))
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-# v1.0.0 formula: endpoints, weights, inversion, clamp, aggregation, bands.
+# Published formula: endpoints, weights, inversion, clamp, aggregation, bands.
+# Methodology 1.1.0 keeps this math and changes the crime series.
 # Rebound here so existing callers of weekly_run keep the same entry points.
 import runtime.processing.formula as _formula  # noqa: E402
 from runtime.publish.failure_notice import (  # noqa: E402

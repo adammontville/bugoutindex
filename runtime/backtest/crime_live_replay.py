@@ -482,7 +482,7 @@ def render_markdown(
     live_high = _num(max(live_deltas))
     return f"""# Crime input refresh replay
 
-Research only. Methodology stays **1.0.0**. The live score on {latest['date']} stays **{_num(latest['locked_index'])}**. `compute_index`, the weights, the bands, the weekly history, and schema version 1 are unchanged.
+Research only. This note scores the **unweighted** RTCI mean. Methodology **1.1.0** later chose the population-weighted Nationwide Full Sample rate instead. The tables below were not rewritten. The published week of {latest['date']} stays **{_num(latest['locked_index'])}** under methodology **1.0.0** until a later weekly publish. `compute_index` endpoints and weights, the bands, the weekly history, and schema version 1 are unchanged by this note.
 
 ## Conclusion
 
@@ -492,7 +492,7 @@ On the {latest['date']} basket the published crime input is **{_num(PUBLISHED_IN
 
 {now_table}
 
-The lock was deliberate. [Pull request #78](https://github.com/adammontville/bugoutindex/pull/78) (commit [`9a7594a`](https://github.com/adammontville/bugoutindex/commit/9a7594a85c7b44bbd514438ccbd20959c6d4ad61), merged 22 September 2026) started the weekly download of the AH-Datalytics file and stored **{_num(PUBLISHED_INCIDENT_RATE, 1)}** as `PUBLISHED_INCIDENT_RATE` in the same change. The pull request says accepting another rate is a separate reviewed revision. The weekly job still downloads a fresh file. The candidate is the unweighted mean for the latest calendar month. The population-weighted alternative sits beside it. Both are diagnostics. `compute_index` still receives {_num(PUBLISHED_INCIDENT_RATE, 1)}.
+The lock was deliberate. [Pull request #78](https://github.com/adammontville/bugoutindex/pull/78) (commit [`9a7594a`](https://github.com/adammontville/bugoutindex/commit/9a7594a85c7b44bbd514438ccbd20959c6d4ad61), merged 22 September 2026) started the weekly download of the AH-Datalytics file and stored **{_num(PUBLISHED_INCIDENT_RATE, 1)}** as `PUBLISHED_INCIDENT_RATE` in the same change. The pull request says accepting another rate is a separate reviewed revision. Methodology 1.1.0 is that revision: the scored input is the Nationwide Full Sample rate, not this note's unweighted column. `PUBLISHED_INCIDENT_RATE` remains the 1.0.0 baseline used above.
 
 ## Where 2723.0 comes from
 
@@ -563,7 +563,7 @@ That rewrites this note, `runtime/backtest/output/crime_live_publications.csv`, 
 
 ## What stays put
 
-The weekly publisher, `docs/data/latest.json`, and `runtime/data/weekly_bugout_index.csv` still carry crime **{_num(PUBLISHED_INCIDENT_RATE, 1)}** and the {latest['date']} index **{_num(latest['locked_index'])}**. This note is a side calculation for a later decision about whether to accept a new crime input. It is not that decision.
+`docs/data/latest.json` and `runtime/data/weekly_bugout_index.csv` still carry crime **{_num(PUBLISHED_INCIDENT_RATE, 1)}** and the {latest['date']} index **{_num(latest['locked_index'])}** under methodology 1.0.0. This note does not republish that week. Methodology 1.1.0 scores the population-weighted Nationwide Full Sample rate on later publishes. The tables above remain the unweighted counterfactual.
 """
 
 

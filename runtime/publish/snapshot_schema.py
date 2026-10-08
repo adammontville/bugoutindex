@@ -5,12 +5,13 @@
 Published snapshot contract, schema_version 1.
 
 ``schema_version`` names this JSON shape. ``methodology_version`` names the
-formula in ``runtime/processing/formula.py``. This module does not score,
-and it does not bump either version.
+formula and the crime input the publisher stamps. Schema 1 did not change
+for methodology 1.1.0. New publishes stamp ``1.1.0``. Files written under
+``1.0.0`` stay valid.
 
 The human-readable copy is ``docs/architecture/snapshot-schema.md``.
-``docs/data/latest.json`` is the frozen example: methodology 1.0.0, headline
-number 57.04 as of the 2026-10-02 publication.
+``docs/data/latest.json`` is the 2026-10-02 publication: methodology 1.0.0,
+headline number 57.04. This module does not rewrite it.
 """
 from __future__ import annotations
 
@@ -22,7 +23,9 @@ from runtime.processing.formula import CORE_METRICS
 from runtime.util.redact import redact_secrets
 
 SCHEMA_VERSION = 1
-METHODOLOGY_VERSION = "1.0.0"
+# Stamped on new publishes. 1.0.0 remains readable; the JSON shape is the same.
+METHODOLOGY_VERSION = "1.1.0"
+ACCEPTED_METHODOLOGY_VERSIONS = ("1.0.0", "1.1.0")
 
 # Envelope keys on a snapshot the weekly job is allowed to publish.
 # A new top-level key is a shape change and needs schema_version 2.
@@ -208,10 +211,11 @@ def validate_published_snapshot(snapshot: object) -> list[str]:
         errors.append(
             f"schema_version must be {SCHEMA_VERSION}, got {snapshot.get('schema_version')!r}"
         )
-    if snapshot.get("methodology_version") != METHODOLOGY_VERSION:
+    if snapshot.get("methodology_version") not in ACCEPTED_METHODOLOGY_VERSIONS:
         errors.append(
-            "methodology_version must be "
-            f"{METHODOLOGY_VERSION!r}, got {snapshot.get('methodology_version')!r}"
+            "methodology_version must be one of "
+            f"{', '.join(ACCEPTED_METHODOLOGY_VERSIONS)}; "
+            f"got {snapshot.get('methodology_version')!r}"
         )
 
     generated = snapshot.get("generated_at_utc")

@@ -2,7 +2,7 @@
 # Copyright (C) 2025 Adam Montville
 # Dual-licensed under AGPL-3.0 and a commercial license.
 """
-v1.0.0 scoring formula.
+Scoring formula shared by methodology 1.0.0 and 1.1.0.
 
 This module is the only copy of the live publisher math:
 
@@ -13,16 +13,19 @@ This module is the only copy of the live publisher math:
 * aggregation ``Σ(normalized × weight) / Σ weight``
 * four risk bands (``interpret``)
 
+Methodology 1.1.0 changes the crime series, not these constants. Crime
+endpoints stay 500–8,000 (inverted) and the crime weight stays 0.12.
+
 ``runtime/publish/weekly_run.py`` and the optional Streamlit viewer import it.
 The viewer does not publish.
 In-range inputs match the published weekly numbers, including the
-19 September 2026 index of 57.11.
+19 September 2026 index of 57.11 under methodology 1.0.0 (crime 2723.0).
 """
 from __future__ import annotations
 
 from typing import Any, Dict, Mapping, Optional
 
-# Core metrics — must match the v1.0.0 methodology.
+# Core metrics. 1.1.0 keeps this list. It changes where crime's raw value comes from.
 CORE_METRICS = [
     "inflation_rate",
     "incident_rate",           # crime rate (per 100k)
@@ -79,7 +82,7 @@ def _inverse(metric: str) -> bool:
 
 
 def score_metric(metric: str, raw: float) -> float:
-    """Normalize one core metric with v1.0.0 endpoints, inversion, and clamp."""
+    """Normalize one core metric with the published endpoints, inversion, and clamp."""
     lo, hi = METRIC_RANGES[metric]
     return normalize(float(raw), lo, hi, inverse=_inverse(metric))
 
@@ -123,7 +126,7 @@ def calculate_category_score(
     """Weighted mean of normalized metrics for the simulator and legacy scorer.
 
     ``metrics`` maps a name to a raw number, or to a dict whose first value is
-    that number. Defaults are the v1.0.0 endpoints and weights. The result is
+    that number. Defaults are the published endpoints and weights. The result is
     not rounded; callers that display two decimals should format it.
     """
     ranges = METRIC_RANGES if metric_ranges is None else metric_ranges
@@ -141,7 +144,7 @@ def calculate_category_score(
 
 
 def interpret(index: float) -> Dict[str, str]:
-    """Four v1.0.0 risk bands. Thresholds are 70, 55, and 40."""
+    """Four risk bands. Thresholds are 70, 55, and 40. Unchanged in 1.1.0."""
     if index >= 70:
         return {"band": "High Stability", "risk": "Low Risk", "band_key": "high"}
     if index >= 55:

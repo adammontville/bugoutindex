@@ -281,7 +281,7 @@ def test_snapshot_records_the_companions_without_changing_the_index():
         gallup,
     )
     assert snapshot["bugout_index"] == 57.11
-    assert snapshot["methodology_version"] == "1.0.0"
+    assert snapshot["methodology_version"] == "1.1.0"
     assert snapshot["metrics"]["incident_rate"]["raw"] == 2723.0
     assert snapshot["metrics"]["trust_in_government"]["raw"] == 41.0
     assert snapshot["pew_trust_shadow"]["in_bugout_index"] is False
@@ -434,7 +434,7 @@ def test_companion_failure_still_publishes_the_locked_score(tmp_path, monkeypatc
     assert weekly.main() == 0
     snapshot = json.loads((docs / "latest.json").read_text())
     assert snapshot["bugout_index"] == 57.11
-    assert snapshot["methodology_version"] == "1.0.0"
+    assert snapshot["methodology_version"] == "1.1.0"
     assert snapshot["metrics"]["incident_rate"]["raw"] == 2723.0
     assert snapshot["metrics"]["trust_in_government"]["raw"] == 41.0
     assert snapshot["pew_trust_shadow"]["status"] == "reused"

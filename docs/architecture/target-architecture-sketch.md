@@ -80,7 +80,7 @@ The policies are explicit. Exit 2 and exit 3 are unchanged. Exit 4 is the schema
 
 | Failure | Policy |
 | --- | --- |
-| A core input fails, or fewer than six cores succeed | Refuse the publish before history is appended (exit 2). The live site stays the last good HTML. |
+| A core input fails, or fewer than six cores succeed | Refuse the publish before history is appended (exit 2). The live site stays the last good HTML. An RTCI download or national-rate failure is this row: crime is not carried forward. |
 | Markets or the pulse return `status: error` | Refuse the publish (exit 3). The index is not written from a run that failed those blocks. |
 | The pulse is partial (some series missing) | Log it. The site may still publish. The page says which series are missing. |
 | Labor-utilization or food-price shadow fails | Do not refuse the publish. Carry forward the previous block and its observation dates when one exists. The score does not move because a shadow failed. |

@@ -99,9 +99,12 @@ The Action runs `weekly_run.py`, which:
    where that week's own snapshot still had an honest period (FRED
    observation dates and the Edelman year, which those fetchers stored
    in `source_fetched_at`). Crime and homelessness placeholder
-   timestamps were not copied; those cells stay blank except the
-   2026-09-19 row, which uses the file value-month end and the HUD
-   reference date already in that snapshot.
+   timestamps were not copied. Crime stays blank except the 2026-09-19
+   row: that week's value month is September 2024, and that month's
+   unweighted rate is the locked 2723.0. A later file whose value month
+   has a different rate does not fill the cell. Homelessness uses the HUD
+   reference date on rows published once that date was recorded (from
+   2026-09-19); earlier rows stay blank.
 10. Writes a snapshot to `docs/data/latest.json`.
 11. Renders `docs/index.html`, `docs/methodology.html`,
    `docs/history.html`, and `docs/revisions.html` via Jinja2 templates.

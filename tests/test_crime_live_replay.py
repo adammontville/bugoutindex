@@ -49,8 +49,13 @@ def test_live_publisher_files_stay_on_the_locked_score():
     assert latest["publication_date"] == "2026-10-02"
     crime = latest["metrics"]["incident_rate"]
     assert crime["raw"] == 2723.0
-    assert crime["diagnostics"]["candidate_incident_rate"] == 2234.66
-    assert crime["diagnostics"]["candidate_month"] == "September 2025"
+    assert crime["observation_date"] is None
+    assert crime["provenance"]["value_month"] == "April 2026"
+    assert crime["provenance"]["value_month_end"] == "2026-04-30"
+    assert crime["provenance"]["file_through"] == "April 2026"
+    assert crime["diagnostics"]["candidate_incident_rate"] == 2074.97
+    assert crime["diagnostics"]["candidate_month"] == "April 2026"
+    assert crime["diagnostics"]["population_weighted_incident_rate"] == 2443.27
     assert crime["diagnostics"]["latest_month_incident_rate"] == 2074.97
     assert crime["diagnostics"]["latest_month"] == "April 2026"
     assert crime["diagnostics"]["index_input"] is False

@@ -29,7 +29,7 @@ The BugOutIndex incorporates six core metrics:
 - **Debt-to-GDP Ratio**: Federal debt as a percentage of GDP (FRED).
 
 ### Social Health Metrics
-- **Crime Rate** (`incident_rate`): Violent **plus** property crime incidents per 100,000 people (Real-Time Crime Index sample; unweighted mean of reporting agencies).
+- **Crime Rate** (`incident_rate`): Violent **plus** property crime incidents per 100,000 people (Real-Time Crime Index sample; unweighted mean of usable rows, including RTCI aggregate rows, for the latest calendar month). The population-weighted Nationwide Full Sample rate is diagnostic only. The scored input stays 2723.0.
 - **Homelessness Rate**: Percentage of the population experiencing homelessness (HUD PIT / AHAR).
 
 ### Governance Metrics

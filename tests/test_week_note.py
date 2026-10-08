@@ -259,10 +259,12 @@ def test_crime_file_vintage_matches_the_committed_csv():
             updated.append(row["Last Updated"])
     provenance = crime_file_provenance(dates, updated)
     assert provenance["kind"] == "file"
-    assert provenance["value_month"] == "September 2024"
-    assert provenance["value_month_end"] == "2024-09-30"
+    # September sorts after December as text. December 2024 is the latest month.
+    assert provenance["value_month"] == "December 2024"
+    assert provenance["value_month_end"] == "2024-12-31"
     assert provenance["file_through"] == "December 2024"
     assert provenance["file_updated"] == "2025-02-19"
+    assert max(dates) == "September 2024"
 
 
 def test_week_note_when_inflation_and_the_index_move():

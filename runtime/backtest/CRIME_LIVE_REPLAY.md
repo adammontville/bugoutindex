@@ -6,15 +6,15 @@ Research only. Methodology stays **1.0.0**. The live score on 2026-10-02 stays *
 
 Giving each published week the newest RTCI month available that day would have raised the index by **1.28 to 1.44** points. All 25 weeks would still have read **Moderate Stability**. The published range in this history is 56.28 to 57.15. The live-crime range is 57.70 to 58.59.
 
-On the 2026-10-02 basket the published crime input is **2723.0** and the score is **57.04**. The snapshot's candidate, **September 2025 at 2234.66**, scores **58.13**. The newest calendar month in that same file, **April 2026 at 2074.97**, scores **58.48**. Both stay Moderate.
+On the 2026-10-02 basket the published crime input is **2723.0** and the score is **57.04**. The text-sort month in that file, **September 2025 at 2234.66**, scores **58.13**. The newest calendar month in that same file, **April 2026 at 2074.97**, scores **58.48**. Both stay Moderate.
 
 | Basket | Crime value | RTCI month | Score | Band |
 | --- | ---: | ---: | ---: | ---: |
 | Published 2026-10-02 | 2723.0 | Locked input | 57.04 | Moderate |
-| Same other inputs, snapshot candidate | 2234.66 | September 2025 | 58.13 | Moderate |
+| Same other inputs, text-sort month | 2234.66 | September 2025 | 58.13 | Moderate |
 | Same other inputs, newest month in that file | 2074.97 | April 2026 | 58.48 | Moderate |
 
-The lock was deliberate. [Pull request #78](https://github.com/adammontville/bugoutindex/pull/78) (commit [`9a7594a`](https://github.com/adammontville/bugoutindex/commit/9a7594a85c7b44bbd514438ccbd20959c6d4ad61), merged 22 September 2026) started the weekly download of the AH-Datalytics file and stored **2723.0** as `PUBLISHED_INCIDENT_RATE` in the same change. The pull request says accepting another rate is a separate reviewed revision. The weekly job still downloads a fresh file. The candidate and the latest calendar month are diagnostics. `compute_index` still receives 2723.0.
+The lock was deliberate. [Pull request #78](https://github.com/adammontville/bugoutindex/pull/78) (commit [`9a7594a`](https://github.com/adammontville/bugoutindex/commit/9a7594a85c7b44bbd514438ccbd20959c6d4ad61), merged 22 September 2026) started the weekly download of the AH-Datalytics file and stored **2723.0** as `PUBLISHED_INCIDENT_RATE` in the same change. The pull request says accepting another rate is a separate reviewed revision. The weekly job still downloads a fresh file. The candidate is the unweighted mean for the latest calendar month. The population-weighted alternative sits beside it. Both are diagnostics. `compute_index` still receives 2723.0.
 
 ## Where 2723.0 comes from
 
@@ -28,11 +28,11 @@ The current file's September 2024 rate is **2481.82** on **621** agencies. 2723.
 
 The score is `compute_index`. Crime endpoints stay **500 to 8000**. The crime weight stays **0.12**. The other five weights are unchanged, so a full row still divides by **0.72**. Trust stays inverted. Bands stay 70, 55, and 40.
 
-The crime value is the unweighted mean of agency rates for the latest calendar month in the RTCI cleaned file that was on [AH-Datalytics/rtci](https://github.com/AH-Datalytics/rtci) `main` at the start of that publication date:
+The crime value is the unweighted mean of usable rows for the latest calendar month in the RTCI cleaned file that was on [AH-Datalytics/rtci](https://github.com/AH-Datalytics/rtci) `main` at the start of that publication date:
 
 `(Violent Crime_mvs_12mo + Property Crime_mvs_12mo) / FBI.Population.Covered × 100,000`
 
-Rows with a missing count or a non-positive population are left out. That is the same construction as the crime diagnostic. The population-weighted alternative is stored on the vintage file and is not scored.
+Rows with a missing count or a non-positive population are left out. Each remaining row counts once, including RTCI aggregate rows (state and nationwide Full Sample, and population-band aggregates). That is the same construction as the crime diagnostic, and it is what produces the locked 2723.0 on the old local file. It is not the population-weighted national total. That alternative is the sum of crimes over the sum of population on the same rows; on the cleaned file it matches the Nationwide Full Sample rate. It is stored on the vintage file and is not scored. This replay does not change that construction.
 
 Committed index history runs from **2026-04-21** through **2026-10-02**. There is no earlier six-metric publication to rescore. Weeks between RTCI releases keep the latest month already in the file.
 
@@ -88,7 +88,7 @@ Live-crime score: the other five published inputs, with crime set to the latest 
 
 ## Text-sort month, for the snapshot figure
 
-The pre-lock fetcher selected `Date.max()`, a text sort. On every file in this window that sort lands on **September 2025**. The snapshot diagnostics still report that month: candidate **2234.66**. The rate itself moved as the sample grew: 2285.03 (498 agencies), then 2229.84 (612), then **2234.66** (621). On the 2026-10-02 basket, 2234.66 scores **58.13** against the published **57.04**.
+The pre-lock fetcher selected `Date.max()`, a text sort. On every file in this window that sort lands on **September 2025**. The 2 October publish stored that month as the candidate (**2234.66**). `latest_month` on the same snapshot was already the calendar month. The fetcher now writes the calendar month into the candidate as well. The scored input stays **2723.0**. The text-sort rate itself moved as the sample grew: 2285.03 (498 agencies), then 2229.84 (612), then **2234.66** (621). On the 2026-10-02 basket, 2234.66 scores **58.13** against the published **57.04**.
 
 Across the 25 weeks this rule lifts the index by **0.97 to 1.10** points. The band stays Moderate Stability.
 
@@ -122,7 +122,7 @@ Across the 25 weeks this rule lifts the index by **0.97 to 1.10** points. The ba
 
 ## Monthly RTCI on the current file
 
-`runtime/backtest/fixtures/v2/RTCI_monthly.csv` is the June 16 file (commit `bc66ee94`, pull recorded 26 September 2026). It matches the 2 October snapshot: September 2025 **2234.66**, April 2026 **2074.97**, 621 agencies, population-weighted April 2026 **2443.27**.
+`runtime/backtest/fixtures/v2/RTCI_monthly.csv` is the June 16 file (commit `bc66ee94`, pull recorded 26 September 2026). It contains September 2025 **2234.66** and April 2026 **2074.97**, 621 agencies, population-weighted April 2026 **2443.27**.
 
 The table scores each month from September 2024 through April 2026 on the **2026-10-02** inputs. Inflation, unemployment, debt, homelessness, and trust stay on that one row. These are revised rates in the current file. An earlier Friday's file had a smaller sample and a different rate for the same month. The publication table above is the rate that was available that day.
 

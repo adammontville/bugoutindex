@@ -19,7 +19,10 @@ Crime is one of the most **visible and immediate indicators of societal distress
 ## **4. Acquisition Method**
 - The weekly publisher downloads the RTCI cleaned sample from the raw URL above via `download_crime_rate_data.py`, then `fetch_incident_rate.py` reads it.
 - A download that is empty, HTML, or not the RTCI CSV fails the crime fetcher. The weekly job then refuses to publish. It does not treat that body as a successful crime reading.
-- The fetcher computes an **unweighted mean** across reporting agencies of violent-plus-property rates on a **per 100,000 people** basis (12-month moving sums in the file) and a population-weighted alternative. Both are **diagnostic fields**. They are not inputs to `compute_index`.
+- The diagnostic month is the **latest calendar month** in the file. RTCI stores `Date` as a month name (`April 2026`) and also stores numeric `Month` and `Year`. The fetcher parses those fields. It does not take `Date.max()`, which is a text sort: "September" sorts after "April" and "December".
+- The fetcher computes an **unweighted mean of usable rows** of violent-plus-property rates on a **per 100,000 people** basis (12-month moving sums in the file) and a population-weighted alternative. Both are **diagnostic fields**. They are not inputs to `compute_index`.
+- A row is usable when both 12-month counts are present and `FBI.Population.Covered` is positive. The cleaned file also contains RTCI **aggregate rows** (state and nationwide Full Sample, and population-band aggregates). Those rows are included. Each usable row counts once, so a small agency counts the same as a large one, and an aggregate row counts the same as an agency row. That is the construction behind the locked **2723.0** (399 usable rows on the old local file, September 2024) and the current-file diagnostics (621 usable rows). Dropping the aggregate rows would change the rate. This note does not do that.
+- The population-weighted alternative is the sum of violent-plus-property counts divided by the sum of population on those same rows. On the cleaned file it matches RTCI's Nationwide Full Sample rate. It is not the candidate.
 - The headline crime input remains the locked **2723.0** until that diagnostic is accepted in a later reviewed change.
 - Coverage is the Real-Time Crime Index sample, not a population-weighted national census of every agency.
 
@@ -44,7 +47,7 @@ The **Crime Rate** is calculated using the following approach:
    - If available, a **12-month moving average (`mvs_12mo`)** is used instead of raw monthly counts to account for **seasonal variations and reporting delays**.
 
 4. **National Crime Rate Estimation**
-   - Since RTCI does not cover the entire U.S., the **national average is computed from the available dataset** by averaging reported crime rates across all agencies.
+   - Since RTCI does not cover the entire U.S., the **national figure is the unweighted mean of usable rows** in the latest calendar month (agency rows and RTCI aggregate rows together). It is not the population-weighted Nationwide Full Sample rate. That weighted total is stored beside the candidate and is not the index input.
 
 ---
 

@@ -1,0 +1,5 @@
+rtci_commit_date,rtci_sha,rtci_commit_message,file_updated,calendar_month,calendar_label,unweighted,population_weighted,agencies,lex_month,lex_label,lex_unweighted,lex_population_weighted,lex_agencies
+2026-04-16,6d87764cb042dbb2ec0ba7c2a36e692ecb2c533b,generate viz data for feb 2026,2026-04-16,2026-02-01,February 2026,2146.38,2585.19,498,2025-09-01,September 2025,2285.03,2742.67,498
+2026-04-24,0786cfa2188da0c2730b51d624399db7ef7b22ee,Regenerate viz data with updated San Francisco aggravated assault figures,2026-04-24,2026-02-01,February 2026,2146.42,2585.32,498,2025-09-01,September 2025,2285.03,2742.67,498
+2026-05-18,40c9ab093775c537f681a1a860bd90abf3e757f2,Regenerate viz data for mar 2026 with CDE agency populations,2026-05-18,2026-03-01,March 2026,2092.21,2477.12,612,2025-09-01,September 2025,2229.84,2635.84,612
+2026-06-16,bc66ee94d57cae9f85ea738d6a1a8861e8f9d49a,Regenerate viz data for jun 2026 sample with Port St. Lucie fix,2026-06-16,2026-04-01,April 2026,2074.97,2443.27,621,2025-09-01,September 2025,2234.66,2622.84,621

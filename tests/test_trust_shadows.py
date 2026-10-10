@@ -492,10 +492,10 @@ def test_markets_refusal_does_not_fetch_the_trust_companions(tmp_path, monkeypat
 
 def test_committed_snapshot_keeps_the_score_and_adds_the_companions():
     latest = json.loads(LATEST.read_text())
-    assert latest["bugout_index"] == 57.04
-    assert latest["methodology_version"] == "1.0.0"
-    assert latest["publication_date"] == "2026-10-02"
-    assert latest["metrics"]["incident_rate"]["raw"] == 2723.0
+    assert latest["bugout_index"] == 57.66
+    assert latest["methodology_version"] == "1.1.0"
+    assert latest["publication_date"] == "2026-10-09"
+    assert latest["metrics"]["incident_rate"]["raw"] == 2443.27
     assert latest["metrics"]["trust_in_government"]["raw"] == 41.0
     assert latest["metrics"]["trust_in_government"]["observation_date"] == "2025"
     pew = latest["pew_trust_shadow"]

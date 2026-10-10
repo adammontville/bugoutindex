@@ -44,9 +44,9 @@ def _imports_streamlit(text: str) -> bool:
 def test_live_snapshot_matches_schema_1_and_the_score_is_unchanged():
     raw = json.loads(LATEST.read_text(encoding="utf-8"))
     assert raw["schema_version"] == 1
-    assert raw["methodology_version"] == "1.0.0"
-    assert raw["bugout_index"] == 57.04
-    assert raw["metrics"]["incident_rate"]["raw"] == 2723.0
+    assert raw["methodology_version"] == "1.1.0"
+    assert raw["bugout_index"] == 57.66
+    assert raw["metrics"]["incident_rate"]["raw"] == 2443.27
     assert SCHEMA_VERSION == 1
     assert METHODOLOGY_VERSION == "1.1.0"
     assert ACCEPTED_METHODOLOGY_VERSIONS == ("1.0.0", "1.1.0")
@@ -66,7 +66,7 @@ def test_live_snapshot_matches_schema_1_and_the_score_is_unchanged():
     for name in COMPANION_BLOCKS:
         assert name not in raw["metrics"]
     loaded = load_published_snapshot()
-    assert loaded["bugout_index"] == 57.04
+    assert loaded["bugout_index"] == 57.66
     assert loaded["publication_date"] == raw["publication_date"]
 
 

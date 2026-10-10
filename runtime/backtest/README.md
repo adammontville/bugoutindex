@@ -102,4 +102,8 @@ Issue #55 still asks for Depression, WWII, and 1970s reconstructions, population
 
 ## Crime refresh replay
 
-[`CRIME_LIVE_REPLAY.md`](CRIME_LIVE_REPLAY.md) rescores each committed weekly publication with the newest RTCI month that was on the public file that day. The other five inputs stay on the published row. Endpoints, weights, and bands stay v1.0.0. The live score stays 57.04. Run `python -m runtime.backtest.crime_live_replay`. The note is meant to be read without a local run.
+[`CRIME_LIVE_REPLAY.md`](CRIME_LIVE_REPLAY.md) rescores each methodology 1.0.0 weekly publication with the newest RTCI month that was on the public file that day. The other five inputs stay on the published row. The replay stops at 2026-10-02, the last week scored at crime 2723.0. Endpoints, weights, and bands stay v1.0.0. Run `python -m runtime.backtest.crime_live_replay`. The note is meant to be read without a local run.
+
+## Slow-input refresh replay
+
+[`SLOW_INPUTS_REPLAY.md`](SLOW_INPUTS_REPLAY.md) rescores each committed weekly publication with a newer HUD AHAR rate, a newer Edelman government percent, or a companion series in that same slot. The other inputs stay on the published row. `compute_index` is unchanged. Homelessness and trust in the live score stay 0.23 and 41. Run `python -m runtime.backtest.slow_inputs_replay`. The note is meant to be read without a local run.

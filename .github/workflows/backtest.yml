@@ -29,4 +29,4 @@ jobs:
       - name: Replay tests
         env:
           PYTHONPATH: ${{ github.workspace }}
-        run: python -m pytest tests/test_backtest.py tests/test_v2_candidate.py tests/test_crime_live_replay.py
+        run: python -m pytest tests/test_backtest.py tests/test_v2_candidate.py tests/test_crime_live_replay.py tests/test_slow_inputs_replay.py

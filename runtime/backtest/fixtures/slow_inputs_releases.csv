@@ -1,0 +1,9 @@
+family,metric,value,available_on,observation,label
+hud,homelessness_rate,0.23,2024-12-27,2024-01-01,2024 HUD AHAR about 23 per 10000
+hud,homelessness_rate,0.22,2026-05-29,2025-01-01,2025 HUD AHAR about 22 per 10000
+edelman,trust_in_government,41,2025-01-21,2025,2025 Edelman Trust Barometer US Government
+edelman,trust_in_government,39,2026-01-18,2026,2026 Edelman Trust Barometer US Government
+pew,trust_in_government,22,2024-05-19,2024-05-19,Pew May 2024 wave fieldwork end
+pew,trust_in_government,17,2025-02-09,2025-02-09,Pew February 2025 wave fieldwork end
+pew,trust_in_government,17,2025-12-04,2025-09-28,Pew September 2025 wave article 2025-12-04
+gallup,trust_in_government,27,2026-07-13,2026-06-15,Gallup 14-institution average June 2026

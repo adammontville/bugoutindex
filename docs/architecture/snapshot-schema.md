@@ -2,16 +2,16 @@
 
 **Status:** Frozen contract for the published weekly snapshot.  
 **Machine check:** `runtime/publish/snapshot_schema.py` (`validate_published_snapshot`).  
-**Example:** [`docs/data/latest.json`](../data/latest.json) — `schema_version` 1, `methodology_version` 1.0.0, `bugout_index` 57.04, `publication_date` 2026-10-02. That file is the published 1.0.0 week. It is not rewritten by methodology 1.1.0.
+**Example:** [`docs/data/latest.json`](../data/latest.json) — `schema_version` 1, `methodology_version` 1.1.0, `bugout_index` 57.66, `publication_date` 2026-10-09. That file is the published 1.1.0 week. It is not rewritten by methodology 1.1.1.
 
-`schema_version` names this JSON shape. `methodology_version` names the formula and the crime input. Methodology 1.1.0 keeps `CORE_METRICS`, the endpoints, the weights, and the bands. It changes the crime series. A new top-level field is a shape change and needs `schema_version` 2. The crime unlock did not add one, so `schema_version` stays 1. Old files stay readable under the version they were written with. New publishes stamp `methodology_version` `"1.1.0"`.
+`schema_version` names this JSON shape. `methodology_version` names the formula and the inputs. Methodology 1.1.0 keeps `CORE_METRICS`, the endpoints, the weights, and the bands, and changes the crime series. Methodology 1.1.1 keeps those same constants and changes the annual homelessness and trust cells. A new top-level field is a shape change and needs `schema_version` 2. Neither revision added one, so `schema_version` stays 1. Old files stay readable under the version they were written with. New publishes stamp `methodology_version` `"1.1.1"`. Weeks through 2026-10-09 stay as published.
 
 ## Envelope
 
 | Field | Required | Role |
 | --- | --- | --- |
 | `schema_version` | yes | Integer `1` |
-| `methodology_version` | yes | String. New publishes stamp `"1.1.0"`. `"1.0.0"` remains valid |
+| `methodology_version` | yes | String. New publishes stamp `"1.1.1"`. `"1.0.0"` and `"1.1.0"` remain valid |
 | `generated_at_utc` | yes | ISO-8601 timestamp string |
 | `publication_date` | yes | `YYYY-MM-DD` in America/Chicago |
 | `bugout_index` | yes | Headline number. Not an object |
@@ -44,7 +44,7 @@ Each object has:
 | --- | --- |
 | `raw` | Number fed to the formula |
 | `normalized` | 0–100 stability score for that input |
-| `weight` | Raw weight (the publisher still divides by 0.72). Unchanged in 1.1.0 |
+| `weight` | Raw weight (the publisher still divides by 0.72). Unchanged in 1.1.0 and 1.1.1 |
 | `observation_date` | Period the number describes, or null |
 | `source_fetched_at` | Fetcher timestamp when one exists, or null |
 | `status` | `"success"` on a snapshot that is allowed to publish |

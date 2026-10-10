@@ -235,8 +235,8 @@ def test_rendered_page_labels_the_shadow_series_outside_the_index(tmp_path, monk
     methodology = (tmp_path / "methodology.html").read_text()
     food_html = html.split("Food prices")[1].split("About this index")[0]
 
-    assert snapshot["bugout_index"] == 57.04
-    assert "57.04" in html
+    assert snapshot["bugout_index"] == 57.66
+    assert "57.66" in html
     assert "not in the BugOut Index" in food_html
     assert "No weight" in food_html or "no weight" in food_html
     assert "https://fred.stlouisfed.org/series/CPIUFDNS" in food_html
@@ -372,9 +372,9 @@ def test_markets_refusal_does_not_fetch_the_shadow_series(tmp_path, monkeypatch)
 
 def test_committed_snapshot_keeps_the_score_and_fred_dates():
     latest = json.loads(LATEST.read_text())
-    assert latest["bugout_index"] == 57.04
-    assert latest["methodology_version"] == "1.0.0"
-    assert latest["metrics"]["incident_rate"]["raw"] == 2723.0
+    assert latest["bugout_index"] == 57.66
+    assert latest["methodology_version"] == "1.1.0"
+    assert latest["metrics"]["incident_rate"]["raw"] == 2443.27
     food = latest["food_shadow"]
     assert food["in_bugout_index"] is False
     assert food["series_ids"]["food_cpi_yoy"] == "CPIUFDNS"

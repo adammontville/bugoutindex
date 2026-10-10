@@ -239,8 +239,8 @@ def test_rendered_page_labels_the_shadow_series_outside_the_index(tmp_path, monk
     methodology = (tmp_path / "methodology.html").read_text()
     labor_html = html.split("Labor utilization")[1].split("About this index")[0]
 
-    assert snapshot["bugout_index"] == 57.04
-    assert "57.04" in html
+    assert snapshot["bugout_index"] == 57.66
+    assert "57.66" in html
     assert "not in the BugOut Index" in labor_html
     assert "No weight" in labor_html or "no weight" in labor_html
     assert "https://fred.stlouisfed.org/series/LNS12300060" in labor_html
@@ -371,9 +371,9 @@ def test_markets_refusal_does_not_fetch_the_shadow_series(tmp_path, monkeypatch)
 
 def test_committed_snapshot_keeps_the_score_and_fred_dates():
     latest = json.loads(LATEST.read_text())
-    assert latest["bugout_index"] == 57.04
-    assert latest["methodology_version"] == "1.0.0"
-    assert latest["metrics"]["incident_rate"]["raw"] == 2723.0
+    assert latest["bugout_index"] == 57.66
+    assert latest["methodology_version"] == "1.1.0"
+    assert latest["metrics"]["incident_rate"]["raw"] == 2443.27
     assert latest["metrics"]["homelessness_rate"]["raw"] == 0.23
     assert latest["metrics"]["trust_in_government"]["raw"] == 41.0
     labor = latest["labor_shadow"]

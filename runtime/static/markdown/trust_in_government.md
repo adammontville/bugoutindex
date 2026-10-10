@@ -16,7 +16,7 @@ A high level of trust indicates **strong institutional stability**, while low tr
 ---
 
 ## **3. Source & Attribution**
-- **Primary Source:** [Edelman Trust Barometer](https://www.edelman.com/trust-barometer)
+- **Primary Source:** [2026 Edelman Trust Barometer U.S. Report](https://www.edelman.com/sites/g/files/aatuss191/files/2026-02/2026%20Edelman%20Trust%20Barometer_U.S.%20Report.pdf)
 - **Data URL:** [Edelman Trust Interactive Module](https://infogr8.github.io/edelman-trust-institute-interactive-module/)
 - **Last Updated:** Data is updated **annually**.
 - **Data Collection Method:**  
@@ -27,7 +27,7 @@ A high level of trust indicates **strong institutional stability**, while low tr
 
 ## **4. Acquisition Method**
 - The weekly fetcher reads the `trust_in_government` row of `runtime/data/annual_inputs.csv`.
-- The published value remains **41** for Edelman survey year **2025**. The observation is that year only. The row does not store a month or day.
+- The checklist value is **39** for Edelman survey year **2026** (United States, Government). The observation is that year only. The row does not store a month or day. Weeks published through 2026-10-09 stay **41** for survey year **2025**.
 - `runtime/data/edelman-trust-barometer-us.csv` is a historical archive. A new year column in that file does not change the score.
 - A person updates the checklist row once a year, using the steps in `runtime/data/ANNUAL_INPUTS.md`. The weekly job copies `reviewed_at` from the row and does not invent a fetch timestamp.
 
@@ -42,8 +42,10 @@ Trust Score (%) = Percentage of respondents expressing confidence in government
 
 The publisher uses this trust percent **directly** as the raw input. It does **not** convert to a distrust score first.
 
-**Example (2025 Edelman reading used in the live score):**
-- **Trust Score:** 41%
+**Example (2026 Edelman U.S. Government cell on the checklist):**
+- **Trust Score:** 39%
+
+The 2025 cell, **41%**, remains on weeks published through 2026-10-09.
 
 ---
 
@@ -64,10 +66,10 @@ normalized = ((Trust Score − 0) / (80 − 0)) × 100
 
 - A **trust score of 0%** results in a **normalized score of 0** (critical instability).
 - A **trust score of 80% or higher** results in a **normalized score of 100** (full stability), after clamping.
-- **Worked example:** trust **41** → **51.25**.
+- **Worked example:** trust **39** → **48.75**. The prior published cell **41** → **51.25**.
 
 ```
-normalized = (41 / 80) × 100 = 51.25
+normalized = (39 / 80) × 100 = 48.75
 ```
 
 ---
@@ -90,7 +92,7 @@ The **Trust in Government** metric provides a key indicator of **institutional s
 ## **Companions, not in the score**
 Pew public trust and Gallup confidence in institutions are shown beside the index. They are not this metric. They have no weight, and they are not inputs to `compute_index`.
 
-- **Pew** is the share who trust the government in Washington to do what is right just about always or most of the time. The September 2025 wave on Pew’s chart is 17%. That is not a substitute for Edelman 41.
-- **Gallup** is “a great deal” plus “quite a lot” of confidence in Congress, the presidency, the Supreme Court, and the 14-institution average. The June 2026 poll is the current checklist year. Those percents are not a substitute for Edelman 41.
+- **Pew** is the share who trust the government in Washington to do what is right just about always or most of the time. The September 2025 wave on Pew’s chart is 17%. That is not a substitute for Edelman 39.
+- **Gallup** is “a great deal” plus “quite a lot” of confidence in Congress, the presidency, the Supreme Court, and the 14-institution average. The June 2026 poll is the current checklist year. Those percents are not a substitute for Edelman 39.
 
 Update steps are in `runtime/data/TRUST_SHADOWS.md`. Issue [#81](https://github.com/adammontville/bugoutindex/issues/81) tracks whether a more frequent series should ever enter the score. That would be a new methodology version.

@@ -44,6 +44,9 @@ MONTHLY_CSV_NAME = "crime_live_monthly.csv"
 # file behind the 2 October 2026 snapshot.
 MONTHLY_FROM = "2024-09-01"
 LATEST_PUBLICATION = "2026-10-02"
+# Methodology 1.0.0 scored crime at 2723.0 through this week. The 2026-10-09
+# publish is methodology 1.1.0 and uses a different crime series. This replay
+# stays on the locked weeks so a later publish does not rewrite the note.
 SNAPSHOT_CANDIDATE_MONTH = "2025-09-01"
 SNAPSHOT_CANDIDATE_RATE = 2234.66
 
@@ -140,9 +143,16 @@ def vintage_asof(vintages: Sequence[Mapping[str, object]], publication_date: str
 
 
 def load_publications(path: Path = WEEKLY_CSV) -> list[dict]:
+    """1.0.0 publications through ``LATEST_PUBLICATION``.
+
+    Later rows score the methodology 1.1.0 crime series. They stay in the
+    weekly file and out of this replay.
+    """
     rows = []
     with path.open(newline="", encoding="utf-8") as handle:
         for row in csv.DictReader(handle):
+            if row["date"] > LATEST_PUBLICATION:
+                continue
             rows.append(
                 {
                     "date": row["date"],
@@ -151,7 +161,7 @@ def load_publications(path: Path = WEEKLY_CSV) -> list[dict]:
                 }
             )
     if not rows:
-        raise ValueError(f"{path} has no publications")
+        raise ValueError(f"{path} has no publications through {LATEST_PUBLICATION}")
     return rows
 
 

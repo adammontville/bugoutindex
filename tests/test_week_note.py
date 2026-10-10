@@ -225,9 +225,9 @@ def test_tile_ages_use_real_anchors():
         {"provenance": fetch_homelessness()["provenance"]},
         publication,
     )
-    assert homelessness["text"].startswith("manual, last set 2024 HUD AHAR")
-    assert "January 2024 point-in-time count" in homelessness["text"]
-    assert f"{_days(publication, '2024-01-01')} days since 2024-01-01" in homelessness["text"]
+    assert homelessness["text"].startswith("manual, last set 2025 HUD AHAR")
+    assert "January 2025 point-in-time count" in homelessness["text"]
+    assert f"{_days(publication, '2025-01-01')} days since 2025-01-01" in homelessness["text"]
 
     trust = describe_core_age(
         "trust_in_government",

@@ -5,13 +5,16 @@
 Published snapshot contract, schema_version 1.
 
 ``schema_version`` names this JSON shape. ``methodology_version`` names the
-formula and the crime input the publisher stamps. Schema 1 did not change
-for methodology 1.1.0. New publishes stamp ``1.1.0``. Files written under
-``1.0.0`` stay valid.
+formula and the inputs the publisher stamps. Schema 1 did not change for
+methodology 1.1.0 or 1.1.1. New publishes stamp ``1.1.1``. Files written
+under ``1.0.0`` and ``1.1.0`` stay valid. 1.1.1 changes the annual
+homelessness and trust checklist cells. It does not change endpoints,
+weights, or the crime series rule from 1.1.0.
 
 The human-readable copy is ``docs/architecture/snapshot-schema.md``.
-``docs/data/latest.json`` is the 2026-10-02 publication: methodology 1.0.0,
-headline number 57.04. This module does not rewrite it.
+``docs/data/latest.json`` is the 2026-10-09 publication: methodology 1.1.0,
+headline number 57.66. This module does not rewrite it. Weeks already
+published stay under the version that produced them.
 """
 from __future__ import annotations
 
@@ -23,9 +26,9 @@ from runtime.processing.formula import CORE_METRICS
 from runtime.util.redact import redact_secrets
 
 SCHEMA_VERSION = 1
-# Stamped on new publishes. 1.0.0 remains readable; the JSON shape is the same.
-METHODOLOGY_VERSION = "1.1.0"
-ACCEPTED_METHODOLOGY_VERSIONS = ("1.0.0", "1.1.0")
+# Stamped on new publishes. 1.0.0 and 1.1.0 remain readable; the JSON shape is the same.
+METHODOLOGY_VERSION = "1.1.1"
+ACCEPTED_METHODOLOGY_VERSIONS = ("1.0.0", "1.1.0", "1.1.1")
 
 # Envelope keys on a snapshot the weekly job is allowed to publish.
 # A new top-level key is a shape change and needs schema_version 2.

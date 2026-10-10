@@ -1,7 +1,7 @@
 # BugOutIndex Metrics and Methodology
 
-**Version**: 1.1.0  
-**Effective Date**: October 8, 2026 (weekly publishes after 2026-10-02)  
+**Version**: 1.1.1  
+**Effective Date**: The next weekly publish after this data revision. Weeks through 2026-10-09 stay as published (methodology 1.0.0 through 2026-10-02, methodology 1.1.0 on 2026-10-09).  
 
 > **Authoritative implementation:** `runtime/processing/formula.py`
 > (`CORE_METRICS`, `METRIC_RANGES`, `WEIGHTS`, `normalize`, `compute_index`, `interpret`).
@@ -13,7 +13,7 @@
 
 ## Introduction
 
-The BugOutIndex is a societal stability scoring system designed to help individuals and communities assess when conditions may deteriorate to a critical point. This document describes the metrics and methodology for **BugOutIndex Version 1.1.0**. Version 1.0.0 remains the record of weeks published through 2026-10-02. Each version of the methodology is documented so a past score can be read under the version that produced it. 1.1.0 does not rewrite those weeks.
+The BugOutIndex is a societal stability scoring system designed to help individuals and communities assess when conditions may deteriorate to a critical point. This document describes the metrics and methodology for **BugOutIndex Version 1.1.1**. Version 1.0.0 remains the record of weeks published through 2026-10-02. Version 1.1.0 remains the record of the 2026-10-09 week. Each version of the methodology is documented so a past score can be read under the version that produced it. 1.1.1 does not rewrite those weeks.
 
 On a perfect week (every core metric at its most stable endpoint), the index scores **100**. Raw weights sum to **0.72**; the publisher divides by that sum so the six relative weights always fill the 0–100 scale.
 
@@ -30,10 +30,10 @@ The BugOutIndex incorporates six core metrics:
 
 ### Social Health Metrics
 - **Crime Rate** (`incident_rate`): Violent **plus** property crime incidents per 100,000 people. Methodology 1.1.0 uses RTCI’s population-weighted national rate for the latest calendar month in the cleaned file: the Nationwide Full Sample row when that row is reliable, otherwise the weighted total of the other usable rows that matches it. The observation date is that month’s last day. Methodology 1.0.0 scored a locked 2723.0. Weeks through 2026-10-02 keep that lock.
-- **Homelessness Rate**: Percentage of the population experiencing homelessness (HUD PIT / AHAR).
+- **Homelessness Rate**: Percentage of the population experiencing homelessness (HUD PIT / AHAR). Methodology 1.1.1 reads **0.22** from the 2025 AHAR (745,652 people on a January 2025 night; about 22 per 10,000). The observation date is **2025-01-01**. Weeks through 2026-10-09 stay **0.23**.
 
 ### Governance Metrics
-- **Trust in Government**: Percentage of respondents expressing confidence in government (Edelman Trust Barometer). Higher trust maps to higher stability.
+- **Trust in Government**: Percentage of respondents expressing confidence in government (Edelman Trust Barometer, United States, Government). Higher trust maps to higher stability. Methodology 1.1.1 reads **39** for survey year **2026**. Weeks through 2026-10-09 stay **41** (survey year 2025).
 
 ---
 
@@ -59,7 +59,7 @@ Values outside the endpoints are clamped to 0 or 100.
 normalized_trust = ((raw − 0) / (80 − 0)) × 100
 ```
 
-so an Edelman trust reading of **41%** normalizes to **51.25**.
+so an Edelman trust reading of **41%** normalizes to **51.25**. The 1.1.1 checklist value **39** normalizes to **48.75**. The 19 September 2026 worked example below still uses 41, the value that week published.
 
 ### Worked examples (publisher math)
 
@@ -123,7 +123,7 @@ Missing metrics are skipped and the denominator shrinks. The weekly publisher re
 
 ### Worked example — week of 19 September 2026
 
-Raw inputs from `docs/data/latest.json` / the weekly CSV:
+This week was published under methodology 1.0.0. Methodology 1.1.1 does not recompute it. Raw inputs from the weekly CSV:
 
 | Metric | Raw | Normalized | Weight | Contribution (norm × weight) |
 |--------|-----|------------|--------|------------------------------|
@@ -141,7 +141,7 @@ BugOutIndex = 41.1177 / 0.72 ≈ 57.11
 
 Interpretation: **Moderate Stability / Warning Signs** (55–69.99).
 
-A plain sum of the weighted contributions **without** dividing by 0.72 would yield about **41.12** (Low Stability). That is **not** how v1.0.0 publishes, and it is not how v1.1.0 publishes either. The endpoints, the weights, the trust inversion, and the divide-by-0.72 step are unchanged. 1.1.0 changes the crime series only.
+A plain sum of the weighted contributions **without** dividing by 0.72 would yield about **41.12** (Low Stability). That is **not** how v1.0.0, v1.1.0, or v1.1.1 publishes. The endpoints, the weights, the trust inversion, and the divide-by-0.72 step are unchanged. 1.1.0 changes the crime series only. 1.1.1 changes the annual homelessness and trust cells only.
 
 ---
 
@@ -164,7 +164,8 @@ Band wording and thresholds are unchanged from the live site. Recalibrating how 
 
 | Version | Date | Changes |
 |---------|------|---------|
-| 1.1.0 | October 8, 2026 | Crime input unlocked. Weekly publishes after 2026-10-02 score RTCI’s Nationwide Full Sample rate (population-weighted violent plus property per 100,000) for the latest calendar month in the file. If that row is missing, duplicated, or disagrees with the weighted total of the other usable rows, the weighted total is scored and the choice is recorded. The observation date is that month’s last day, parsed from the file. Endpoints stay 500–8,000 (inverted) and the weight stays 0.12. An RTCI failure refuses the publish (core fail policy). Weeks through 2026-10-02 stay 1.0.0 with crime locked at 2723.0. |
+| 1.1.1 | October 10, 2026 | Data revision. The next weekly publish reads homelessness **0.22** (2025 HUD AHAR, 745,652 people, observation date 2025-01-01) and trust **39** (2026 Edelman Trust Barometer, United States, Government, observation year 2026). Endpoints, weights, inversion, crime series, and `schema_version` 1 are unchanged. Weeks through 2026-10-09 stay as published: 1.0.0 through 2026-10-02, and 1.1.0 on 2026-10-09 (crime 2443.27, homelessness 0.23, trust 41, index 57.66). `docs/data/latest.json` is that 1.1.0 file and is not rewritten here. | 
+| 1.1.0 | October 8, 2026 | Crime input unlocked. Weekly publishes after 2026-10-02 score RTCI’s Nationwide Full Sample rate (population-weighted violent plus property per 100,000) for the latest calendar month in the file. If that row is missing, duplicated, or disagrees with the weighted total of the other usable rows, the weighted total is scored and the choice is recorded. The observation date is that month’s last day, parsed from the file. Endpoints stay 500–8,000 (inverted) and the weight stays 0.12. An RTCI failure refuses the publish (core fail policy). Weeks through 2026-10-02 stay 1.0.0 with crime locked at 2723.0. The 2026-10-09 publish is the first 1.1.0 week. |
 | 1.0.0 | March 16, 2025 | Initial release with core metrics and methodology. Crime input later locked at 2723.0. |
 
 ---
@@ -183,7 +184,7 @@ For more information, see the [LICENSE](./LICENSE.md) file.
 
 ## Future metrics (incubating inventory)
 
-Nothing in this section is part of the score. Methodology 1.1.0 changes the crime input only. Companions stay outside the score unless an explicit, versioned methodology change says otherwise. The index is a directional stress reading of published statistics, not a historical bug-out siren.
+Nothing in this section is part of the score. Methodology 1.1.0 changes the crime input only. Methodology 1.1.1 changes the annual homelessness and trust cells only. Companions stay outside the score unless an explicit, versioned methodology change says otherwise. The index is a directional stress reading of published statistics, not a historical bug-out siren.
 
 The inventory below is the cut locked by Adam Montville on 2026-09-23. That cut does not add a series to the score. The NYC DHS shelter census was added later as a companion only. It is not in the score.
 

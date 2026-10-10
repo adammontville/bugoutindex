@@ -209,7 +209,7 @@ def test_later_month_dates_the_scored_rate_not_the_v1_lock():
     assert row["incident_rate_observation_date"] == "2025-09-30"
 
 
-def test_weighted_rate_is_the_index_input_and_the_snapshot_stamps_1_1_0():
+def test_weighted_rate_is_the_index_input_and_a_new_snapshot_stamps_1_1_1():
     crime = fetch_incident_rate(csv_text=FIXTURE_CSV)
     assert crime["data"]["incident_rate"] == 500.0
     assert crime["diagnostics"]["candidate_incident_rate"] == 500.0
@@ -234,7 +234,7 @@ def test_weighted_rate_is_the_index_input_and_the_snapshot_stamps_1_1_0():
         {"data": {}, "dates": {}},
     )
     assert snapshot["schema_version"] == 1
-    assert snapshot["methodology_version"] == "1.1.0"
+    assert snapshot["methodology_version"] == "1.1.1"
     assert snapshot["bugout_index"] == 62.05
     block = snapshot["metrics"]["incident_rate"]
     assert block["raw"] == 500.0
@@ -416,18 +416,19 @@ def test_duplicate_nationwide_rows_fall_back_to_the_weighted_total():
 
 
 def test_october_2026_basket_projects_to_57_66_without_rewriting_history():
-    """The 2026-10-02 week stays published at 57.04. This is the 1.1.0 projection."""
+    """The 2026-10-02 week stays at 57.04. The 2026-10-09 publish is that projection."""
     import csv
     import json
     from pathlib import Path
 
     root = Path(__file__).resolve().parents[1]
     latest = json.loads((root / "docs" / "data" / "latest.json").read_text(encoding="utf-8"))
-    assert latest["methodology_version"] == "1.0.0"
+    assert latest["methodology_version"] == "1.1.0"
     assert latest["schema_version"] == 1
-    assert latest["bugout_index"] == 57.04
-    assert latest["metrics"]["incident_rate"]["raw"] == 2723.0
-    assert latest["metrics"]["incident_rate"]["observation_date"] is None
+    assert latest["bugout_index"] == 57.66
+    assert latest["publication_date"] == "2026-10-09"
+    assert latest["metrics"]["incident_rate"]["raw"] == 2443.27
+    assert latest["metrics"]["incident_rate"]["observation_date"] == "2026-04-30"
 
     weekly = root / "runtime" / "data" / "weekly_bugout_index.csv"
     with weekly.open(newline="", encoding="utf-8") as handle:

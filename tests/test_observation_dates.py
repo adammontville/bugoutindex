@@ -272,15 +272,15 @@ def test_tile_age_prefers_observation_date_over_fetched_at():
     assert "2020-01-01" not in age["text"]
 
 
-def test_manual_fetchers_keep_published_raws_and_record_periods():
+def test_manual_fetchers_keep_checklist_raws_and_record_periods():
     homelessness = fetch_homelessness()
-    assert homelessness["data"]["homelessness_rate"] == 0.23
+    assert homelessness["data"]["homelessness_rate"] == 0.22
     assert homelessness["fetched_at"] is None
-    assert homelessness["observation_date"] == "2024-01-01"
+    assert homelessness["observation_date"] == "2025-01-01"
 
     trust = fetch_trust()
-    assert trust["data"]["trust_in_government"] == 41.0
-    assert trust["observation_date"] == "2025"
+    assert trust["data"]["trust_in_government"] == 39.0
+    assert trust["observation_date"] == "2026"
 
     # Local file, not a network download. December 2024 is the latest
     # calendar month. Its Nationwide Full Sample rate is the scored input.
@@ -398,12 +398,19 @@ def test_committed_history_keeps_the_june_revision_and_does_not_invent_crime_dat
         assert "2025-01-01T00:00:00Z" not in "".join(row.values())
         # 2723.0 is the September 2024 unweighted mean. Only the 2026-09-19
         # publish recorded that month. A later file's value-month end is not
-        # an observation of the same locked rate.
-        if when != "2026-09-19":
-            assert row["incident_rate_observation_date"] == ""
+        # an observation of the same locked rate. Methodology 1.1.0 records
+        # the value-month end on the week that scores the national rate.
+        if float(row["incident_rate"]) == 2723.0:
+            if when != "2026-09-19":
+                assert row["incident_rate_observation_date"] == ""
+        else:
+            assert when == "2026-10-09"
+            assert float(row["incident_rate"]) == 2443.27
+            assert row["incident_rate_observation_date"] == "2026-04-30"
         assert row["incident_rate_observation_date"] != "2025-09-30"
-        # 0.23 is the January 2024 HUD count. Weeks before that date was
-        # recorded stay blank. Later publishes may repeat the source date.
+        # 0.23 is the January 2024 HUD count on published weeks. Weeks before
+        # that date was recorded stay blank. Later publishes through
+        # 2026-10-09 repeat it. Methodology 1.1.1 does not rewrite them.
         if when < "2026-09-19":
             assert row["homelessness_rate_observation_date"] == ""
         else:
@@ -413,18 +420,18 @@ def test_committed_history_keeps_the_june_revision_and_does_not_invent_crime_dat
 
     latest = json.loads(LATEST.read_text())
     assert latest["schema_version"] == 1
-    assert latest["bugout_index"] == 57.04
-    assert latest["methodology_version"] == "1.0.0"
-    assert latest["publication_date"] == "2026-10-02"
+    assert latest["bugout_index"] == 57.66
+    assert latest["methodology_version"] == "1.1.0"
+    assert latest["publication_date"] == "2026-10-09"
     history = load_history(WEEKLY_CSV, limit=100)
     assert latest["history"]["bugout_index"] == history
-    live = next(row for row in history if row["date"] == "2026-10-02")
+    live = next(row for row in history if row["date"] == "2026-10-09")
     for metric in CORE_METRICS:
         assert latest["metrics"][metric]["observation_date"] == live[observation_column(metric)]
         assert float(latest["metrics"][metric]["raw"]) == float(live[metric])
-    assert latest["metrics"]["incident_rate"]["raw"] == 2723.0
-    assert latest["metrics"]["incident_rate"]["observation_date"] is None
-    assert live["incident_rate_observation_date"] is None
-    assert float(live["bugout_index"]) == 57.04
+    assert latest["metrics"]["incident_rate"]["raw"] == 2443.27
+    assert latest["metrics"]["incident_rate"]["observation_date"] == "2026-04-30"
+    assert live["incident_rate_observation_date"] == "2026-04-30"
+    assert float(live["bugout_index"]) == 57.66
     assert latest["metrics"]["homelessness_rate"]["raw"] == 0.23
     assert latest["metrics"]["trust_in_government"]["raw"] == 41.0

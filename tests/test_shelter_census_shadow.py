@@ -275,7 +275,7 @@ def test_snapshot_keeps_the_locked_score_when_companions_are_attached():
         },
     )
     assert snapshot["bugout_index"] == 57.11
-    assert snapshot["methodology_version"] == "1.1.0"
+    assert snapshot["methodology_version"] == "1.1.1"
     assert snapshot["metrics"]["homelessness_rate"]["raw"] == 0.23
     assert snapshot["metrics"]["incident_rate"]["raw"] == 2723.0
     assert snapshot["metrics"]["trust_in_government"]["raw"] == 41.0
@@ -307,7 +307,7 @@ def test_rendered_page_labels_each_companion_outside_the_score(tmp_path, monkeyp
 
     assert {key: snapshot[key] for key in SCORE_FIELDS} == before
     assert snapshot["metrics"]["homelessness_rate"]["raw"] == 0.23
-    assert snapshot["metrics"]["incident_rate"]["raw"] == 2723.0
+    assert snapshot["metrics"]["incident_rate"]["raw"] == 2443.27
     assert snapshot["metrics"]["trust_in_government"]["raw"] == 41.0
     for heading in (
         "Nashville–Davidson shelter checklist",

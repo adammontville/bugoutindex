@@ -50,6 +50,13 @@ jobs:
         # or tampered install.
         run: python -m pip install --require-hashes -r runtime/requirements.txt
 
+      # HUD AHAR and Edelman Trust Barometer are checklist cells in
+      # runtime/data/annual_inputs.csv. runtime/data/fetch/annual_release_check.py
+      # can warn when the next release is past its usual window plus grace
+      # (HUD: 12–18 months after the next January PIT; Edelman: the following
+      # January). This job does not run that check. The check never edits
+      # the checklist and never changes the score. A newer report is a
+      # reviewed data revision.
       - name: Run weekly pipeline
         env:
           FRED_API_KEY: ${{ secrets.FRED_API_KEY }}

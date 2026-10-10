@@ -10,6 +10,7 @@ from pathlib import Path
 
 from runtime.backtest.crime_live_replay import (
     CURRENT_RTCI_CSV,
+    LATEST_PUBLICATION,
     LOCAL_RTCI_CSV,
     NOTE_NAME,
     PACKAGE_DIR,
@@ -44,12 +45,12 @@ def test_live_publisher_files_stay_on_the_locked_score():
     assert sum(WEIGHTS.values()) == 0.72
     latest = json.loads((ROOT / "docs" / "data" / "latest.json").read_text(encoding="utf-8"))
     assert latest["schema_version"] == 1
-    assert latest["methodology_version"] == "1.0.0"
-    assert latest["bugout_index"] == 57.04
-    assert latest["publication_date"] == "2026-10-02"
+    assert latest["methodology_version"] == "1.1.0"
+    assert latest["bugout_index"] == 57.66
+    assert latest["publication_date"] == "2026-10-09"
     crime = latest["metrics"]["incident_rate"]
-    assert crime["raw"] == 2723.0
-    assert crime["observation_date"] is None
+    assert crime["raw"] == 2443.27
+    assert crime["observation_date"] == "2026-04-30"
     assert crime["provenance"]["value_month"] == "April 2026"
     assert crime["provenance"]["value_month_end"] == "2026-04-30"
     assert crime["provenance"]["file_through"] == "April 2026"
@@ -58,7 +59,7 @@ def test_live_publisher_files_stay_on_the_locked_score():
     assert crime["diagnostics"]["population_weighted_incident_rate"] == 2443.27
     assert crime["diagnostics"]["latest_month_incident_rate"] == 2074.97
     assert crime["diagnostics"]["latest_month"] == "April 2026"
-    assert crime["diagnostics"]["index_input"] is False
+    assert crime["diagnostics"]["index_input"] is True
     formula = (ROOT / "runtime" / "processing" / "formula.py").read_text(encoding="utf-8")
     weekly = (ROOT / "runtime" / "publish" / "weekly_run.py").read_text(encoding="utf-8")
     assert "crime_live_replay" not in formula
@@ -68,10 +69,14 @@ def test_live_publisher_files_stay_on_the_locked_score():
 
 def test_each_publication_keeps_its_locked_score_and_moves_only_crime():
     publications = list(csv.DictReader(WEEKLY_CSV.open(newline="", encoding="utf-8")))
+    locked_weeks = [row for row in publications if row["date"] <= LATEST_PUBLICATION]
     rows = build_publication_rows()
-    assert len(rows) == len(publications) == 25
-    assert [row["date"] for row in rows] == [row["date"] for row in publications]
-    for published, row in zip(publications, rows):
+    assert len(publications) == 26
+    assert publications[-1]["date"] == "2026-10-09"
+    assert float(publications[-1]["incident_rate"]) == 2443.27
+    assert len(rows) == len(locked_weeks) == 25
+    assert [row["date"] for row in rows] == [row["date"] for row in locked_weeks]
+    for published, row in zip(locked_weeks, rows):
         assert float(published["incident_rate"]) == 2723.0
         assert row["locked_index"] == float(published["bugout_index"])
         assert row["crime_value"] != 2723.0

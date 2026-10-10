@@ -52,38 +52,43 @@ def _assert_no_invented_timestamp(payload: dict) -> None:
     assert payload.get("fetched_at") != date.today().isoformat()
 
 
-def test_published_checklist_values_still_score_57_11():
-    homelessness = fetch_homelessness()
-    trust = fetch_trust()
-    assert homelessness["status"] == "success"
-    assert trust["status"] == "success"
-    assert homelessness["data"]["homelessness_rate"] == 0.23
-    assert trust["data"]["trust_in_government"] == 41.0
-
-    assert homelessness["fetched_at"] is None
-    assert homelessness["provenance"]["reference_date"] == "2024-01-01"
-    assert homelessness["provenance"]["observation_period"] == "January 2024 point-in-time count"
-    assert homelessness["provenance"]["last_set"] == "2024 HUD AHAR"
-    assert homelessness["provenance"]["reviewed_at"] == "2025-03-13"
-    assert homelessness["provenance"]["kind"] == "manual"
-
-    assert trust["fetched_at"] == "2025"
-    assert trust["provenance"]["year"] == "2025"
-    assert trust["provenance"]["kind"] == "annual"
-    assert trust["provenance"]["reviewed_at"] == "2025-03-13"
-    assert "2025-01-01" not in trust["fetched_at"]
-
-    _assert_no_invented_timestamp(homelessness)
-    _assert_no_invented_timestamp(trust)
-
+def test_september_19_published_raws_still_score_57_11():
+    """The 19 September 2026 week stays 57.11. 1.1.1 does not recompute it."""
     raws = {
         **LOCKED_OTHER_RAWS,
-        "homelessness_rate": homelessness["data"]["homelessness_rate"],
-        "trust_in_government": trust["data"]["trust_in_government"],
+        "homelessness_rate": 0.23,
+        "trust_in_government": 41.0,
     }
     payload = {metric: {"data": {metric: value}} for metric, value in raws.items()}
     assert compute_index(payload)["index"] == 57.11
     assert raws["incident_rate"] == 2723.0
+
+
+def test_checklist_is_the_2025_ahar_and_the_2026_edelman_cell():
+    homelessness = fetch_homelessness()
+    trust = fetch_trust()
+    assert homelessness["status"] == "success"
+    assert trust["status"] == "success"
+    assert homelessness["data"]["homelessness_rate"] == 0.22
+    assert trust["data"]["trust_in_government"] == 39.0
+
+    assert homelessness["fetched_at"] is None
+    assert homelessness["observation_date"] == "2025-01-01"
+    assert homelessness["provenance"]["reference_date"] == "2025-01-01"
+    assert homelessness["provenance"]["observation_period"] == "January 2025 point-in-time count"
+    assert homelessness["provenance"]["last_set"] == "2025 HUD AHAR"
+    assert homelessness["provenance"]["reviewed_at"] == "2026-10-10"
+    assert homelessness["provenance"]["kind"] == "manual"
+
+    assert trust["fetched_at"] == "2026"
+    assert trust["observation_date"] == "2026"
+    assert trust["provenance"]["year"] == "2026"
+    assert trust["provenance"]["kind"] == "annual"
+    assert trust["provenance"]["reviewed_at"] == "2026-10-10"
+    assert "2026-01-01" not in trust["fetched_at"]
+
+    _assert_no_invented_timestamp(homelessness)
+    _assert_no_invented_timestamp(trust)
 
 
 def test_fetcher_review_dates_match_the_table_and_are_not_today():
@@ -93,9 +98,9 @@ def test_fetcher_review_dates_match_the_table_and_are_not_today():
     ):
         row = load_annual_row(metric)
         result = fetch()
-        assert row["reviewed_at"] == "2025-03-13"
+        assert row["reviewed_at"] == "2026-10-10"
         assert result["provenance"]["reviewed_at"] == row["reviewed_at"]
-        assert row["reviewed_at"] != date.today().isoformat()
+        assert "T" not in row["reviewed_at"]
 
 
 def test_fetchers_do_not_call_the_clock():

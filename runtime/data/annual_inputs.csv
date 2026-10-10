@@ -1,3 +1,3 @@
 metric,value,observation_period,observation_date,source,source_url,reviewed_at
-homelessness_rate,0.23,January 2024 point-in-time count,2024-01-01,2024 HUD AHAR,https://www.huduser.gov/portal/sites/default/files/pdf/2024-AHAR-Part-1.pdf,2025-03-13
-trust_in_government,41,2025,2025,2025 Edelman Trust Barometer US Government,https://www.edelman.com/trust-barometer,2025-03-13
+homelessness_rate,0.22,January 2025 point-in-time count,2025-01-01,2025 HUD AHAR,https://www.huduser.gov/portal/sites/default/files/pdf/2025-AHAR-Part-1.pdf,2026-10-10
+trust_in_government,39,2026,2026,2026 Edelman Trust Barometer US Government,https://www.edelman.com/sites/g/files/aatuss191/files/2026-02/2026%20Edelman%20Trust%20Barometer_U.S.%20Report.pdf,2026-10-10

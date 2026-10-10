@@ -47,6 +47,7 @@ if str(REPO_ROOT) not in sys.path:
 
 # Published formula: endpoints, weights, inversion, clamp, aggregation, bands.
 # Methodology 1.1.0 keeps this math and changes the crime series.
+# Methodology 1.1.1 keeps this math and changes the annual checklist cells.
 # Rebound here so existing callers of weekly_run keep the same entry points.
 import runtime.processing.formula as _formula  # noqa: E402
 from runtime.publish.failure_notice import (  # noqa: E402

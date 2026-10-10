@@ -92,7 +92,7 @@ def test_shadows_are_absent_from_compute_index_and_edelman_stays_the_core_input(
     assert "pewresearch.org" not in formula
     assert "gallup.com" not in formula
     annual = ANNUAL.read_text()
-    assert "trust_in_government,41,2025,2025," in annual
+    assert "trust_in_government,39,2026,2026," in annual
     assert "pew_public_trust" not in annual
     assert "gallup_congress" not in annual
 
@@ -281,7 +281,7 @@ def test_snapshot_records_the_companions_without_changing_the_index():
         gallup,
     )
     assert snapshot["bugout_index"] == 57.11
-    assert snapshot["methodology_version"] == "1.1.0"
+    assert snapshot["methodology_version"] == "1.1.1"
     assert snapshot["metrics"]["incident_rate"]["raw"] == 2723.0
     assert snapshot["metrics"]["trust_in_government"]["raw"] == 41.0
     assert snapshot["pew_trust_shadow"]["in_bugout_index"] is False
@@ -434,7 +434,7 @@ def test_companion_failure_still_publishes_the_locked_score(tmp_path, monkeypatc
     assert weekly.main() == 0
     snapshot = json.loads((docs / "latest.json").read_text())
     assert snapshot["bugout_index"] == 57.11
-    assert snapshot["methodology_version"] == "1.1.0"
+    assert snapshot["methodology_version"] == "1.1.1"
     assert snapshot["metrics"]["incident_rate"]["raw"] == 2723.0
     assert snapshot["metrics"]["trust_in_government"]["raw"] == 41.0
     assert snapshot["pew_trust_shadow"]["status"] == "reused"
@@ -492,10 +492,10 @@ def test_markets_refusal_does_not_fetch_the_trust_companions(tmp_path, monkeypat
 
 def test_committed_snapshot_keeps_the_score_and_adds_the_companions():
     latest = json.loads(LATEST.read_text())
-    assert latest["bugout_index"] == 57.04
-    assert latest["methodology_version"] == "1.0.0"
-    assert latest["publication_date"] == "2026-10-02"
-    assert latest["metrics"]["incident_rate"]["raw"] == 2723.0
+    assert latest["bugout_index"] == 57.66
+    assert latest["methodology_version"] == "1.1.0"
+    assert latest["publication_date"] == "2026-10-09"
+    assert latest["metrics"]["incident_rate"]["raw"] == 2443.27
     assert latest["metrics"]["trust_in_government"]["raw"] == 41.0
     assert latest["metrics"]["trust_in_government"]["observation_date"] == "2025"
     pew = latest["pew_trust_shadow"]

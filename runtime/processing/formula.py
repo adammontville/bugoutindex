@@ -2,7 +2,7 @@
 # Copyright (C) 2025 Adam Montville
 # Dual-licensed under AGPL-3.0 and a commercial license.
 """
-Scoring formula shared by methodology 1.0.0 and 1.1.0.
+Scoring formula shared by methodology 1.0.0, 1.1.0, and 1.1.1.
 
 This module is the only copy of the live publisher math:
 
@@ -15,6 +15,9 @@ This module is the only copy of the live publisher math:
 
 Methodology 1.1.0 changes the crime series, not these constants. Crime
 endpoints stay 500–8,000 (inverted) and the crime weight stays 0.12.
+Methodology 1.1.1 changes the annual homelessness and trust checklist
+values only. Endpoints, weights, inversion, clamp, and aggregation stay
+as written here.
 
 ``runtime/publish/weekly_run.py`` and the optional Streamlit viewer import it.
 The viewer does not publish.
@@ -25,7 +28,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, Mapping, Optional
 
-# Core metrics. 1.1.0 keeps this list. It changes where crime's raw value comes from.
+# Core metrics. 1.1.0 and 1.1.1 keep this list. 1.1.0 changes where crime's raw value comes from.
 CORE_METRICS = [
     "inflation_rate",
     "incident_rate",           # crime rate (per 100k)
@@ -144,7 +147,7 @@ def calculate_category_score(
 
 
 def interpret(index: float) -> Dict[str, str]:
-    """Four risk bands. Thresholds are 70, 55, and 40. Unchanged in 1.1.0."""
+    """Four risk bands. Thresholds are 70, 55, and 40. Unchanged in 1.1.0 and 1.1.1."""
     if index >= 70:
         return {"band": "High Stability", "risk": "Low Risk", "band_key": "high"}
     if index >= 55:

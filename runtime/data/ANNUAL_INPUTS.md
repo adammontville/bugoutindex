@@ -54,9 +54,13 @@ Write a date. Do not write a clock time, and do not write `2025-01-01T00:00:00Z`
 
 ## Release-age check
 
-`runtime/data/fetch/annual_release_check.py` warns when an observation is more than 13 calendar months old. A HUD date is aged from that `YYYY-MM-DD`. An Edelman year is aged from January 1 of that year, so a January release is not flagged in the month it comes out. Exactly 13 months later does not warn. The day after does.
+`runtime/data/fetch/annual_release_check.py` warns when the **next** release is past its usual window, plus the grace period in `RELEASE_WINDOWS`. It does not age the observation itself.
 
-On 2026-10-10 the 2025 AHAR observation (`2025-01-01`) warns, because that night is already more than 13 months past and a January 2026 national count could be released later. The 2026 Edelman year does not warn yet. A warning is a note for a person. It does not edit this table, it does not run inside the weekly job, and it does not change `compute_index`.
+HUD describes a January point-in-time night. The next AHAR after the checklist year is the following January, and that report usually appears **12 to 18 months** after that January 1. One further month is grace. The 2025 row (observation `2025-01-01`) is looking for the January 2026 count, due **2027-08-01**. It does not warn on 2026-10-10.
+
+Edelman publishes in **January** of the survey year. The next report after checklist year 2026 is January 2027, then one month of grace, due **2027-02-28**. It does not warn on 2026-10-10.
+
+The due date itself is still on time. The next day warns. A warning is a note for a person. It does not edit this table, it does not run inside the weekly job, and it does not change `compute_index`.
 
 ## Future work
 

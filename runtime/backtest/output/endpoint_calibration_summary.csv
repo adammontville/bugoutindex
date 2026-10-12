@@ -1,0 +1,21 @@
+scenario,scenario_label,window,months,min_index,min_date,max_index,max_date,high,moderate,low,critical
+v1,1.1.1 endpoints and bands,all,236,50.98,2020-04-01,61.39,2007-08-01,0,182,54,0
+a,"A: p2–p98 endpoints, live bands",all,236,40.70,2009-12-01,63.57,2019-01-01,0,128,108,0
+b,"B: live endpoints, episode bands",all,236,50.98,2020-04-01,61.39,2007-08-01,8,159,69,0
+c,C: p2–p98 endpoints and episode bands,all,236,40.70,2009-12-01,63.57,2019-01-01,100,29,48,59
+v1,1.1.1 endpoints and bands,2008,25,54.01,2009-12-01,60.01,2008-12-01,0,23,2,0
+a,"A: p2–p98 endpoints, live bands",2008,25,40.70,2009-12-01,55.08,2007-12-01,0,1,24,0
+b,"B: live endpoints, episode bands",2008,25,54.01,2009-12-01,60.01,2008-12-01,0,23,2,0
+c,C: p2–p98 endpoints and episode bands,2008,25,40.70,2009-12-01,55.08,2007-12-01,0,1,9,15
+v1,1.1.1 endpoints and bands,2020,12,50.98,2020-04-01,59.03,2020-03-01,0,8,4,0
+a,"A: p2–p98 endpoints, live bands",2020,12,47.17,2020-04-01,62.51,2020-03-01,0,6,6,0
+b,"B: live endpoints, episode bands",2020,12,50.98,2020-04-01,59.03,2020-03-01,0,7,5,0
+c,C: p2–p98 endpoints and episode bands,2020,12,47.17,2020-04-01,62.51,2020-03-01,3,3,2,4
+v1,1.1.1 endpoints and bands,2022,12,52.28,2022-06-01,54.47,2022-12-01,0,0,12,0
+a,"A: p2–p98 endpoints, live bands",2022,12,49.81,2022-06-01,54.43,2022-12-01,0,0,12,0
+b,"B: live endpoints, episode bands",2022,12,52.28,2022-06-01,54.47,2022-12-01,0,0,12,0
+c,C: p2–p98 endpoints and episode bands,2022,12,49.81,2022-06-01,54.43,2022-12-01,0,0,11,1
+v1,1.1.1 endpoints and bands,2015_2019,60,56.37,2017-02-01,59.75,2019-06-01,0,60,0,0
+a,"A: p2–p98 endpoints, live bands",2015_2019,60,57.58,2015-01-01,63.57,2019-01-01,0,60,0,0
+b,"B: live endpoints, episode bands",2015_2019,60,56.37,2017-02-01,59.75,2019-06-01,0,60,0,0
+c,C: p2–p98 endpoints and episode bands,2015_2019,60,57.58,2015-01-01,63.57,2019-01-01,51,9,0,0

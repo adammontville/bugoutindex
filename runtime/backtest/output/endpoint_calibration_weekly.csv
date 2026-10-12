@@ -1,0 +1,5 @@
+series,sample,weeks,mean_abs_change,stdev_change,share_flat,max_abs_change,max_abs_week,max_drop,max_drop_week
+v1,within_month,790,0.0000,0.0000,1.0000,0.0000,2026-08-28,0.0000,2007-01-12
+v1,all_fridays,1025,0.0903,0.3716,0.7707,8.0500,2020-04-03,-8.0500,2020-04-03
+a,within_month,790,0.0000,0.0000,1.0000,0.0000,2026-08-28,0.0000,2007-01-12
+a,all_fridays,1025,0.2033,1.0073,0.7766,17.5400,2025-11-07,-17.0800,2025-10-03

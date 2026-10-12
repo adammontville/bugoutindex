@@ -20,7 +20,7 @@
         </mxCell>
 
         <!-- weekly_run -->
-        <mxCell id="c-weekly" value="&lt;b&gt;weekly_run publisher&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:11px&quot;&gt;Container: Python module&lt;/font&gt;&lt;br&gt;&lt;br&gt;runtime/publish/weekly_run.py&#xa;fetch → score → companions →&#xa;validate → render. No Streamlit.&#xa;Exit 2 core, exit 3 markets/pulse,&#xa;exit 4 bad snapshot. Shadow or&#xa;revision failure still publishes." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#23a2d9;strokeColor=#0e7090;fontColor=#ffffff;align=center;verticalAlign=middle;" vertex="1" parent="1">
+        <mxCell id="c-weekly" value="&lt;b&gt;weekly_run publisher&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:11px&quot;&gt;Container: Python module&lt;/font&gt;&lt;br&gt;&lt;br&gt;runtime/publish/weekly_run.py&#xa;fetch → score → companions →&#xa;validate → render.&#xa;Exit 2 core, exit 3 markets/pulse,&#xa;exit 4 bad snapshot. Shadow or&#xa;revision failure still publishes." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#23a2d9;strokeColor=#0e7090;fontColor=#ffffff;align=center;verticalAlign=middle;" vertex="1" parent="1">
           <mxGeometry x="370" y="130" width="280" height="175" as="geometry"/>
         </mxCell>
 
@@ -55,7 +55,7 @@
         </mxCell>
 
         <!-- Legacy note box -->
-        <mxCell id="c-legacy" value="&lt;b&gt;Optional Streamlit viewer&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:11px&quot;&gt;Not the weekly publisher&lt;/font&gt;&lt;br&gt;&lt;br&gt;runtime/main.py reads latest.json.&#xa;Does not write docs/. The weekly&#xa;job does not import Streamlit.&#xa;Local/Pi: same pipeline, serve docs/." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#b1b1b1;strokeColor=#787878;fontColor=#ffffff;align=center;verticalAlign=middle;dashed=1;" vertex="1" parent="1">
+        <mxCell id="c-legacy" value="&lt;b&gt;Local / Pi preview&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:11px&quot;&gt;Not a publisher&lt;/font&gt;&lt;br&gt;&lt;br&gt;python -m http.server 8765&#xa;--directory docs&#xa;Serves the files the weekly&#xa;job writes. No Streamlit." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#b1b1b1;strokeColor=#787878;fontColor=#ffffff;align=center;verticalAlign=middle;dashed=1;" vertex="1" parent="1">
           <mxGeometry x="1240" y="140" width="250" height="160" as="geometry"/>
         </mxCell>
 

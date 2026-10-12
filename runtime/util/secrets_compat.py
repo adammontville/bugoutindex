@@ -5,7 +5,7 @@
 Read secrets from the process environment.
 
 Weekly publish, a laptop, and a Raspberry Pi all set ``FRED_API_KEY`` in
-the environment. This module does not import Streamlit. The value is never
+the environment. This module reads that environment only. The value is never
 written into HTML, JSON, or CSV.
 
     from runtime.util.secrets_compat import get_secret

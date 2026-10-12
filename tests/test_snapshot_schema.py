@@ -25,16 +25,9 @@ from runtime.publish.snapshot_schema import (
     validate_published_snapshot,
 )
 from runtime.util.secrets_compat import get_secret
-from runtime.viewer_io import load_published_snapshot
 
 ROOT = Path(__file__).resolve().parents[1]
 LATEST = ROOT / "docs" / "data" / "latest.json"
-PUBLISH_SCAN = (
-    ROOT / "runtime" / "publish",
-    ROOT / "runtime" / "data" / "fetch",
-    ROOT / "runtime" / "processing",
-    ROOT / "runtime" / "backtest",
-)
 
 
 def _imports_streamlit(text: str) -> bool:
@@ -67,9 +60,6 @@ def test_live_snapshot_matches_schema_1_and_the_score_is_unchanged():
         assert raw[name]["in_bugout_index"] is False
     for name in COMPANION_BLOCKS:
         assert name not in raw["metrics"]
-    loaded = load_published_snapshot()
-    assert loaded["bugout_index"] == 57.66
-    assert loaded["publication_date"] == raw["publication_date"]
 
 
 def test_schema_rejects_a_shape_change_a_folded_companion_and_a_secret():
@@ -102,18 +92,30 @@ def test_schema_rejects_a_shape_change_a_folded_companion_and_a_secret():
     assert any("methodology_version" in item for item in validate_published_snapshot(unknown))
 
 
-def test_publish_path_does_not_import_streamlit():
+def test_repository_does_not_import_streamlit():
     secrets = (ROOT / "runtime" / "util" / "secrets_compat.py").read_text(encoding="utf-8")
     assert not _imports_streamlit(secrets)
     weekly = (ROOT / "runtime" / "publish" / "weekly_run.py").read_text(encoding="utf-8")
     assert not _imports_streamlit(weekly)
     assert "viewer_io" not in weekly
     assert "SCHEMA_VERSION" in weekly
-    for folder in PUBLISH_SCAN:
-        paths = [folder] if folder.is_file() else folder.rglob("*.py")
-        for path in paths:
-            text = path.read_text(encoding="utf-8")
-            assert not _imports_streamlit(text), path
+    for path in (ROOT / "runtime").rglob("*.py"):
+        text = path.read_text(encoding="utf-8")
+        assert not _imports_streamlit(text), path
+    requirements_in = (ROOT / "runtime" / "requirements.in").read_text(encoding="utf-8").lower()
+    requirements_txt = (ROOT / "runtime" / "requirements.txt").read_text(encoding="utf-8").lower()
+    assert "streamlit" not in requirements_in
+    assert "streamlit" not in requirements_txt
+    for removed in (
+        ROOT / "runtime" / "main.py",
+        ROOT / "runtime" / "viewer_io.py",
+        ROOT / "runtime" / "pages",
+        ROOT / "runtime" / "presentation",
+        ROOT / "runtime" / "static",
+        ROOT / ".streamlit",
+        ROOT / "runtime" / ".streamlit",
+    ):
+        assert not removed.exists(), removed
     assert "streamlit" not in sys.modules
 
 
@@ -122,27 +124,6 @@ def test_get_secret_reads_the_environment_only(monkeypatch):
     assert get_secret("FRED_API_KEY") == "from-env"
     monkeypatch.delenv("FRED_API_KEY", raising=False)
     assert get_secret("MISSING_SECRET", default=None) is None
-
-
-def test_viewer_reads_the_snapshot_and_does_not_write_the_site():
-    pages = [
-        ROOT / "runtime" / "pages" / "dashboard.py",
-        ROOT / "runtime" / "pages" / "boi_simulator.py",
-        ROOT / "runtime" / "presentation" / "display_logo.py",
-        ROOT / "runtime" / "main.py",
-        ROOT / "runtime" / "viewer_io.py",
-    ]
-    for path in pages:
-        text = path.read_text(encoding="utf-8")
-        assert "historical_bugout_index" not in text
-        assert ".write_text" not in text
-        assert "to_csv" not in text
-        assert "weekly_run" not in text
-    main = (ROOT / "runtime" / "main.py").read_text(encoding="utf-8")
-    assert "st.secrets" not in main
-    viewer = (ROOT / "runtime" / "viewer_io.py").read_text(encoding="utf-8")
-    assert "docs" in viewer and "latest.json" in viewer
-    assert not _imports_streamlit(viewer)
 
 
 def test_schema_refusal_does_not_write_docs(tmp_path, monkeypatch):

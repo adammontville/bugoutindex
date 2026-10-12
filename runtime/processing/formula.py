@@ -19,8 +19,8 @@ Methodology 1.1.1 changes the annual homelessness and trust checklist
 values only. Endpoints, weights, inversion, clamp, and aggregation stay
 as written here.
 
-``runtime/publish/weekly_run.py`` and the optional Streamlit viewer import it.
-The viewer does not publish.
+``runtime/publish/weekly_run.py`` imports it.
+
 In-range inputs match the published weekly numbers, including the
 19 September 2026 index of 57.11 under methodology 1.0.0 (crime 2723.0).
 """
@@ -56,8 +56,7 @@ WEIGHTS: Dict[str, float] = {
     "trust_in_government": 0.12,
 }
 
-# Streamlit pages color a score with these class names.
-# Keys are interpret()["band_key"]; thresholds are not repeated here.
+# CSS class for each band. Keys are interpret()["band_key"]; thresholds are not repeated here.
 STABILITY_CSS_CLASS = {
     "high": "stable",
     "moderate": "moderate",
@@ -76,7 +75,7 @@ def normalize(raw: float, lo: float, hi: float, inverse: bool = False) -> float:
     return max(0.0, min(100.0, score))
 
 
-# Name used by the Streamlit scorers and tests/test_scoring.py.
+# Name used by tests/test_scoring.py and older callers.
 normalize_metric = normalize
 
 
@@ -158,5 +157,5 @@ def interpret(index: float) -> Dict[str, str]:
 
 
 def stability_css_class(index: float) -> str:
-    """Streamlit CSS class for a score. Thresholds come from ``interpret``."""
+    """CSS class for a score. Thresholds come from ``interpret``."""
     return STABILITY_CSS_CLASS[interpret(index)["band_key"]]

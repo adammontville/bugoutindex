@@ -7,7 +7,7 @@ Headless weekly runner.
 Responsibilities:
     1. Fetch all six core BOI metrics and compute the weighted index.
        ``FRED_API_KEY`` comes from the environment. This module does not
-       import Streamlit.
+       import an app runtime.
     2. Fetch metals (gold, silver, DXY), the short-term economic pulse,
        and the shadow companions (labor utilization, food prices, the
        NYC DHS shelter census, the other local shelter companions,

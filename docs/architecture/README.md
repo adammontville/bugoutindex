@@ -7,7 +7,7 @@ These are the C4 Context and Container diagrams for BugOut Index.
 | Context | [c4-context.drawio](c4-context.drawio) |
 | Container | [c4-container.drawio](c4-container.drawio) |
 
-The Context diagram shows who uses the public site, the weekly software system, and the external sources it talks to (FRED / ALFRED, gold-api.com, AH-Datalytics RTCI, manual HUD and Edelman inputs, GitHub Actions and Pages). The Container diagram shows the weekly path inside that system: the GitHub Action, `weekly_run` (fetch → score → validate → render, no Streamlit import), the v1.0.0 formula module, fetchers, committed data files, the static renderer, and the Pages site. The gray box is the optional Streamlit viewer. It reads the snapshot and does not publish.
+The Context diagram shows who uses the public site, the weekly software system, and the external sources it talks to (FRED / ALFRED, gold-api.com, AH-Datalytics RTCI, manual HUD and Edelman inputs, GitHub Actions and Pages). The Container diagram shows the weekly path inside that system: the GitHub Action, `weekly_run` (fetch → score → validate → render), the formula module, fetchers, committed data files, the static renderer, and the Pages site. The gray box is a local or Pi preview: `python -m http.server 8765 --directory docs`. It serves the published files and does not publish.
 
 ## How to open
 
@@ -20,9 +20,9 @@ The written review of the same system is [ARCHITECTURE_AND_ROADMAP.md](../../ARC
 
 ## Target architecture
 
-[Target architecture sketch (pipeline + static site)](target-architecture-sketch.md): steps 1–3 are done. The snapshot contract is [snapshot schema 1](snapshot-schema.md). Step 4, removing Streamlit, is not started.
+[Target architecture sketch (pipeline + static site)](target-architecture-sketch.md): steps 1–4 are done. The snapshot contract is [snapshot schema 1](snapshot-schema.md). Step 4 removed Streamlit.
 
-The container diagram was updated so `weekly_run` includes validation (exit 4) and the gray box is an optional viewer. It still does not draw each shadow series as its own box. Those blocks are named in the schema doc.
+The container diagram shows validation (exit 4) on `weekly_run`. The gray box is the local or Pi static preview. It still does not draw each shadow series as its own box. Those blocks are named in the schema doc.
 
 ## Notes
 

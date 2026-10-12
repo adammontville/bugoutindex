@@ -1,11 +1,11 @@
-# Target architecture sketch (pipeline + static site) — deferred
+# Target architecture sketch (pipeline + static site)
 
 **Audience:** Product Manager  
-**Status:** Steps 1–3 are done. Step 4 (remove Streamlit) is not started. Adam approved this cleanup before methodology work. The score, the bands, the weights, `CORE_METRICS`, and the live number were not changed. `schema_version` stays 1. `methodology_version` stays 1.0.0.  
-**Written:** 2026-09-25. Steps 1–3 recorded 2026-10-07.  
-**Shipped path:** pipeline → snapshot → validate → render → GitHub Pages. The contract is [`snapshot-schema.md`](snapshot-schema.md). The C4 diagrams in this folder show that path; the container diagram’s gray box is the optional Streamlit viewer, not a second publisher. [`ARCHITECTURE_AND_ROADMAP.md`](../../ARCHITECTURE_AND_ROADMAP.md) is the longer written review.
+**Status:** Steps 1–4 are done. Step 4 (remove Streamlit) is done. Adam approved this cleanup. The score, the bands, the weights, `CORE_METRICS`, `compute_index`, and the live number were not changed. `schema_version` stays 1. `methodology_version` stays 1.1.1.  
+**Written:** 2026-09-25. Steps 1–3 recorded 2026-10-07. Step 4 recorded 2026-10-12.  
+**Shipped path:** pipeline → snapshot → validate → render → GitHub Pages. The contract is [`snapshot-schema.md`](snapshot-schema.md). The C4 diagrams in this folder show that path. The container diagram’s gray box is a local or Pi static preview of `docs/`, not a second publisher. [`ARCHITECTURE_AND_ROADMAP.md`](../../ARCHITECTURE_AND_ROADMAP.md) is the longer written review.
 
-The BugOut Index stays a **directional stress and stability reading**. It places published statistics between fixed endpoints so a reader can see how hard those conditions are pressing. Higher is more stable. It is not a forecast and not a bug-out or historical-crisis siren. Methodology **1.0.0** stays the published formula until a separate, versioned decision says otherwise.
+The BugOut Index stays a **directional stress and stability reading**. It places published statistics between fixed endpoints so a reader can see how hard those conditions are pressing. Higher is more stable. It is not a forecast and not a bug-out or historical-crisis siren. The publisher stamps methodology **1.1.1**. Weeks already published stay under the version that produced them. Step 4 did not change that version.
 
 ---
 
@@ -21,7 +21,7 @@ Simplicity is the goal. Fewer runtimes, fewer writers of the public site, and on
 
 Keep GitHub Pages and the automated weekly build and deploy. The public product is the static site under `docs/`, rebuilt by a Python batch job and served as files.
 
-Drop Streamlit from the core publish path. The weekly site is written by the batch pipeline. A local or Raspberry Pi viewer is optional, and only if someone still wants one later.
+The weekly site is written by the batch pipeline. A laptop or a Raspberry Pi runs that same pipeline and serves `docs/` with a static file server.
 
 The shape is one pipeline:
 
@@ -70,7 +70,7 @@ annual checklist ┘         │
 
 The weekly Action remains the publisher for the public site. GitHub Pages keeps serving `/docs` on `main`. The site is files. The number is computed in the batch job.
 
-`schema_version` names the JSON shape. `methodology_version` names the formula. The published snapshot is `schema_version` 1 and `methodology_version` 1.0.0 (`docs/data/latest.json`). That contract is written down in [`snapshot-schema.md`](snapshot-schema.md) and checked by `runtime/publish/snapshot_schema.py`. Bump `schema_version` when the shape changes. Old files stay readable under the version they were written with. The freeze did not bump either version and did not edit `latest.json`.
+`schema_version` names the JSON shape. `methodology_version` names the formula. New publishes stamp `schema_version` 1 and `methodology_version` 1.1.1. `docs/data/latest.json` stays the last weekly publish. That contract is written down in [`snapshot-schema.md`](snapshot-schema.md) and checked by `runtime/publish/snapshot_schema.py`. Bump `schema_version` when the shape changes. Old files stay readable under the version they were written with. The schema freeze did not edit `latest.json`, and step 4 did not either.
 
 ---
 
@@ -128,7 +128,7 @@ The weekly schedule stays Friday 23:30 UTC. GitHub often starts that job Saturda
 
 A local or Pi run is the same command as the weekly job: fetch, score, validate, render into `docs/`, then serve that directory with a static file server. Preview is opening those files. There is no second history file and no `deployment` branch on the product path.
 
-Streamlit, if it is still wanted, is an optional viewer. It reads the snapshot or the rendered pages. It does not write the weekly site, and the weekly job does not import it.
+Publish with `python -m runtime.publish.weekly_run`. Preview with `python -m http.server 8765 --directory docs`. There is no Streamlit viewer. The weekly job does not import one.
 
 ---
 
@@ -149,12 +149,12 @@ Language models stay off the score, the weights, the bands, and any watch level.
 
 ## Migration path
 
-The formula, `CORE_METRICS`, and the live number stayed put through steps 1–3.
+The formula, `CORE_METRICS`, and the live number stayed put through steps 1–4.
 
-1. **Freeze the schema.** Done. The contract is [`snapshot-schema.md`](snapshot-schema.md). `schema_version` is still 1. `methodology_version` is still 1.0.0. `docs/data/latest.json` was not rewritten.
-2. **Move `weekly_run` off Streamlit.** Done. The weekly job does not import Streamlit. Fetchers read `FRED_API_KEY` from the environment (`runtime/util/secrets_compat.py`). The Action still installs the hashed lockfile, which still lists Streamlit because the viewer is still in the tree.
-3. **Demote Streamlit to an optional viewer.** Done. `runtime/main.py` reads `docs/data/latest.json`. It does not write the weekly site. A local or Pi box runs the same pipeline and serves `docs/`. The public site is still GitHub Pages.
-4. **Remove Streamlit when it is unused.** Not started. Drop the app, the dependency, and the old entry points only after nothing is using the viewer.
+1. **Freeze the schema.** Done. The contract is [`snapshot-schema.md`](snapshot-schema.md). `schema_version` is still 1. That freeze left `methodology_version` at 1.0.0 and did not rewrite `docs/data/latest.json`. Later methodology versions (1.1.0, then 1.1.1) stay on schema 1. Step 4 did not change them.
+2. **Move `weekly_run` off Streamlit.** Done. The weekly job does not import Streamlit. Fetchers read `FRED_API_KEY` from the environment (`runtime/util/secrets_compat.py`). When this step landed, the Action still installed a hashed lockfile that listed Streamlit, because the viewer was still in the tree. Step 4 removed that dependency.
+3. **Demote Streamlit to an optional viewer.** Done. `runtime/main.py` read `docs/data/latest.json` and did not write the weekly site. A local or Pi box runs the same pipeline and serves `docs/`. The public site is still GitHub Pages. Step 4 removed that viewer.
+4. **Remove Streamlit.** Done. Adam approved this step. The viewer (`runtime/main.py`, `runtime/pages/`, `runtime/presentation/`, `runtime/viewer_io.py`), the Streamlit-only essays and images under `runtime/static/`, and the `streamlit` dependency are gone. There is no `.streamlit/` config in the repo. The hashed lockfile no longer lists Streamlit. A local or Pi box still publishes with `python -m runtime.publish.weekly_run` and previews with `python -m http.server 8765 --directory docs`. The public site is still GitHub Pages. Scoring, `compute_index`, `schema_version`, and `methodology_version` (1.1.1) were not changed. `docs/data/latest.json` and history were not rewritten.
 
 Stop here. The site is still the static weekly publish.
 
@@ -162,9 +162,10 @@ Stop here. The site is still the static weekly publish.
 
 ## What this work does not do
 
-- It does not change the score formula, `CORE_METRICS`, weights, bands, or the live number.
-- It does not remove Streamlit (step 4).
-- It does not decide methodology v1.1, new companions, or a weight change.
-- The C4 container diagram names the viewer and the validate step in the `weekly_run` box. It does not draw a separate box for every shadow series.
+- It does not change the score formula, `compute_index`, `CORE_METRICS`, weights, bands, or the live number.
+- It does not change `schema_version` (stays 1) or `methodology_version` (stays 1.1.1).
+- It does not rewrite `docs/data/latest.json` or history.
+- Step 4 removed Streamlit. It did not add a publisher.
+- The C4 container diagram’s gray box is the local or Pi static preview. The validate step stays in the `weekly_run` box. The diagram does not draw a separate box for every shadow series.
 
-The shipped path is the weekly Action, `weekly_run`, the v1.0.0 formula, fetchers, the schema 1 snapshot, validation, the static renderer, and GitHub Pages.
+The shipped path is the weekly Action, `weekly_run`, the formula module, fetchers, the schema 1 snapshot, validation, the static renderer, and GitHub Pages.

@@ -101,4 +101,4 @@ The weekly job scrubs secrets, then validates, then writes `docs/data/latest.jso
 
 An RTCI download failure, an unreadable crime file, or a latest month with no usable national rate is a core failure (exit 2). The job does not carry the previous crime value forward and does not invent an observation date. That is the core-input row above. Shadows and revisions still carry forward. Crime does not.
 
-`FRED_API_KEY` is read from the environment. The weekly job does not import Streamlit.
+`FRED_API_KEY` is read from the environment. The repository does not depend on Streamlit, and the weekly job does not import it.

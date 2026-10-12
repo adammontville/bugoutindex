@@ -1,7 +1,7 @@
 # BugOut Index — architecture review and roadmap
 
 **Audience:** Product Manager  
-**Status:** Living architecture record. Shipped publisher, formula, companion, and backtest work is described as merged. Later sections still include open proposals. The incubating-metrics inventory was locked by Adam Montville on 2026-09-23 (see Later). Target-architecture steps 1–3 are in effect: schema 1 is frozen, the weekly job does not import Streamlit, and Streamlit is an optional viewer. This document does not change the score, the bands, or the formula.  
+**Status:** Living architecture record. Shipped publisher, formula, companion, and backtest work is described as merged. Later sections still include open proposals. The incubating-metrics inventory was locked by Adam Montville on 2026-09-23 (see Later). Target-architecture steps 1–4 are in effect: schema 1 is frozen, and Streamlit has been removed. A local or Pi preview is `python -m http.server 8765 --directory docs`. This document does not change the score, the bands, or the formula.  
 **Reviewed against:** repository `main` as of the 2026-09-19 weekly publish (score **57.11**), with later notes for work merged after that publish.
 **Live site:** [https://www.bugoutindex.com/](https://www.bugoutindex.com/) (GitHub Pages; `bugoutindex.com` redirects there). The same build is at [https://adammontville.github.io/bugoutindex/](https://adammontville.github.io/bugoutindex/).
 
@@ -61,11 +61,11 @@ The publisher (`runtime/publish/weekly_run.py`, `interpret()`) uses four bands:
 | 40–54.99 | Low Stability | Heightened Risk |
 | Below 40 | Critical Instability | Collapse Likely |
 
-`METRICS.md` still lists six bands, including Critical Fragility (35–39.99), Critical Instability (25–34.99), and Systemic Collapse (below 25). **Nothing in the publisher uses those three lower bands.** `runtime/static/markdown/about.md` matches the four-band scale. The public site is weekly, and several inputs are annual.
+`METRICS.md` still lists six bands, including Critical Fragility (35–39.99), Critical Instability (25–34.99), and Systemic Collapse (below 25). **Nothing in the publisher uses those three lower bands.** The methodology page matches the four-band scale. The Streamlit essay that used to live at `runtime/static/markdown/about.md` was removed with the viewer. The public site is weekly, and several inputs are annual.
 
 ### The six inputs, as the publisher computes them
 
-Authoritative code: `CORE_METRICS`, `METRIC_RANGES`, `WEIGHTS`, and `normalize()` in `runtime/publish/weekly_run.py`. The same ranges and weights are copied in `runtime/processing/calculate_index.py` and `runtime/pages/boi_simulator.py`.
+Authoritative code: `CORE_METRICS`, `METRIC_RANGES`, `WEIGHTS`, and `normalize()` live in `runtime/processing/formula.py`. `runtime/publish/weekly_run.py` and `runtime/processing/calculate_index.py` import that module. The Streamlit simulator (`runtime/pages/boi_simulator.py`) was removed in step 4.
 
 For a “higher raw value is worse” metric:
 
@@ -128,11 +128,11 @@ If the same normalized values are combined the way `METRICS.md` is written — a
 | Topic | What the weekly job does | What a reader finds elsewhere |
 | --- | --- | --- |
 | Aggregation | Divide by the sum of weights (0.72) | `METRICS.md` “Step 3” is a plain sum. The public methodology page matches the code |
-| Inflation endpoints | −10 to 15. A 4% print scores **44** | `METRICS.md` table says −15% to 10%. Its example uses 0% to 10% and says 4% scores **60**. `runtime/static/markdown/inflation_rate.md` matches the code |
+| Inflation endpoints | −10 to 15. A 4% print scores **44** | `METRICS.md` table says −15% to 10%. Its example uses 0% to 10% and says 4% scores **60**. The public methodology page matches the code. The Streamlit essay at `runtime/static/markdown/inflation_rate.md` was removed with the viewer |
 | Trust | Linear map of the trust percent on 0–80. 41 → **51.25** | `METRICS.md` does not mention the inversion, so the generic formula scores 41 as **48.75** and treats higher trust as worse. `trust_in_government.md` first computes distrust as `100 − 41 = 59`, then normalizes that on 0–80, which scores **26.25** |
 | Crime definition | Violent **plus** property, unweighted mean of agencies in the local file | `METRICS.md` overview says “violent crimes.” The crime essay and the site say violent plus property |
 | Risk bands | Four bands. Below 40 is one bucket | `METRICS.md` has six bands |
-| Clamping | Weekly normalizer clamps to 0–100 | `runtime/processing/normalize.py` does not clamp. The Streamlit simulator imports that function |
+| Clamping | Weekly normalizer clamps to 0–100 | `runtime/processing/normalize.py` re-exports `formula.normalize`, which clamps. The Streamlit simulator was removed with the viewer |
 | “Percent weight” | Labels are the raw weights | A reader can reasonably think they are shares of 100 |
 
 `METRICS.md` was supposed to be aligned with the code (closed issue #21, January 2025). It has drifted again. The public methodology page, written with the weekly site in April 2026, is the closest prose to the publisher. It still prints the raw weights as percents, so it does not show the 20.8 / 16.7 / 12.5 shares.
@@ -195,7 +195,7 @@ These are product constraints, not just style notes:
 - **Deflation scores as healthier than low inflation.** −10% CPI maps to 100 and 15% maps to 0, in a straight line. A 2% print scores higher than a 4% print, and a −2% print scores higher than 2%. That is an explicit choice in `inflation_rate.md`. It is also a product question: deflation has been a crisis signal in other eras.
 - **National only.** No state or city score. `about.md` lists geographic breakdown as a future plan.
 - **Thresholds are fixed.** A slow move inside the window changes the score a little. A move past the endpoint does not, once clamped. The methodology page says the endpoints are meant to be historically extreme. The FRED replay in `runtime/backtest/` does not show that for all six inputs: crime, homelessness, and trust are excluded or held constant and labeled. See the product-framing note.
-- **Streamlit is an optional viewer.** The public site is the static renderer: pipeline → snapshot → validate → render → GitHub Pages. `runtime/main.py` reads `docs/data/latest.json` and does not write `docs/`. The weekly job does not import Streamlit. `FRED_API_KEY` comes from the environment. `runtime/util/deploy.sh` still knows about a `deployment` branch and a commented Raspberry Pi SSH step; a Pi run of the product path is the same pipeline, then a static server for `docs/`. Removing Streamlit is step 4 and is not done.
+- **Streamlit is gone.** The public site is the static renderer: pipeline → snapshot → validate → render → GitHub Pages. Step 4 removed `runtime/main.py` and the rest of the viewer. `FRED_API_KEY` comes from the environment. `runtime/util/deploy.sh` still knows about a `deployment` branch and a commented Raspberry Pi SSH step; a Pi run of the product path is the same pipeline, then `python -m http.server 8765 --directory docs`.
 
 ---
 
@@ -222,17 +222,17 @@ local CSV/const ─┘         │            validate schema 1 (exit 4)
 | Piece | Role | Runs in production? |
 | --- | --- | --- |
 | `.github/workflows/weekly-update.yml` | Scheduled job. Python 3.12. One secret, `FRED_API_KEY`. Commits data and `docs/` back to `main` as `bugout-bot` | Yes |
-| `runtime/publish/weekly_run.py` | Fetch, score, append history, validate schema 1, write JSON, call the renderer. Exits 2, 3, or 4 to refuse a bad publish. Does not import Streamlit | Yes |
+| `runtime/publish/weekly_run.py` | Fetch, score, append history, validate schema 1, write JSON, call the renderer. Exits 2, 3, or 4 to refuse a bad publish | Yes |
 | `runtime/publish/render.py` plus `runtime/publish/templates/` | Static HTML. No JavaScript required. Pages: current, history, revisions, methodology | Yes |
 | `runtime/data/fetch/fetch_{inflation,unemployment,debt,incident,homelessness,trust,markets,pulse,labor_shadow,food_shadow,nyc_dhs_shadow,ramsey_shelter_shadow,sf_shelter_shadow,shelter_region_shadow,revisions}.py` | Inputs | Yes, from the weekly job. `fetch_labor_shadow`, `fetch_food_shadow`, `fetch_nyc_dhs_shadow`, and the other shelter companions are not scored |
 | `runtime/data/fetch/fetch_{inflation,unemployment,debt,incident,homelessness,trust,markets,pulse,labor_shadow,food_shadow,nyc_dhs_shadow,pew_trust_shadow,gallup_confidence_shadow,revisions}.py` | Inputs | Yes, from the weekly job. `fetch_labor_shadow`, `fetch_food_shadow`, `fetch_nyc_dhs_shadow`, `fetch_pew_trust_shadow`, and `fetch_gallup_confidence_shadow` are companions and are not scored |
 | `runtime/util/http_retry.py` | Retries timeouts, connection errors, 408, 429, and 5xx. Backoff about 2s, 6s, 14s, 30s, 60s | Yes |
-| `runtime/util/secrets_compat.py` | `FRED_API_KEY` from the environment. No Streamlit import | Yes |
+| `runtime/util/secrets_compat.py` | `FRED_API_KEY` from the environment | Yes |
 | `docs/CNAME` | Custom domain `www.bugoutindex.com` | Yes. Checked during this review: both hostnames serve the Pages site. `last-modified` on 22 September 2026 was the 19 September publish |
-| Streamlit viewer (`runtime/main.py`), simulator, `calculate_index.py`, incubating fetchers, crime downloader, `deploy.sh` | Optional viewer reads the snapshot. Not on the weekly path | No |
+| `calculate_index.py`, incubating fetchers, crime downloader, `deploy.sh` | Legacy or incubating. Not on the weekly path. The Streamlit viewer was removed in step 4 | No |
 | `runtime/data/fetch_data.py` | A cache that would refetch some series every 7–365 days | Not called by the weekly job |
 
-Dependencies (`runtime/requirements.txt`): the hashed lock still includes Streamlit because the optional viewer is in the tree. The weekly job installs that lock and does not import Streamlit. Also pytest, requests, python-dotenv, pandas, Jinja2. The weekly site does not need a server process. Hosting cost is GitHub Actions minutes (recent scheduled runs are about 2 minutes) plus GitHub Pages. FRED and gold-api.com are used on their free tiers. There is no database and no paid model call.
+Dependencies (`runtime/requirements.txt`): the hashed lock is pytest, requests, python-dotenv, pandas, and Jinja2, plus what those packages need. Streamlit is not in the lock. The weekly job installs that lock. The weekly site does not need a server process. Hosting cost is GitHub Actions minutes (recent scheduled runs are about 2 minutes) plus GitHub Pages. FRED and gold-api.com are used on their free tiers. There is no database and no paid model call.
 
 ### Data flow for one Friday
 
@@ -253,7 +253,7 @@ Dependencies (`runtime/requirements.txt`): the hashed lock still includes Stream
 
 There is no separate deploy step and no CDN configuration in the repo beyond GitHub Pages serving `/docs` on `main`. A green weekly run plus a green `pages-build-deployment` workflow is the whole path. Recent scheduled runs through 19 September 2026 completed successfully, and the live page showed 57.11 when this review fetched it.
 
-The legacy daily file `runtime/data/historical_bugout_index.csv` (stringified Python dicts, starting 2025-03-16, score about 57.62 on the first rows) is not updated by this pipeline and is not what the Streamlit viewer reads. The viewer reads `docs/data/latest.json`. `runtime/util/sync_history.sh` copies that legacy file from the `deployment` branch back to `main`.
+The legacy daily file `runtime/data/historical_bugout_index.csv` (stringified Python dicts, starting 2025-03-16, score about 57.62 on the first rows) is not updated by this pipeline. The published snapshot is `docs/data/latest.json`. `runtime/util/sync_history.sh` copies that legacy file from the `deployment` branch back to `main`.
 
 ---
 
@@ -360,10 +360,10 @@ These improve rigor, honesty, and the Friday page without new data sources.
 
 **4. Lock the formula with a test, and stop maintaining three copies**
 
-- **Outcome:** One module owns endpoints, weights, inversion, clamping, aggregation, and bands. `weekly_run.py` and the simulator import it. A test fixes the 19 September inputs to 57.11 and the band “Moderate Stability”, and fixes trust 41 → 51.25. `tests/test_scoring.py` collects.
+- **Outcome:** One module owns endpoints, weights, inversion, clamping, aggregation, and bands. `weekly_run.py` imports it. A test fixes the 19 September inputs to 57.11 and the band “Moderate Stability”, and fixes trust 41 → 51.25. `tests/test_scoring.py` collects. The Streamlit simulator was removed in step 4.
 - **Effort:** M.
 - **Dependencies:** None, if the extracted function is behavior-preserving, including the clamp.
-- **Success:** `pytest` fails if someone removes the division by total weight or the trust inversion. Running the Streamlit simulator on in-range values matches the site.
+- **Success:** `pytest` fails if someone removes the division by total weight or the trust inversion. The publisher imports the shared formula module. The Streamlit simulator was removed in step 4; `tests/test_scoring.py` still locks the bands.
 
 **5. Make a missed Friday obvious**
 
@@ -422,7 +422,7 @@ These raise data quality and prepare a real methodology version. They still do n
 
 **12. Retire the second app in the docs, even if the code stays**
 
-- **Outcome:** `DEVELOPER.md` matches `runtime/main.py` and `runtime/requirements.txt`, and it says the public product is the static site. `calculate_index.py` does not fetch on import. The `deployment` branch and Pi script are marked legacy.
+- **Outcome:** `DEVELOPER.md` matches the weekly pipeline and `runtime/requirements.txt`, and it says the public product is the static site. `calculate_index.py` does not fetch on import. The `deployment` branch and Pi script are marked legacy.
 - **Effort:** S.
 - **Dependencies:** PM confirms the Pi is not still serving users (question below).
 - **Success:** A new contributor following `DEVELOPER.md` reaches the weekly pipeline, not a missing `presentation/dashboard.py`.
@@ -529,7 +529,7 @@ Operating rules if a call is ever added to the Action:
 2. **Deflation.** Should −2% inflation score as more stable than +2%, as the −10 to +15 line does today?
 3. **Crime.** Is “unweighted mean of violent plus property rates in the RTCI file” the definition you want to keep, and which GitHub repo is the source of that file?
 4. **What “weekly” is for.** Confirm the product is a slow index plus a weekly explanation, not faster inputs inside the score. The data supports the first one. Issues #42 and #53 pull toward the second.
-5. **Streamlit.** It stays as an optional viewer of the published snapshot until nothing uses it. It is not the weekly writer. Removing it is step 4 in [`docs/architecture/target-architecture-sketch.md`](docs/architecture/target-architecture-sketch.md).
+5. **Streamlit.** Decided. Step 4 removed it. Preview is `python -m http.server 8765 --directory docs`. See [`docs/architecture/target-architecture-sketch.md`](docs/architecture/target-architecture-sketch.md).
 6. **Week note voice.** Is a dry, numeric note enough, or do you want a reviewed paragraph later? The roadmap does the dry note first.
 7. **Canonical URL.** `www.bugoutindex.com` is what the CNAME and DNS serve. The README had been pointing only at `github.io`. This review names both. Which should lead?
 8. **Annual owner.** Who updates HUD and Edelman, and in which month?
@@ -544,10 +544,10 @@ Operating rules if a call is ever added to the Action:
 
 Primary code and docs used for this review:
 
-- Score: `runtime/publish/weekly_run.py`, `runtime/processing/normalize.py`, `runtime/processing/scoring_v1.py`, `runtime/processing/calculate_index.py`, `runtime/pages/boi_simulator.py`
+- Score: `runtime/publish/weekly_run.py`, `runtime/processing/formula.py`, `runtime/processing/normalize.py`, `runtime/processing/scoring_v1.py`, `runtime/processing/calculate_index.py`
 - Publish path: `.github/workflows/weekly-update.yml`, `runtime/publish/render.py`, `runtime/publish/templates/`, `runtime/publish/README.md`, `docs/CNAME`
 - Fetchers: `runtime/data/fetch/`, `runtime/util/http_retry.py`, `runtime/util/download_crime_rate_data.py`
-- Stated methodology: `METRICS.md`, `runtime/static/markdown/*.md`, `runtime/publish/templates/methodology.html.j2`
+- Stated methodology: `METRICS.md`, `runtime/publish/templates/methodology.html.j2`. The Streamlit essays under `runtime/static/markdown/` were removed in step 4
 - Incubating: `incubating/`
 - Published numbers: `docs/data/latest.json` (generated 2026-09-19T01:21:36Z, index 57.11), `runtime/data/weekly_bugout_index.csv` (23 rows, 2026-04-21 through 2026-09-19)
 - Tests: `tests/test_scoring.py` (collection error), `runtime/util/test_http_retry.py` (5 passed)

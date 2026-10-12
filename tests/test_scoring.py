@@ -170,7 +170,6 @@ def test_publishers_share_the_formula_module():
 
 def test_other_publishers_do_not_keep_a_second_copy():
     weekly = (ROOT / "runtime" / "publish" / "weekly_run.py").read_text()
-    simulator = (ROOT / "runtime" / "pages" / "boi_simulator.py").read_text()
     calculate_index = (ROOT / "runtime" / "processing" / "calculate_index.py").read_text()
     normalize_py = (ROOT / "runtime" / "processing" / "normalize.py").read_text()
     scoring = (ROOT / "runtime" / "processing" / "scoring_v1.py").read_text()
@@ -179,10 +178,6 @@ def test_other_publishers_do_not_keep_a_second_copy():
     assert "def normalize(" not in weekly
     assert "def compute_index(" not in weekly
     assert "def interpret(" not in weekly
-
-    assert "from processing.formula import" in simulator
-    assert "(-10, 15)" not in simulator
-    assert "0.15" not in simulator
 
     assert "from runtime.processing.formula import" in calculate_index
     assert "def normalize_metric(" not in calculate_index
@@ -195,7 +190,7 @@ def test_other_publishers_do_not_keep_a_second_copy():
     assert "from .formula import calculate_category_score, normalize_metric" in scoring
 
 
-def test_four_bands_and_streamlit_classes():
+def test_four_bands():
     assert interpret(70)["band"] == "High Stability"
     assert interpret(69.99)["band"] == "Moderate Stability"
     assert interpret(55)["band"] == "Moderate Stability"

@@ -634,6 +634,8 @@ def render_site(snapshot: Dict[str, Any]) -> None:
     DOCS.mkdir(exist_ok=True)
     (DOCS / "assets").mkdir(exist_ok=True)
     shutil.copy(STATIC / "style.css", DOCS / "assets" / "style.css")
+    # Copied on every render so a weekly publish does not drop the icon.
+    shutil.copy(STATIC / "favicon.ico", DOCS / "favicon.ico")
 
     # Prepare metric view-models
     boi_history = snapshot.get("history", {}).get("bugout_index", [])

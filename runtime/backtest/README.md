@@ -100,6 +100,10 @@ Issue #55 still asks for Depression, WWII, and 1970s reconstructions, population
 
 [`V2_CANDIDATE.md`](V2_CANDIDATE.md) is a separate replay for methodology v2.0 planning. It does not change this v1.0.0 command, `compute_index`, or the weekly publish. The note's current basket is hypothesis h2. Run it with `python -m runtime.backtest.v2_candidate`. The results note is meant to be read without a local run.
 
+## Combined 2.0 design
+
+[`COMBINED_DESIGN.md`](COMBINED_DESIGN.md) replays one research configuration beside methodology 1.1.1: frozen 1970–2006 inflation and unemployment endpoints, a debt-to-GDP change instead of the level, a VIX financial-stress input, and two weight shifts off homelessness and trust. It does not change `compute_index`, `docs/data/latest.json`, or the weekly history. Run `python -m runtime.backtest.combined_design`. The note is meant to be read without a local run.
+
 ## Crime refresh replay
 
 [`CRIME_LIVE_REPLAY.md`](CRIME_LIVE_REPLAY.md) rescores each committed weekly publication with the newest RTCI month that was on the public file that day. The other five inputs stay on the published row. Endpoints, weights, and bands stay v1.0.0. The live score stays 57.04. Run `python -m runtime.backtest.crime_live_replay`. The note is meant to be read without a local run.

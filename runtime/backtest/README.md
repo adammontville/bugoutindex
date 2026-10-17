@@ -96,9 +96,9 @@ An empty `inputs_present` would be the formula's zero (nothing was scored), not 
 
 Issue #55 still asks for Depression, WWII, and 1970s reconstructions, population-adjusted crime, and a page about the analysis. This directory does not do that work, and it does not add a page to the public site.
 
-## v2 candidate hypothesis
+## v2 candidate baskets
 
-[`V2_CANDIDATE.md`](V2_CANDIDATE.md) is a separate replay for methodology v2.0 planning. It does not change this v1.0.0 command, `compute_index`, or the weekly publish. The note's current basket is hypothesis h2. Run it with `python -m runtime.backtest.v2_candidate`. The results note is meant to be read without a local run.
+[`V2_CANDIDATE.md`](V2_CANDIDATE.md) is a separate replay for methodology v2.0 planning. It does not change this v1.0.0 command, `compute_index`, or the weekly publish. The v1 column in that note is methodology 1.1.1: Nationwide Full Sample crime, homelessness 0.22, and trust 39. Beside it are three additive baskets (labor and food, cost of living, financial stress). Hypothesis h2 is cited and is not recomputed. Run it with `python -m runtime.backtest.v2_candidate`. The results note is meant to be read without a local run. `python -m runtime.backtest` stays the 1.0.0 replay.
 
 ## Crime refresh replay
 

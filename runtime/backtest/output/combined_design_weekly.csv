@@ -1,0 +1,11 @@
+series,sample,weeks,mean_abs_change,stdev_change,share_flat,max_abs_change,max_abs_week,max_drop,max_drop_week
+w2_month_publish,within_month,790,0.00,0.00,1.000000,0.00,2026-08-28,0.00,2007-01-12
+w2_month_publish,all_fridays,1025,0.45,1.53,0.771707,20.42,2020-04-03,-20.42,2020-04-03
+w2_month_publish,gap_excluded,1019,0.43,1.43,0.772326,20.42,2020-04-03,-20.42,2020-04-03
+w2_week_vix,within_month,790,0.61,0.92,0.077215,5.94,2018-02-09,-5.94,2018-02-09
+w2_week_vix,all_fridays,1025,0.86,1.64,0.059512,20.42,2020-04-03,-20.42,2020-04-03
+w2_week_vix,gap_excluded,1019,0.84,1.57,0.059863,20.42,2020-04-03,-20.42,2020-04-03
+v1_monthly,all_months,235,0.39,0.78,0.000000,8.05,2020-04-01,-8.05,2020-04-01
+v1_monthly,gap_excluded,233,0.37,0.70,0.000000,8.05,2020-04-01,-8.05,2020-04-01
+w2_monthly,all_months,235,1.95,3.19,0.004255,20.42,2020-04-01,-20.42,2020-04-01
+w2_monthly,gap_excluded,233,1.87,3.01,0.004292,20.42,2020-04-01,-20.42,2020-04-01

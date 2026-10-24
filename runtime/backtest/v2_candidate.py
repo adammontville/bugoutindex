@@ -2,244 +2,161 @@
 # Copyright (C) 2025 Adam Montville
 # Dual-licensed under AGPL-3.0 and a commercial license.
 """
-Trial v2 candidate replay beside the locked v1.0.0 FRED replay.
+Research replay of methodology 1.1.1 beside three candidate baskets.
 
 This module does not publish a score. It does not change
-``runtime.processing.formula``, the weekly job, or ``docs/data/latest.json``.
-The v1 numbers in the output are ``compute_index``. The v2 numbers are a
-labeled hypothesis basket scored with ``formula.normalize`` and the same
-divide-by-sum-of-present-weights rule. They are not a methodology version.
+``runtime.processing.formula``, the weekly job, ``docs/data/latest.json``,
+or the weekly history. Companions stay outside the score.
+
+The v1 column is ``compute_index`` on 1.1.1 inputs: the live endpoints and
+weights, crime as the RTCI Nationwide Full Sample rate when that month
+exists, and the 1.1.1 homelessness and trust checklist values held constant.
+The candidate columns use ``formula.normalize`` and the same
+divide-by-sum-of-present-weights rule on a wider basket. They are not a
+methodology version.
 """
 from __future__ import annotations
 
 import argparse
 import csv
+import json
 import sys
+from datetime import datetime, timedelta
 from decimal import Decimal, ROUND_HALF_UP
 from pathlib import Path
+from statistics import mean, stdev
 from typing import Mapping, Optional, Sequence
 
 from runtime.backtest.harness import (
-    FIXTURE_DOWNLOAD_DATE,
     HELD_CONSTANT_BASELINE,
     PUBLISHED_DATE,
-    WINDOWS,
-    FredLevels,
-    Window,
-    build_month_row,
     cpi_yoy,
     format_float,
     iter_months,
-    load_fixtures,
-    load_published_raws,
     prior_year_date,
     score_published_inputs,
+    load_published_raws,
 )
+from runtime.data.fetch.annual_inputs import load_annual_row
 from runtime.data.fetch.fetch_incident_rate import PUBLISHED_INCIDENT_RATE
-from runtime.processing.formula import WEIGHTS, compute_index, interpret, normalize
+from runtime.processing.formula import (
+    CORE_METRICS,
+    METRIC_RANGES,
+    WEIGHTS,
+    compute_index,
+    interpret,
+    normalize,
+)
 
-HYPOTHESIS_ID = "h2"
-CANDIDATE_LABEL = "v2_candidate_hypothesis_h2"
+# This replay's label. Hypothesis h2 was the previous replacement basket.
+# Its August 2026 score is cited below and is not recomputed.
+HYPOTHESIS_ID = "baskets_a_b_c"
+CANDIDATE_LABEL = "v2_baskets_a_b_c"
 DATA_PULL_DATE = "2026-09-26"
+DEBT_FULL_PULL_DATE = "2026-10-12"
+CREDIT_PULL_DATE = "2026-10-12"
+VIX_WEEKLY_PULL_DATE = "2026-10-12"
+# First month with a CPI year-over-year rate in the BLS fixture, through the
+# last headline CPI month in that fixture.
+HISTORY_START = "2007-01-01"
+HISTORY_END = "2026-08-01"
 # BLS cells for this month were non-numeric in the 2026-09-26 pull.
 BLS_GAP_MONTH = "2025-10-01"
 
-# Hypothesis h2 weights. They sum to 1.00 when every trial input is present.
-# They are not formula.WEIGHTS and they are not a fitted contract.
-# h1 was CPI 0.22, food 0.14, labor 0.28, VIX 0.18, crime 0.18.
-TRIAL_WEIGHTS = {
-    "inflation_rate": 0.20,
-    "food_cpi_yoy": 0.14,
-    "labor_utilization": 0.30,
-    "vix_month_mean": 0.16,
-    "incident_rate": 0.20,
+# Each add-on has the same raw weight. 0.08 is below unemployment (0.12)
+# and homelessness (0.09), so an add-on cannot outvote a core input.
+# It was not fit to a loss or to the current band.
+ADDON_WEIGHT = 0.08
+BASKET_ADDONS = {
+    "a_labor_food": ("food_cpi_yoy", "prime_age_epop"),
+    "b_cost_of_living": ("food_cpi_yoy", "housing_delinquency", "rent_burden_30"),
+    "c_financial": ("vix_month_mean", "credit_conditions"),
 }
-PRIMARY_ORDER = (
-    "inflation_rate",
-    "food_cpi_yoy",
-    "labor_utilization",
-    "vix_month_mean",
-    "incident_rate",
-)
-# Endpoints are hypotheses except where the note says they reuse v1.0.0
-# or the incubating food draft. Higher raw is less stable unless INVERSE.
-TRIAL_RANGES = {
-    "inflation_rate": (-10.0, 15.0),
-    # h1 food range was 0 to 10. h2 is −2 to 15.
-    "food_cpi_yoy": (-2.0, 15.0),
-    # h1 labor blend range was 70 to 83. h2 is 72 to 82.
-    "labor_utilization": (72.0, 82.0),
-    "prime_age_epop": (68.0, 82.0),
-    "vix_month_mean": (10.0, 65.0),
-    "incident_rate": (500.0, 8000.0),
-    "unemployment_rate": (0.0, 25.0),
-    "debt_to_gdp_ratio": (0.0, 200.0),
-    # Side-column hypotheses. Sample in this pull: housing 1.41–11.48,
-    # card delinquency 1.53–6.77. The ranges leave those peaks short of a
-    # hard floor and the troughs short of fully stable.
-    "housing_delinquency": (1.0, 12.0),
-    "consumer_credit_delinquency": (1.0, 8.0),
-    # ACS 1-year 30%+ rent burden in this pull runs 48.4 (2019) to 53.4
-    # (2011). 40 to 60 leaves that trough short of fully stable and that
-    # peak short of a hard floor. It is not fitted to the August band.
-    "rent_burden_30": (40.0, 60.0),
-    # CUUR0000SEHA 12-month change in this pull runs about −0.1 to 8.8.
-    # −2 to 12 is the same kind of hypothesis range, not a burden share.
-    "rent_cpi_yoy": (-2.0, 12.0),
-    # Monthly-mean DGS10 from 2003 through August 2026 runs about 0.62 to
-    # 5.11. 0 to 6 leaves that trough short of fully stable and that peak
-    # short of a hard floor. The 1962–2026 peak near 15 is a different era.
-    "treasury_10y": (0.0, 6.0),
-    # DFII10 monthly means in the same file run about −1.07 to 2.89.
-    "real_yield_10y": (-2.0, 4.0),
-    # v1.0.0 endpoints, reused only by the "kept" sensitivity.
-    "homelessness_rate": (0.0, 0.5),
-    "trust_in_government": (0.0, 80.0),
+BASKET_ORDER = ("a_labor_food", "b_cost_of_living", "c_financial")
+BASKET_TITLE = {
+    "a_labor_food": "A labor and food",
+    "b_cost_of_living": "B cost of living",
+    "c_financial": "C financial stress",
 }
-INVERSE = frozenset({"labor_utilization", "prime_age_epop", "trust_in_government"})
-LABOR_EPOP_WEIGHT = 0.70
-LABOR_LFPR_WEIGHT = 0.30
-DEBT_SENSITIVITY_WEIGHT = 0.12
-# Side columns only. They are not in TRIAL_WEIGHTS and not in the h2 primary.
-HOUSING_STRESS_WEIGHT = 0.12
-CONSUMER_CREDIT_WEIGHT = 0.12
-# Side columns only. Rent burden is the ACS income-share series.
-# Rent CPI is a labeled shelter-inflation proxy, not that share.
-RENT_BURDEN_WEIGHT = 0.12
-RENT_CPI_PROXY_WEIGHT = 0.12
-RENT_DATA_PULL_DATE = "2026-09-27"
-# Side columns only. Nominal and real 10-year yields, not corporate OAS.
-TREASURY_10Y_WEIGHT = 0.12
-REAL_YIELD_WEIGHT = 0.12
-RATES_DATA_PULL_DATE = "2026-09-27"
-# v1.0.0 weights for the "if debt, HUD, and Edelman stayed" sensitivity.
-HUD_KEPT_WEIGHT = WEIGHTS["homelessness_rate"]
-TRUST_KEPT_WEIGHT = WEIGHTS["trust_in_government"]
-LABOR_SLOT_WEIGHT = TRIAL_WEIGHTS["labor_utilization"]
 
-RECENT_WINDOW = Window(
-    name="recent",
-    start="2022-01-01",
-    end="2026-08-01",
-    description=(
-        "January 2022 through August 2026. August 2026 is the last headline "
-        "CPI month in this pull and the month behind the locked 57.11 score. "
-        "The window includes the 2022 food and headline inflation peak."
-    ),
-)
-V2_WINDOWS = {
-    "2008": WINDOWS["2008"],
-    "2020": WINDOWS["2020"],
-    "recent": RECENT_WINDOW,
+# Trial endpoints for series that are not in the live formula.
+# v1 endpoints are METRIC_RANGES and are not copied here as a second source.
+TRIAL_RANGES = {
+    # h2 food range. The older 0–10 draft clamped the 2022 peak.
+    "food_cpi_yoy": (-2.0, 15.0),
+    # Prime-age EPOP in this fixture runs 69.6 (2020-04) to 80.9.
+    # 80.9 is the July 2023 print and is tied through September 2024.
+    # 68 to 82 leaves that trough short of a hard floor and that peak short
+    # of fully stable. Higher EPOP is more stable.
+    "prime_age_epop": (68.0, 82.0),
+    # Mortgage delinquency in this fixture runs 1.41 to 11.48.
+    "housing_delinquency": (1.0, 12.0),
+    # ACS 30%+ rent burden in this fixture runs 48.4 (2019) to 53.4 (2011).
+    "rent_burden_30": (40.0, 60.0),
+    # Monthly-mean VIX in this fixture runs about 10.13 to 62.67.
+    "vix_month_mean": (10.0, 65.0),
+    # Chicago Fed NFCI credit subindex. The full file on the 2026-10-12 pull
+    # runs about -3.16 to 3.49. -4 to 4 leaves both ends short of a clamp.
+    # The subindex is standardized to mean 0 and standard deviation 1.
+    "credit_conditions": (-4.0, 4.0),
 }
-V2_WINDOW_ORDER = ("2008", "2020", "recent")
+RANGES = dict(METRIC_RANGES)
+RANGES.update(TRIAL_RANGES)
+INVERSE = frozenset({"trust_in_government", "prime_age_epop"})
+
+# Prior committed h2 replay. Not recomputed. Food −2 to 15, labor blend 72 to
+# 82, weights CPI 0.20 / food 0.14 / labor 0.30 / VIX 0.16 / crime 0.20.
+# Debt, homelessness, and trust were out of that basket.
+H2_PRIOR = {
+    "2008-10-01": (50.79, "Low"),
+    "2009-10-01": (65.79, "Moderate"),
+    "2020-03-01": (62.82, "Moderate"),
+    "2020-04-01": (44.34, "Low"),
+    "2022-06-01": (59.19, "Moderate"),
+    "2026-08-01": (77.28, "High"),
+}
+
+KEY_MONTHS = (
+    ("2008-10-01", "VIX and credit conditions jump"),
+    ("2008-11-01", "VIX monthly-mean peak; credit week of 5 Dec is the file high"),
+    ("2009-10-01", "Unemployment 10.0 and mortgage delinquency 10.41"),
+    ("2009-12-01", "Great Recession window ends; RTCI crime is still absent"),
+    ("2020-03-01", "COVID VIX monthly-mean peak"),
+    ("2020-04-01", "Unemployment 14.8 and prime-age EPOP trough; bank delinquency stayed low"),
+    ("2022-06-01", "Headline CPI and food CPI high"),
+    ("2022-09-01", "Food CPI year-over-year high in this pull"),
+    ("2025-10-01", "BLS publication gap"),
+    ("2026-04-01", "Last month in the RTCI file"),
+    ("2026-08-01", "Last headline CPI month in this pull"),
+)
 
 PACKAGE_DIR = Path(__file__).resolve().parent
 V2_FIXTURE_DIR = PACKAGE_DIR / "fixtures" / "v2"
 OUTPUT_DIR = PACKAGE_DIR / "output"
 MONTHLY_NAME = "v2_candidate_monthly.csv"
 SUMMARY_NAME = "v2_candidate_summary.csv"
+WEEKLY_NAME = "v2_candidate_weekly.csv"
 NOTE_NAME = "V2_CANDIDATE.md"
 CHART_NAME = "v2_candidate_chart.svg"
+ROOT = PACKAGE_DIR.parents[1]
+LATEST_PATH = ROOT / "docs" / "data" / "latest.json"
 
 SCORE_NOTE = (
-    "Hypothesis h2 replay for methodology v2.0 planning. Trial weights and "
-    "ranges are not a contract. v1 columns are compute_index (methodology "
-    "1.0.0). v2 columns are not the published BugOut Index and are not "
-    "inputs to the weekly job. h1 was the prior labeled basket "
-    "(food 0–10, labor 70–83, weights 0.22/0.14/0.28/0.18/0.18)."
+    "Research replay for methodology v2.0 planning. v1_111 is compute_index "
+    "on methodology 1.1.1 inputs. Baskets A, B, and C keep those inputs and "
+    "add series at weight 0.08 each. They are not a contract and they are "
+    "not the published BugOut Index."
 )
 
 SUMMARY_SCENARIOS = (
-    ("v1_partial", "v1.0.0 partial (crime, homelessness, trust excluded)"),
-    ("v1_held", "v1.0.0 held constant (2723 / 0.23 / 41)"),
-    ("v1_held_without_debt", "v1.0.0 held, debt removed"),
-    ("v1_held_without_homelessness", "v1.0.0 held, homelessness removed"),
-    ("v1_held_without_trust", "v1.0.0 held, trust removed"),
-    ("v1_partial_without_debt", "v1.0.0 partial, debt also removed"),
-    ("v2", "v2 candidate h2 (crime trial when the RTCI month exists)"),
-    ("v2_without_crime", "v2 candidate h2 with crime always excluded"),
-    ("v2_if_unrate", "v2 h2 basket with UNRATE instead of the labor composite"),
-    ("v2_if_epop_only", "v2 h2 basket with prime-age EPOP instead of the composite"),
-    ("v2_if_debt_included", "v2 h2 basket plus debt-to-GDP at weight 0.12"),
-    ("v2_if_crime_held", "v2 h2 basket with crime held at the locked 2723"),
-    ("v2_if_housing", "v2 h2 basket plus mortgage delinquency at weight 0.12"),
-    (
-        "v2_if_consumer_credit",
-        "v2 h2 basket plus credit-card delinquency at weight 0.12",
-    ),
-    (
-        "v2_if_housing_and_consumer",
-        "v2 h2 basket plus mortgage and credit-card delinquency",
-    ),
-    (
-        "v2_if_rent_burden",
-        "v2 h2 basket plus ACS 30% rent burden at weight 0.12",
-    ),
-    (
-        "v2_if_rent_burden_and_consumer",
-        "v2 h2 basket plus ACS 30% rent burden and credit-card delinquency",
-    ),
-    (
-        "v2_if_rent_cpi_proxy",
-        "v2 h2 basket plus rent-of-primary-residence CPI YoY (proxy, not burden)",
-    ),
-    ("v2_if_dgs10", "v2 h2 basket plus 10-year Treasury yield at weight 0.12"),
-    ("v2_if_real_yield", "v2 h2 basket plus 10-year real yield at weight 0.12"),
-    (
-        "v2_if_rates",
-        "v2 h2 basket plus 10-year nominal and real yields",
-    ),
-    (
-        "v2_if_kept_debt_hud_trust",
-        "v2 h2 basket plus debt when present and the HUD and Edelman pins",
-    ),
+    ("v1_111", "methodology 1.1.1 (Nationwide Full Sample crime; homelessness 0.22 and trust 39 held)"),
+    ("v1_partial", "inflation, unemployment, and debt only"),
+    ("v1_100_held", "1.0.0 pins on the same FRED inputs (crime 2723, homelessness 0.23, trust 41)"),
+    ("a_labor_food", "A: 1.1.1 plus prime-age EPOP and food CPI"),
+    ("b_cost_of_living", "B: 1.1.1 plus food CPI, mortgage delinquency, and rent burden"),
+    ("c_financial", "C: 1.1.1 plus VIX and the Chicago Fed credit subindex"),
 )
-
-KEY_MONTHS = (
-    ("2007-12-01", "Great Recession window starts"),
-    ("2008-10-01", "VIX monthly mean jumps"),
-    ("2008-11-01", "VIX monthly-mean peak in this pull"),
-    ("2009-10-01", "UNRATE peak in the locked vintage (10.0)"),
-    ("2009-12-01", "Great Recession window ends"),
-    ("2020-01-01", "Pre-COVID month"),
-    ("2020-03-01", "COVID VIX monthly-mean peak"),
-    ("2020-04-01", "COVID unemployment and prime-age EPOP trough"),
-    ("2020-12-01", "COVID window ends"),
-    ("2022-06-01", "Food CPI year-over-year 10.4 (inside h2; a hard floor under h1)"),
-    ("2022-09-01", "Food CPI year-over-year high in this pull"),
-    ("2025-10-01", "BLS publication gap in this pull"),
-    ("2026-04-01", "Last month in the RTCI trial file"),
-    ("2026-08-01", "Latest headline CPI month; locked-score inputs"),
-)
-
-# Prior committed h1 replay. These numbers are not recomputed by this command.
-# They are the scores from the first labeled basket so a reader can compare
-# h2 with h1 without a local run. h1 food range was 0–10, labor range 70–83,
-# weights CPI 0.22 / food 0.14 / labor 0.28 / VIX 0.18 / crime 0.18.
-H1_KEY_SCORES = {
-    "2008-10-01": {"v2": (45.62, "Low"), "crime_off": (45.62, "Low")},
-    "2009-10-01": {"v2": (68.72, "Moderate"), "crime_off": (68.72, "Moderate")},
-    "2020-03-01": {"v2": (60.58, "Moderate"), "crime_off": (58.28, "Moderate")},
-    "2020-04-01": {"v2": (48.32, "Low"), "crime_off": (43.24, "Low")},
-    "2022-06-01": {"v2": (52.87, "Low"), "crime_off": (48.85, "Low")},
-    "2026-08-01": {"v2": (74.51, "High"), "crime_off": (74.51, "High")},
-}
-H1_COMPARE_MONTHS = (
-    "2008-10-01",
-    "2009-10-01",
-    "2020-03-01",
-    "2020-04-01",
-    "2022-06-01",
-    "2026-08-01",
-)
-HOUSEHOLD_COMPARE_MONTHS = (
-    "2008-10-01",
-    "2009-10-01",
-    "2020-04-01",
-    "2022-06-01",
-    "2026-08-01",
-)
+SUMMARY_WINDOWS = ("all", "2008", "2020", "2022")
 
 
 def food_public_yoy(current: object, previous: object) -> Optional[float]:
@@ -256,17 +173,6 @@ def food_public_yoy(current: object, previous: object) -> Optional[float]:
         return None
     pct = ((cur - prev) / prev) * Decimal(100)
     return float(pct.quantize(Decimal("0.1"), rounding=ROUND_HALF_UP))
-
-
-def labor_utilization(epop: Optional[float], lfpr: Optional[float]) -> Optional[float]:
-    """Hypothesis blend: 0.70 × prime-age EPOP + 0.30 × prime-age LFPR.
-
-    This is not the incubating essay's participation penalty. That penalty
-    was never given a formula. Both series move this input every month.
-    """
-    if epop is None or lfpr is None:
-        return None
-    return LABOR_EPOP_WEIGHT * float(epop) + LABOR_LFPR_WEIGHT * float(lfpr)
 
 
 def _load_text_series(path: Path) -> dict[str, str]:
@@ -291,7 +197,6 @@ def _as_float_map(texts: Mapping[str, str]) -> dict[str, float]:
 
 
 def _load_rent_burden(path: Path) -> tuple[dict[str, float], dict[str, float]]:
-    """ACS 1-year 30%+ share (scored) and 50%+ share (diagnostic only)."""
     thirty: dict[str, float] = {}
     fifty: dict[str, float] = {}
     with path.open(newline="", encoding="utf-8") as handle:
@@ -317,6 +222,13 @@ def load_v2_bundle(directory: Optional[Path] = None) -> dict:
                 "max": float(row["vix_month_max"]),
                 "observations": int(row["observations"]),
             }
+    vix_weekly = {}
+    with (folder / "VIXCLS_weekly.csv").open(newline="", encoding="utf-8") as handle:
+        for row in csv.DictReader(handle):
+            vix_weekly[row["week_ending"]] = {
+                "mean": float(row["vix_week_mean"]),
+                "observations": int(row["observations"]),
+            }
     crime = {}
     with (folder / "RTCI_monthly.csv").open(newline="", encoding="utf-8") as handle:
         for row in csv.DictReader(handle):
@@ -325,35 +237,30 @@ def load_v2_bundle(directory: Optional[Path] = None) -> dict:
                 "population_weighted": float(row["incident_rate_population_weighted"]),
                 "agencies": int(row["agencies"]),
             }
-    extra_debt = _as_float_map(_load_text_series(folder / "GFDEGDQ188S_published_extra.csv"))
     rent_30, rent_50 = _load_rent_burden(folder / "B25070.csv")
+    credit = _as_float_map(_load_text_series(folder / "NFCICREDIT_weekly.csv"))
     return {
         "cpi": _load_text_series(folder / "CPIAUCSL.csv"),
         "food": _load_text_series(folder / "CPIUFDNS.csv"),
         "epop": _as_float_map(_load_text_series(folder / "LNS12300060.csv")),
-        "lfpr": _as_float_map(_load_text_series(folder / "LNS11300060.csv")),
         "unrate": _as_float_map(_load_text_series(folder / "LNS14000000.csv")),
         "vix": vix_rows,
+        "vix_weekly": vix_weekly,
         "crime": crime,
-        "extra_debt": extra_debt,
+        "debt": _as_float_map(_load_text_series(folder / "GFDEGDQ188S_full.csv")),
         "housing_delinquency": _as_float_map(_load_text_series(folder / "DRSFRMACBS.csv")),
-        "consumer_credit_delinquency": _as_float_map(
-            _load_text_series(folder / "DRCCLACBS.csv")
-        ),
         "rent_burden_30": rent_30,
         "rent_burden_50": rent_50,
-        "rent_cpi": _load_text_series(folder / "CUUR0000SEHA.csv"),
-        "treasury_10y": _as_float_map(_load_text_series(folder / "DGS10_monthly.csv")),
-        "real_yield_10y": _as_float_map(_load_text_series(folder / "DFII10_monthly.csv")),
+        "credit": credit,
     }
 
 
-def quarterly_asof(series: Mapping[str, float], day: str) -> tuple[Optional[float], str, str]:
-    """Latest quarterly print on or before ``day``.
+def asof(series: Mapping[str, float], day: str) -> tuple[Optional[float], str, str]:
+    """Latest print on or before ``day``.
 
-    Same rule as the debt column: the quarter-start month is ``observed``.
-    Later months keep that print as ``carried_forward``. A month before the
-    first print is ``excluded``. This is not an interpolation.
+    The print's own date is ``observed``. A later date keeps that print as
+    ``carried_forward``. A date before the first print is ``excluded``.
+    This is not an interpolation.
     """
     available = [stamp for stamp in series if stamp <= day]
     if not available:
@@ -361,94 +268,6 @@ def quarterly_asof(series: Mapping[str, float], day: str) -> tuple[Optional[floa
     chosen = max(available)
     status = "observed" if chosen == day else "carried_forward"
     return series[chosen], status, chosen
-
-
-def recent_debt_map(fixture_debt: Mapping[str, float], extra_debt: Mapping[str, float]) -> dict[str, float]:
-    """Debt prints that may be used on the recent window.
-
-    Pre-2025 fixture quarters are left out so 2022 is not scored on a
-    2020 print carried across several years. The 2026-01-01 fixture print
-    and the published 2025-10-01 extra print are kept.
-    """
-    debt = {day: value for day, value in fixture_debt.items() if day >= "2025-01-01"}
-    debt.update(extra_debt)
-    return debt
-
-
-def v1_levels_for(window_name: str, bundle: Mapping, fixture: FredLevels) -> tuple[FredLevels, str]:
-    """Locked fixture for the crisis windows. BLS fill only on ``recent``."""
-    if window_name in ("2008", "2020"):
-        return fixture, "locked_fred_fixture_2026-09-23"
-    if window_name != "recent":
-        raise KeyError(window_name)
-    return (
-        FredLevels(
-            cpi=_as_float_map(bundle["cpi"]),
-            unemployment=dict(bundle["unrate"]),
-            debt_to_gdp=recent_debt_map(fixture.debt_to_gdp, bundle["extra_debt"]),
-        ),
-        "bls_pull_2026-09-26_plus_published_debt",
-    )
-
-
-def score_basket(
-    values: Mapping[str, Optional[float]],
-    order: Sequence[str],
-    weights: Mapping[str, float],
-) -> dict:
-    """Normalize, then divide by the sum of weights that were present.
-
-    A missing input shrinks the denominator. It is not treated as zero
-    stress. An empty basket returns a null index, not a collapse score.
-    """
-    total_weighted = 0.0
-    total_weight = 0.0
-    present = []
-    excluded = []
-    metrics = {}
-    for name in order:
-        raw = values.get(name)
-        if raw is None or not isinstance(raw, (int, float)):
-            excluded.append(name)
-            metrics[name] = {"raw": None, "normalized": None, "weight": weights[name]}
-            continue
-        lo, hi = TRIAL_RANGES[name]
-        norm = normalize(float(raw), lo, hi, inverse=name in INVERSE)
-        metrics[name] = {
-            "raw": float(raw),
-            "normalized": round(norm, 2),
-            "weight": weights[name],
-        }
-        total_weighted += norm * weights[name]
-        total_weight += weights[name]
-        present.append(name)
-    if total_weight == 0:
-        index = None
-        band = ""
-    else:
-        index = round(total_weighted / total_weight, 2)
-        band = interpret(index)["band"]
-    return {
-        "index": index,
-        "band": band,
-        "denominator": total_weight,
-        "present": present,
-        "excluded": excluded,
-        "metrics": metrics,
-    }
-
-
-def _v1_index(raws: Mapping[str, Optional[float]]) -> tuple[Optional[float], str]:
-    """Locked formula on a subset of the six core inputs."""
-    payload = {}
-    for metric, value in raws.items():
-        if value is None or not isinstance(value, (int, float)):
-            continue
-        payload[metric] = {"data": {metric: float(value)}}
-    if not payload:
-        return None, ""
-    scored = compute_index(payload)
-    return scored["index"], interpret(scored["index"])["band"]
 
 
 def _inflation_from_texts(levels: Mapping[str, str], day: str) -> Optional[float]:
@@ -474,288 +293,333 @@ def _food_from_texts(levels: Mapping[str, str], day: str) -> Optional[float]:
     return food_public_yoy(levels[day], levels[prior])
 
 
-def _primary_values(day: str, bundle: Mapping, inflation: Optional[float]) -> dict:
-    epop = bundle["epop"].get(day)
-    lfpr = bundle["lfpr"].get(day)
-    vix = bundle["vix"].get(day)
-    crime = bundle["crime"].get(day)
+def _crime_for(day: str, crime: Mapping[str, dict]) -> tuple:
+    """Nationwide Full Sample rate for ``day``.
+
+    A month inside the file is ``observed``. Months after the file's last
+    month carry that last rate, which is how methodology 1.1.1 publishes
+    the latest file month. Months before the file starts are ``excluded``.
+    The carried value is not a later month's crime observation.
+    """
+    if day in crime:
+        row = crime[day]
+        return (
+            row["population_weighted"],
+            "observed",
+            day,
+            row["agencies"],
+            row["unweighted"],
+        )
+    last = max(crime)
+    if day > last:
+        row = crime[last]
+        return (
+            row["population_weighted"],
+            "carried_forward",
+            last,
+            row["agencies"],
+            row["unweighted"],
+        )
+    return None, "excluded", "", None, None
+
+
+def _credit_month_mean(credit: Mapping[str, float], day: str) -> Optional[float]:
+    prefix = day[:7]
+    weeks = [value for stamp, value in credit.items() if stamp[:7] == prefix]
+    if not weeks:
+        return None
+    return mean(weeks)
+
+
+def checklist_pins() -> dict[str, float]:
+    """Methodology 1.1.1 annual cells. Held on every historical month."""
+    homelessness = load_annual_row("homelessness_rate")
+    trust = load_annual_row("trust_in_government")
     return {
-        "inflation_rate": inflation,
-        "food_cpi_yoy": _food_from_texts(bundle["food"], day),
-        "labor_utilization": labor_utilization(epop, lfpr),
-        "vix_month_mean": None if vix is None else vix["mean"],
-        "incident_rate": None if crime is None else crime["unweighted"],
-        "prime_age_epop": epop,
-        "prime_age_lfpr": lfpr,
-        "unemployment_rate": bundle["unrate"].get(day),
-        "vix_month_max": None if vix is None else vix["max"],
-        "crime": crime,
+        "homelessness_rate": float(homelessness["value"]),
+        "trust_in_government": float(trust["value"]),
+        "homelessness_observation_date": str(homelessness["observation_date"]),
+        "trust_observation_date": str(trust["observation_date"]),
     }
 
 
-def _weights_for(order: Sequence[str], labor_name: str = "labor_utilization") -> dict[str, float]:
-    weights = {}
-    for name in order:
-        if name == labor_name or name in ("unemployment_rate", "prime_age_epop"):
-            weights[name] = LABOR_SLOT_WEIGHT
-        elif name == "debt_to_gdp_ratio":
-            weights[name] = DEBT_SENSITIVITY_WEIGHT
-        elif name == "housing_delinquency":
-            weights[name] = HOUSING_STRESS_WEIGHT
-        elif name == "consumer_credit_delinquency":
-            weights[name] = CONSUMER_CREDIT_WEIGHT
-        elif name == "rent_burden_30":
-            weights[name] = RENT_BURDEN_WEIGHT
-        elif name == "rent_cpi_yoy":
-            weights[name] = RENT_CPI_PROXY_WEIGHT
-        elif name == "treasury_10y":
-            weights[name] = TREASURY_10Y_WEIGHT
-        elif name == "real_yield_10y":
-            weights[name] = REAL_YIELD_WEIGHT
-        elif name == "homelessness_rate":
-            weights[name] = HUD_KEPT_WEIGHT
-        elif name == "trust_in_government":
-            weights[name] = TRUST_KEPT_WEIGHT
-        else:
-            weights[name] = TRIAL_WEIGHTS[name]
+def basket_weights(basket: str) -> dict[str, float]:
+    weights = {name: WEIGHTS[name] for name in CORE_METRICS}
+    for name in BASKET_ADDONS[basket]:
+        weights[name] = ADDON_WEIGHT
     return weights
 
 
-def build_v2_rows(bundle: Optional[Mapping] = None, fixture: Optional[FredLevels] = None) -> list[dict]:
-    """One row per month of the 2008, 2020, and recent windows."""
+def score_weighted(values: Mapping[str, Optional[float]], weights: Mapping[str, float]) -> dict:
+    """Normalize, then divide by the sum of weights that were present.
+
+    A missing input shrinks the denominator. It is not treated as zero
+    stress. An empty basket returns a null index.
+    """
+    total_weighted = 0.0
+    total_weight = 0.0
+    present = []
+    excluded = []
+    norms: dict[str, Optional[float]] = {}
+    for name, weight in weights.items():
+        raw = values.get(name)
+        if raw is None or not isinstance(raw, (int, float)):
+            excluded.append(name)
+            norms[name] = None
+            continue
+        lo, hi = RANGES[name]
+        norm = normalize(float(raw), lo, hi, inverse=name in INVERSE)
+        norms[name] = norm
+        total_weighted += norm * weight
+        total_weight += weight
+        present.append(name)
+    if total_weight == 0:
+        index = None
+        band = ""
+    else:
+        index = round(total_weighted / total_weight, 2)
+        band = interpret(index)["band"]
+    return {
+        "index": index,
+        "band": band,
+        "denominator": total_weight,
+        "present": present,
+        "excluded": excluded,
+        "norms": norms,
+    }
+
+
+def _v1_index(raws: Mapping[str, Optional[float]]) -> tuple[Optional[float], str]:
+    payload = {}
+    for metric, value in raws.items():
+        if value is None or not isinstance(value, (int, float)):
+            continue
+        if metric not in WEIGHTS:
+            continue
+        payload[metric] = {"data": {metric: float(value)}}
+    if not payload:
+        return None, ""
+    scored = compute_index(payload)
+    return scored["index"], interpret(scored["index"])["band"]
+
+
+def assign_window(day: str) -> str:
+    if "2007-12-01" <= day <= "2009-12-01":
+        return "2008"
+    if day.startswith("2020-"):
+        return "2020"
+    if day.startswith("2022-"):
+        return "2022"
+    return "history"
+
+
+def month_values(day: str, bundle: Mapping, pins: Mapping[str, float]) -> dict:
+    """Inputs for one calendar month. Annual 1.1.1 pins are held, labeled later."""
+    inflation = _inflation_from_texts(bundle["cpi"], day)
+    food = _food_from_texts(bundle["food"], day)
+    debt, debt_status, debt_date = asof(bundle["debt"], day)
+    housing, housing_status, housing_date = asof(bundle["housing_delinquency"], day)
+    rent, rent_status, rent_date = asof(bundle["rent_burden_30"], day)
+    rent50 = None if not rent_date else bundle["rent_burden_50"].get(rent_date)
+    crime, crime_status, crime_date, agencies, unweighted = _crime_for(day, bundle["crime"])
+    vix = bundle["vix"].get(day)
+    return {
+        "inflation_rate": inflation,
+        "unemployment_rate": bundle["unrate"].get(day),
+        "debt_to_gdp_ratio": debt,
+        "debt_status": debt_status,
+        "debt_observation_date": debt_date,
+        "incident_rate": crime,
+        "incident_unweighted": unweighted,
+        "incident_status": crime_status,
+        "incident_observation_date": crime_date,
+        "incident_agencies": agencies,
+        "homelessness_rate": float(pins["homelessness_rate"]),
+        "trust_in_government": float(pins["trust_in_government"]),
+        "food_cpi_yoy": food,
+        "prime_age_epop": bundle["epop"].get(day),
+        "housing_delinquency": housing,
+        "housing_status": housing_status,
+        "housing_observation_date": housing_date,
+        "rent_burden_30": rent,
+        "rent_burden_50": rent50,
+        "rent_status": rent_status,
+        "rent_observation_date": rent_date,
+        "vix_month_mean": None if vix is None else vix["mean"],
+        "credit_conditions": _credit_month_mean(bundle["credit"], day),
+    }
+
+
+def _score_row(values: Mapping) -> dict:
+    v1_raws = {metric: values.get(metric) for metric in CORE_METRICS}
+    v1_index, v1_band = _v1_index(v1_raws)
+    v1_scored = score_weighted(values, {name: WEIGHTS[name] for name in CORE_METRICS})
+    partial_raws = {
+        "inflation_rate": values.get("inflation_rate"),
+        "unemployment_rate": values.get("unemployment_rate"),
+        "debt_to_gdp_ratio": values.get("debt_to_gdp_ratio"),
+    }
+    partial_index, partial_band = _v1_index(partial_raws)
+    held_raws = {
+        "inflation_rate": values.get("inflation_rate"),
+        "unemployment_rate": values.get("unemployment_rate"),
+        "debt_to_gdp_ratio": values.get("debt_to_gdp_ratio"),
+        "incident_rate": float(HELD_CONSTANT_BASELINE["incident_rate"]),
+        "homelessness_rate": float(HELD_CONSTANT_BASELINE["homelessness_rate"]),
+        "trust_in_government": float(HELD_CONSTANT_BASELINE["trust_in_government"]),
+    }
+    held_index, held_band = _v1_index(held_raws)
+    baskets = {
+        name: score_weighted(values, basket_weights(name)) for name in BASKET_ORDER
+    }
+    return {
+        "v1": {"index": v1_index, "band": v1_band, "detail": v1_scored},
+        "partial": {"index": partial_index, "band": partial_band},
+        "held_100": {"index": held_index, "band": held_band},
+        "baskets": baskets,
+    }
+
+
+def build_v2_rows(bundle: Optional[Mapping] = None) -> list[dict]:
+    """One row per month from January 2007 through August 2026."""
     bundle = load_v2_bundle() if bundle is None else bundle
-    fixture = load_fixtures() if fixture is None else fixture
+    pins = checklist_pins()
     rows = []
-    for name in V2_WINDOW_ORDER:
-        window = V2_WINDOWS[name]
-        levels, source = v1_levels_for(name, bundle, fixture)
-        download = FIXTURE_DOWNLOAD_DATE if source.startswith("locked_") else DATA_PULL_DATE
-        for day in iter_months(window.start, window.end):
-            partial = build_month_row(levels, day, window, "partial", fred_download_date=download)
-            held = build_month_row(levels, day, window, "held_constant", fred_download_date=download)
-            inflation = _inflation_from_texts(bundle["cpi"], day)
-            parts = _primary_values(day, bundle, inflation)
-            crime = parts["crime"]
-            primary = score_basket(parts, PRIMARY_ORDER, _weights_for(PRIMARY_ORDER))
-            without_crime_values = dict(parts)
-            without_crime_values["incident_rate"] = None
-            without_crime = score_basket(
-                without_crime_values, PRIMARY_ORDER, _weights_for(PRIMARY_ORDER)
-            )
-            unrate_order = tuple(
-                "unemployment_rate" if metric == "labor_utilization" else metric
-                for metric in PRIMARY_ORDER
-            )
-            unrate_values = dict(parts)
-            unrate_values["unemployment_rate"] = parts["unemployment_rate"]
-            if_unrate = score_basket(unrate_values, unrate_order, _weights_for(unrate_order))
-            epop_order = tuple(
-                "prime_age_epop" if metric == "labor_utilization" else metric
-                for metric in PRIMARY_ORDER
-            )
-            if_epop = score_basket(parts, epop_order, _weights_for(epop_order))
-            debt_raw = held["debt_to_gdp_ratio"]
-            debt_order = PRIMARY_ORDER + ("debt_to_gdp_ratio",)
-            debt_values = dict(parts)
-            debt_values["debt_to_gdp_ratio"] = debt_raw
-            if_debt = score_basket(debt_values, debt_order, _weights_for(debt_order))
-            housing_raw, housing_status, housing_date = quarterly_asof(
-                bundle["housing_delinquency"], day
-            )
-            credit_raw, credit_status, credit_date = quarterly_asof(
-                bundle["consumer_credit_delinquency"], day
-            )
-            parts["housing_delinquency"] = housing_raw
-            parts["consumer_credit_delinquency"] = credit_raw
-            housing_order = PRIMARY_ORDER + ("housing_delinquency",)
-            credit_order = PRIMARY_ORDER + ("consumer_credit_delinquency",)
-            both_order = PRIMARY_ORDER + (
-                "housing_delinquency",
-                "consumer_credit_delinquency",
-            )
-            if_housing = score_basket(parts, housing_order, _weights_for(housing_order))
-            if_credit = score_basket(parts, credit_order, _weights_for(credit_order))
-            if_both = score_basket(parts, both_order, _weights_for(both_order))
-            rent_raw, rent_status, rent_date = quarterly_asof(bundle["rent_burden_30"], day)
-            rent50_raw, _rent50_status, _rent50_date = quarterly_asof(
-                bundle["rent_burden_50"], day
-            )
-            rent_cpi = _inflation_from_texts(bundle["rent_cpi"], day)
-            rent_cpi_status = "observed" if rent_cpi is not None else "excluded"
-            parts["rent_burden_30"] = rent_raw
-            parts["rent_cpi_yoy"] = rent_cpi
-            rent_order = PRIMARY_ORDER + ("rent_burden_30",)
-            rent_credit_order = PRIMARY_ORDER + (
-                "rent_burden_30",
-                "consumer_credit_delinquency",
-            )
-            proxy_order = PRIMARY_ORDER + ("rent_cpi_yoy",)
-            if_rent = score_basket(parts, rent_order, _weights_for(rent_order))
-            if_rent_credit = score_basket(
-                parts, rent_credit_order, _weights_for(rent_credit_order)
-            )
-            if_rent_proxy = score_basket(parts, proxy_order, _weights_for(proxy_order))
-            treasury_raw = bundle["treasury_10y"].get(day)
-            real_raw = bundle["real_yield_10y"].get(day)
-            treasury_status = "observed" if treasury_raw is not None else "excluded"
-            real_status = "observed" if real_raw is not None else "excluded"
-            parts["treasury_10y"] = treasury_raw
-            parts["real_yield_10y"] = real_raw
-            dgs_order = PRIMARY_ORDER + ("treasury_10y",)
-            real_order = PRIMARY_ORDER + ("real_yield_10y",)
-            rates_order = PRIMARY_ORDER + ("treasury_10y", "real_yield_10y")
-            if_dgs = score_basket(parts, dgs_order, _weights_for(dgs_order))
-            if_real = score_basket(parts, real_order, _weights_for(real_order))
-            if_rates = score_basket(parts, rates_order, _weights_for(rates_order))
-            kept_values = dict(parts)
-            kept_values["debt_to_gdp_ratio"] = debt_raw
-            kept_values["homelessness_rate"] = float(HELD_CONSTANT_BASELINE["homelessness_rate"])
-            kept_values["trust_in_government"] = float(HELD_CONSTANT_BASELINE["trust_in_government"])
-            kept_order = PRIMARY_ORDER + (
-                "debt_to_gdp_ratio",
-                "homelessness_rate",
-                "trust_in_government",
-            )
-            if_kept = score_basket(kept_values, kept_order, _weights_for(kept_order))
-            held_crime_values = dict(parts)
-            held_crime_values["incident_rate"] = float(PUBLISHED_INCIDENT_RATE)
-            if_crime_held = score_basket(
-                held_crime_values, PRIMARY_ORDER, _weights_for(PRIMARY_ORDER)
-            )
-
-            def demote(raws: Mapping[str, Optional[float]]) -> tuple[Optional[float], str]:
-                return _v1_index(raws)
-
-            without_debt_held = demote(
-                {
-                    "inflation_rate": held["inflation_rate"],
-                    "unemployment_rate": held["unemployment_rate"],
-                    "incident_rate": held["incident_rate"],
-                    "homelessness_rate": held["homelessness_rate"],
-                    "trust_in_government": held["trust_in_government"],
-                }
-            )
-            without_homeless = demote(
-                {
-                    "inflation_rate": held["inflation_rate"],
-                    "unemployment_rate": held["unemployment_rate"],
-                    "debt_to_gdp_ratio": held["debt_to_gdp_ratio"],
-                    "incident_rate": held["incident_rate"],
-                    "trust_in_government": held["trust_in_government"],
-                }
-            )
-            without_trust = demote(
-                {
-                    "inflation_rate": held["inflation_rate"],
-                    "unemployment_rate": held["unemployment_rate"],
-                    "debt_to_gdp_ratio": held["debt_to_gdp_ratio"],
-                    "incident_rate": held["incident_rate"],
-                    "homelessness_rate": held["homelessness_rate"],
-                }
-            )
-            partial_without_debt = demote(
-                {
-                    "inflation_rate": partial["inflation_rate"],
-                    "unemployment_rate": partial["unemployment_rate"],
-                }
-            )
-            rows.append(
-                {
-                    "date": day,
-                    "window": window.name,
-                    "candidate_label": CANDIDATE_LABEL,
-                    "methodology_reference": "1.0.0",
-                    "data_pull_date": DATA_PULL_DATE,
-                    "v1_level_source": source,
-                    "v1_partial_index": partial["replay_index"],
-                    "v1_partial_band": partial["band"],
-                    "v1_held_index": held["replay_index"],
-                    "v1_held_band": held["band"],
-                    "v1_held_without_debt_index": without_debt_held[0],
-                    "v1_held_without_debt_band": without_debt_held[1],
-                    "v1_held_without_homelessness_index": without_homeless[0],
-                    "v1_held_without_homelessness_band": without_homeless[1],
-                    "v1_held_without_trust_index": without_trust[0],
-                    "v1_held_without_trust_band": without_trust[1],
-                    "v1_partial_without_debt_index": partial_without_debt[0],
-                    "v1_partial_without_debt_band": partial_without_debt[1],
-                    "v1_inflation_rate": partial["inflation_rate"],
-                    "v1_unemployment_rate": partial["unemployment_rate"],
-                    "v1_debt_to_gdp_ratio": partial["debt_to_gdp_ratio"],
-                    "v1_debt_status": partial["debt_to_gdp_ratio_status"],
-                    "v2_index": primary["index"],
-                    "v2_band": primary["band"],
-                    "v2_weight_denominator": primary["denominator"],
-                    "v2_inputs_present": "|".join(primary["present"]),
-                    "v2_inputs_excluded": "|".join(primary["excluded"]),
-                    "v2_inflation_rate": parts["inflation_rate"],
-                    "v2_inflation_normalized": primary["metrics"]["inflation_rate"]["normalized"],
-                    "v2_food_cpi_yoy": parts["food_cpi_yoy"],
-                    "v2_food_normalized": primary["metrics"]["food_cpi_yoy"]["normalized"],
-                    "v2_labor_utilization": parts["labor_utilization"],
-                    "v2_labor_normalized": primary["metrics"]["labor_utilization"]["normalized"],
-                    "v2_prime_age_epop": parts["prime_age_epop"],
-                    "v2_prime_age_lfpr": parts["prime_age_lfpr"],
-                    "v2_vix_month_mean": parts["vix_month_mean"],
-                    "v2_vix_normalized": primary["metrics"]["vix_month_mean"]["normalized"],
-                    "v2_vix_month_max": parts["vix_month_max"],
-                    "v2_incident_rate": parts["incident_rate"],
-                    "v2_incident_normalized": primary["metrics"]["incident_rate"]["normalized"],
-                    "v2_incident_status": "trial_observed" if crime else "excluded",
-                    "v2_incident_agencies": None if crime is None else crime["agencies"],
-                    "v2_incident_population_weighted": None
-                    if crime is None
-                    else crime["population_weighted"],
-                    "v2_without_crime_index": without_crime["index"],
-                    "v2_without_crime_band": without_crime["band"],
-                    "v2_if_unrate_index": if_unrate["index"],
-                    "v2_if_unrate_band": if_unrate["band"],
-                    "v2_if_epop_only_index": if_epop["index"],
-                    "v2_if_epop_only_band": if_epop["band"],
-                    "v2_if_debt_included_index": if_debt["index"],
-                    "v2_if_debt_included_band": if_debt["band"],
-                    "v2_if_crime_held_index": if_crime_held["index"],
-                    "v2_if_crime_held_band": if_crime_held["band"],
-                    "v2_housing_delinquency": housing_raw,
-                    "v2_housing_status": housing_status,
-                    "v2_housing_observation_date": housing_date,
-                    "v2_if_housing_index": if_housing["index"],
-                    "v2_if_housing_band": if_housing["band"],
-                    "v2_consumer_credit_delinquency": credit_raw,
-                    "v2_consumer_credit_status": credit_status,
-                    "v2_consumer_credit_observation_date": credit_date,
-                    "v2_if_consumer_credit_index": if_credit["index"],
-                    "v2_if_consumer_credit_band": if_credit["band"],
-                    "v2_if_housing_and_consumer_index": if_both["index"],
-                    "v2_if_housing_and_consumer_band": if_both["band"],
-                    "v2_rent_burden_30": rent_raw,
-                    "v2_rent_burden_status": rent_status,
-                    "v2_rent_burden_observation_date": rent_date,
-                    "v2_rent_burden_50": rent50_raw,
-                    "v2_if_rent_burden_index": if_rent["index"],
-                    "v2_if_rent_burden_band": if_rent["band"],
-                    "v2_if_rent_burden_and_consumer_index": if_rent_credit["index"],
-                    "v2_if_rent_burden_and_consumer_band": if_rent_credit["band"],
-                    "v2_rent_cpi_yoy": rent_cpi,
-                    "v2_rent_cpi_status": rent_cpi_status,
-                    "v2_if_rent_cpi_proxy_index": if_rent_proxy["index"],
-                    "v2_if_rent_cpi_proxy_band": if_rent_proxy["band"],
-                    "v2_treasury_10y": treasury_raw,
-                    "v2_treasury_10y_status": treasury_status,
-                    "v2_if_dgs10_index": if_dgs["index"],
-                    "v2_if_dgs10_band": if_dgs["band"],
-                    "v2_real_yield_10y": real_raw,
-                    "v2_real_yield_status": real_status,
-                    "v2_if_real_yield_index": if_real["index"],
-                    "v2_if_real_yield_band": if_real["band"],
-                    "v2_if_rates_index": if_rates["index"],
-                    "v2_if_rates_band": if_rates["band"],
-                    "v2_if_kept_debt_hud_trust_index": if_kept["index"],
-                    "v2_if_kept_debt_hud_trust_band": if_kept["band"],
-                    "score_note": SCORE_NOTE,
-                }
-            )
+    for day in iter_months(HISTORY_START, HISTORY_END):
+        values = month_values(day, bundle, pins)
+        scored = _score_row(values)
+        v1 = scored["v1"]
+        detail = v1["detail"]
+        basket_a = scored["baskets"]["a_labor_food"]
+        basket_b = scored["baskets"]["b_cost_of_living"]
+        basket_c = scored["baskets"]["c_financial"]
+        rows.append(
+            {
+                "date": day,
+                "window": assign_window(day),
+                "candidate_label": CANDIDATE_LABEL,
+                "methodology_reference": "1.1.1",
+                "inflation_rate": values["inflation_rate"],
+                "unemployment_rate": values["unemployment_rate"],
+                "debt_to_gdp_ratio": values["debt_to_gdp_ratio"],
+                "debt_status": values["debt_status"],
+                "debt_observation_date": values["debt_observation_date"],
+                "incident_rate": values["incident_rate"],
+                "incident_unweighted": values["incident_unweighted"],
+                "incident_status": values["incident_status"],
+                "incident_observation_date": values["incident_observation_date"],
+                "incident_agencies": values["incident_agencies"],
+                "homelessness_rate": values["homelessness_rate"],
+                "trust_in_government": values["trust_in_government"],
+                "food_cpi_yoy": values["food_cpi_yoy"],
+                "prime_age_epop": values["prime_age_epop"],
+                "housing_delinquency": values["housing_delinquency"],
+                "housing_status": values["housing_status"],
+                "housing_observation_date": values["housing_observation_date"],
+                "rent_burden_30": values["rent_burden_30"],
+                "rent_burden_50": values["rent_burden_50"],
+                "rent_status": values["rent_status"],
+                "rent_observation_date": values["rent_observation_date"],
+                "vix_month_mean": values["vix_month_mean"],
+                "credit_conditions": values["credit_conditions"],
+                "food_normalized": _round_norm(basket_a["norms"].get("food_cpi_yoy")),
+                "epop_normalized": _round_norm(basket_a["norms"].get("prime_age_epop")),
+                "housing_normalized": _round_norm(basket_b["norms"].get("housing_delinquency")),
+                "rent_normalized": _round_norm(basket_b["norms"].get("rent_burden_30")),
+                "vix_normalized": _round_norm(basket_c["norms"].get("vix_month_mean")),
+                "credit_normalized": _round_norm(basket_c["norms"].get("credit_conditions")),
+                "v1_111_index": v1["index"],
+                "v1_111_band": v1["band"],
+                "v1_111_denominator": detail["denominator"],
+                "v1_111_inputs_present": "|".join(detail["present"]),
+                "v1_111_inputs_excluded": "|".join(detail["excluded"]),
+                "v1_partial_index": scored["partial"]["index"],
+                "v1_partial_band": scored["partial"]["band"],
+                "v1_100_held_index": scored["held_100"]["index"],
+                "v1_100_held_band": scored["held_100"]["band"],
+                "a_index": basket_a["index"],
+                "a_band": basket_a["band"],
+                "a_denominator": basket_a["denominator"],
+                "b_index": basket_b["index"],
+                "b_band": basket_b["band"],
+                "b_denominator": basket_b["denominator"],
+                "c_index": basket_c["index"],
+                "c_band": basket_c["band"],
+                "c_denominator": basket_c["denominator"],
+                "score_note": SCORE_NOTE,
+            }
+        )
     return rows
+
+
+def _round_norm(value: Optional[float]) -> Optional[float]:
+    if value is None:
+        return None
+    return round(value, 2)
+
+
+def current_reading(bundle: Optional[Mapping] = None) -> dict:
+    """1.1.1 restatement of the committed latest.json inputs, plus add-ons.
+
+    The six published raws are scored as methodology 1.1.0 stored them.
+    The restatement replaces only homelessness and trust with the 1.1.1
+    checklist. Add-ons use the latest shadow or fixture print on or before
+    the publication date. This does not write ``latest.json``.
+    """
+    bundle = load_v2_bundle() if bundle is None else bundle
+    latest = json.loads(LATEST_PATH.read_text(encoding="utf-8"))
+    pins = checklist_pins()
+    published = {metric: float(latest["metrics"][metric]["raw"]) for metric in CORE_METRICS}
+    published_index, published_band = _v1_index(published)
+    restated = dict(published)
+    restated["homelessness_rate"] = float(pins["homelessness_rate"])
+    restated["trust_in_government"] = float(pins["trust_in_government"])
+    publication = str(latest["publication_date"])
+    food = latest["food_shadow"]["values"]["food_cpi_yoy"]
+    food_date = latest["food_shadow"]["dates"]["food_cpi_yoy"]
+    epop = latest["labor_shadow"]["values"]["prime_age_epop"]
+    epop_date = latest["labor_shadow"]["dates"]["prime_age_epop"]
+    housing, housing_status, housing_date = asof(bundle["housing_delinquency"], publication)
+    rent, rent_status, rent_date = asof(bundle["rent_burden_30"], publication)
+    credit_stamp = max(stamp for stamp in bundle["credit"] if stamp <= publication)
+    vix_stamp = max(stamp for stamp in bundle["vix_weekly"] if stamp <= publication)
+    values = {
+        "inflation_rate": restated["inflation_rate"],
+        "unemployment_rate": restated["unemployment_rate"],
+        "debt_to_gdp_ratio": restated["debt_to_gdp_ratio"],
+        "incident_rate": restated["incident_rate"],
+        "homelessness_rate": restated["homelessness_rate"],
+        "trust_in_government": restated["trust_in_government"],
+        "food_cpi_yoy": float(food),
+        "prime_age_epop": float(epop),
+        "housing_delinquency": housing,
+        "rent_burden_30": rent,
+        "vix_month_mean": bundle["vix_weekly"][vix_stamp]["mean"],
+        "credit_conditions": bundle["credit"][credit_stamp],
+    }
+    scored = _score_row(values)
+    return {
+        "publication_date": publication,
+        "published_methodology": latest["methodology_version"],
+        "published_index": published_index,
+        "published_band": published_band,
+        "published_file_index": latest["bugout_index"],
+        "values": values,
+        "food_date": food_date,
+        "epop_date": epop_date,
+        "housing_status": housing_status,
+        "housing_date": housing_date,
+        "rent_status": rent_status,
+        "rent_date": rent_date,
+        "vix_week": vix_stamp,
+        "credit_week": credit_stamp,
+        "pins": pins,
+        "scored": scored,
+        "unemployment_date": latest["metrics"]["unemployment_rate"]["observation_date"],
+        "inflation_date": latest["metrics"]["inflation_rate"]["observation_date"],
+        "incident_date": latest["metrics"]["incident_rate"]["observation_date"],
+        "debt_date": latest["metrics"]["debt_to_gdp_ratio"]["observation_date"],
+    }
 
 
 COLUMNS = (
@@ -763,136 +627,73 @@ COLUMNS = (
     "window",
     "candidate_label",
     "methodology_reference",
-    "data_pull_date",
-    "v1_level_source",
+    "inflation_rate",
+    "unemployment_rate",
+    "debt_to_gdp_ratio",
+    "debt_status",
+    "debt_observation_date",
+    "incident_rate",
+    "incident_unweighted",
+    "incident_status",
+    "incident_observation_date",
+    "incident_agencies",
+    "homelessness_rate",
+    "trust_in_government",
+    "food_cpi_yoy",
+    "prime_age_epop",
+    "housing_delinquency",
+    "housing_status",
+    "housing_observation_date",
+    "rent_burden_30",
+    "rent_burden_50",
+    "rent_status",
+    "rent_observation_date",
+    "vix_month_mean",
+    "credit_conditions",
+    "food_normalized",
+    "epop_normalized",
+    "housing_normalized",
+    "rent_normalized",
+    "vix_normalized",
+    "credit_normalized",
+    "v1_111_index",
+    "v1_111_band",
+    "v1_111_denominator",
+    "v1_111_inputs_present",
+    "v1_111_inputs_excluded",
     "v1_partial_index",
     "v1_partial_band",
-    "v1_held_index",
-    "v1_held_band",
-    "v1_held_without_debt_index",
-    "v1_held_without_debt_band",
-    "v1_held_without_homelessness_index",
-    "v1_held_without_homelessness_band",
-    "v1_held_without_trust_index",
-    "v1_held_without_trust_band",
-    "v1_partial_without_debt_index",
-    "v1_partial_without_debt_band",
-    "v1_inflation_rate",
-    "v1_unemployment_rate",
-    "v1_debt_to_gdp_ratio",
-    "v1_debt_status",
-    "v2_index",
-    "v2_band",
-    "v2_weight_denominator",
-    "v2_inputs_present",
-    "v2_inputs_excluded",
-    "v2_inflation_rate",
-    "v2_inflation_normalized",
-    "v2_food_cpi_yoy",
-    "v2_food_normalized",
-    "v2_labor_utilization",
-    "v2_labor_normalized",
-    "v2_prime_age_epop",
-    "v2_prime_age_lfpr",
-    "v2_vix_month_mean",
-    "v2_vix_normalized",
-    "v2_vix_month_max",
-    "v2_incident_rate",
-    "v2_incident_normalized",
-    "v2_incident_status",
-    "v2_incident_agencies",
-    "v2_incident_population_weighted",
-    "v2_without_crime_index",
-    "v2_without_crime_band",
-    "v2_if_unrate_index",
-    "v2_if_unrate_band",
-    "v2_if_epop_only_index",
-    "v2_if_epop_only_band",
-    "v2_if_debt_included_index",
-    "v2_if_debt_included_band",
-    "v2_if_crime_held_index",
-    "v2_if_crime_held_band",
-    "v2_housing_delinquency",
-    "v2_housing_status",
-    "v2_housing_observation_date",
-    "v2_if_housing_index",
-    "v2_if_housing_band",
-    "v2_consumer_credit_delinquency",
-    "v2_consumer_credit_status",
-    "v2_consumer_credit_observation_date",
-    "v2_if_consumer_credit_index",
-    "v2_if_consumer_credit_band",
-    "v2_if_housing_and_consumer_index",
-    "v2_if_housing_and_consumer_band",
-    "v2_rent_burden_30",
-    "v2_rent_burden_status",
-    "v2_rent_burden_observation_date",
-    "v2_rent_burden_50",
-    "v2_if_rent_burden_index",
-    "v2_if_rent_burden_band",
-    "v2_if_rent_burden_and_consumer_index",
-    "v2_if_rent_burden_and_consumer_band",
-    "v2_rent_cpi_yoy",
-    "v2_rent_cpi_status",
-    "v2_if_rent_cpi_proxy_index",
-    "v2_if_rent_cpi_proxy_band",
-    "v2_treasury_10y",
-    "v2_treasury_10y_status",
-    "v2_if_dgs10_index",
-    "v2_if_dgs10_band",
-    "v2_real_yield_10y",
-    "v2_real_yield_status",
-    "v2_if_real_yield_index",
-    "v2_if_real_yield_band",
-    "v2_if_rates_index",
-    "v2_if_rates_band",
-    "v2_if_kept_debt_hud_trust_index",
-    "v2_if_kept_debt_hud_trust_band",
+    "v1_100_held_index",
+    "v1_100_held_band",
+    "a_index",
+    "a_band",
+    "a_denominator",
+    "b_index",
+    "b_band",
+    "b_denominator",
+    "c_index",
+    "c_band",
+    "c_denominator",
     "score_note",
 )
 
 _INDEX_COLUMNS = {
+    "food_normalized",
+    "epop_normalized",
+    "housing_normalized",
+    "rent_normalized",
+    "vix_normalized",
+    "credit_normalized",
+    "v1_111_index",
+    "v1_111_denominator",
     "v1_partial_index",
-    "v1_held_index",
-    "v1_held_without_debt_index",
-    "v1_held_without_homelessness_index",
-    "v1_held_without_trust_index",
-    "v1_partial_without_debt_index",
-    "v2_index",
-    "v2_weight_denominator",
-    "v2_inflation_normalized",
-    "v2_food_normalized",
-    "v2_labor_normalized",
-    "v2_vix_normalized",
-    "v2_incident_normalized",
-    "v2_without_crime_index",
-    "v2_if_unrate_index",
-    "v2_if_epop_only_index",
-    "v2_if_debt_included_index",
-    "v2_if_crime_held_index",
-    "v2_if_housing_index",
-    "v2_if_consumer_credit_index",
-    "v2_if_housing_and_consumer_index",
-    "v2_if_rent_burden_index",
-    "v2_if_rent_burden_and_consumer_index",
-    "v2_if_rent_cpi_proxy_index",
-    "v2_if_dgs10_index",
-    "v2_if_real_yield_index",
-    "v2_if_rates_index",
-    "v2_if_kept_debt_hud_trust_index",
-}
-_ONE_DECIMAL = {"v2_food_cpi_yoy", "v2_rent_burden_30", "v2_rent_burden_50"}
-_TWO_DECIMAL = {
-    "v2_labor_utilization",
-    "v2_vix_month_mean",
-    "v2_vix_month_max",
-    "v2_incident_rate",
-    "v2_incident_population_weighted",
-    "v2_housing_delinquency",
-    "v2_consumer_credit_delinquency",
-    "v2_rent_cpi_yoy",
-    "v2_treasury_10y",
-    "v2_real_yield_10y",
+    "v1_100_held_index",
+    "a_index",
+    "a_denominator",
+    "b_index",
+    "b_denominator",
+    "c_index",
+    "c_denominator",
 }
 
 
@@ -903,10 +704,6 @@ def csv_fields(row: Mapping[str, object]) -> dict[str, str]:
         if value is None or value == "":
             rendered[column] = ""
         elif column in _INDEX_COLUMNS:
-            rendered[column] = f"{float(value):.2f}"
-        elif column in _ONE_DECIMAL:
-            rendered[column] = f"{float(value):.1f}"
-        elif column in _TWO_DECIMAL:
             rendered[column] = f"{float(value):.2f}"
         elif isinstance(value, float):
             rendered[column] = format_float(value)
@@ -952,43 +749,33 @@ def _band_counts(bands: Sequence[str]) -> dict[str, int]:
     return counts
 
 
+_SUMMARY_INDEX = {
+    "v1_111": "v1_111_index",
+    "v1_partial": "v1_partial_index",
+    "v1_100_held": "v1_100_held_index",
+    "a_labor_food": "a_index",
+    "b_cost_of_living": "b_index",
+    "c_financial": "c_index",
+}
+
+
 def summarize(rows: Sequence[Mapping[str, object]]) -> list[dict]:
-    """One summary row per scenario and window."""
-    index_of = {
-        "v1_partial": "v1_partial_index",
-        "v1_held": "v1_held_index",
-        "v1_held_without_debt": "v1_held_without_debt_index",
-        "v1_held_without_homelessness": "v1_held_without_homelessness_index",
-        "v1_held_without_trust": "v1_held_without_trust_index",
-        "v1_partial_without_debt": "v1_partial_without_debt_index",
-        "v2": "v2_index",
-        "v2_without_crime": "v2_without_crime_index",
-        "v2_if_unrate": "v2_if_unrate_index",
-        "v2_if_epop_only": "v2_if_epop_only_index",
-        "v2_if_debt_included": "v2_if_debt_included_index",
-        "v2_if_crime_held": "v2_if_crime_held_index",
-        "v2_if_housing": "v2_if_housing_index",
-        "v2_if_consumer_credit": "v2_if_consumer_credit_index",
-        "v2_if_housing_and_consumer": "v2_if_housing_and_consumer_index",
-        "v2_if_rent_burden": "v2_if_rent_burden_index",
-        "v2_if_rent_burden_and_consumer": "v2_if_rent_burden_and_consumer_index",
-        "v2_if_rent_cpi_proxy": "v2_if_rent_cpi_proxy_index",
-        "v2_if_dgs10": "v2_if_dgs10_index",
-        "v2_if_real_yield": "v2_if_real_yield_index",
-        "v2_if_rates": "v2_if_rates_index",
-        "v2_if_kept_debt_hud_trust": "v2_if_kept_debt_hud_trust_index",
-    }
-    band_of = {key: column.replace("_index", "_band") for key, column in index_of.items()}
+    """One summary row per scenario and window. ``all`` is the full file."""
     summary = []
     for scenario, label in SUMMARY_SCENARIOS:
-        for window_name in V2_WINDOW_ORDER:
-            subset = [row for row in rows if row["window"] == window_name]
-            ends = _extremes([(row["date"], row[index_of[scenario]]) for row in subset])
+        index_column = _SUMMARY_INDEX[scenario]
+        band_column = index_column.replace("_index", "_band")
+        for window_name in SUMMARY_WINDOWS:
+            if window_name == "all":
+                subset = list(rows)
+            else:
+                subset = [row for row in rows if row["window"] == window_name]
+            ends = _extremes([(str(row["date"]), row[index_column]) for row in subset])
             counts = _band_counts(
                 [
-                    str(row[band_of[scenario]])
+                    str(row[band_column])
                     for row in subset
-                    if row[index_of[scenario]] is not None
+                    if row[index_column] is not None
                 ]
             )
             summary.append(
@@ -1044,14 +831,143 @@ def write_summary(summary: Sequence[Mapping[str, object]], path: Path) -> None:
             writer.writerow(rendered)
 
 
+def _friday_month(friday: str) -> str:
+    return friday[:7] + "-01"
+
+
+def weekly_volatility(bundle: Optional[Mapping] = None) -> list[dict]:
+    """Friday-to-Friday changes.
+
+    Within a month, baskets A and B and methodology 1.1.1 are constant,
+    because their inputs are monthly or slower. Basket C moves when that
+    week's VIX mean or that Friday's credit subindex moves. ``all_fridays``
+    also includes the step from the last Friday of one month to the first
+    Friday of the next, which is where a new monthly print shows up.
+    """
+    bundle = load_v2_bundle() if bundle is None else bundle
+    pins = checklist_pins()
+    month_cache = {
+        day: month_values(day, bundle, pins)
+        for day in iter_months(HISTORY_START, HISTORY_END)
+    }
+    fridays = [
+        stamp
+        for stamp in sorted(bundle["vix_weekly"])
+        if stamp in bundle["credit"] and HISTORY_START <= _friday_month(stamp) <= HISTORY_END
+    ]
+    series: dict[str, list[tuple[str, str, float]]] = {
+        "v1_111": [],
+        "a_labor_food": [],
+        "b_cost_of_living": [],
+        "c_financial": [],
+    }
+    for friday in fridays:
+        month = _friday_month(friday)
+        values = dict(month_cache[month])
+        values["vix_month_mean"] = bundle["vix_weekly"][friday]["mean"]
+        values["credit_conditions"] = bundle["credit"][friday]
+        scored = _score_row(values)
+        points = {
+            "v1_111": scored["v1"]["index"],
+            "a_labor_food": scored["baskets"]["a_labor_food"]["index"],
+            "b_cost_of_living": scored["baskets"]["b_cost_of_living"]["index"],
+            "c_financial": scored["baskets"]["c_financial"]["index"],
+        }
+        for name, index in points.items():
+            if index is not None:
+                series[name].append((friday, month, float(index)))
+
+    samples = {
+        "within_month": lambda prev, cur: prev[1] == cur[1],
+        "within_month_2008": lambda prev, cur: prev[1] == cur[1] and assign_window(cur[1]) == "2008",
+        "within_month_2020": lambda prev, cur: prev[1] == cur[1] and assign_window(cur[1]) == "2020",
+        "within_month_2022": lambda prev, cur: prev[1] == cur[1] and assign_window(cur[1]) == "2022",
+        "all_fridays": lambda prev, cur: True,
+    }
+    rows = []
+    for basket, points in series.items():
+        for sample, predicate in samples.items():
+            deltas = []
+            for prev, cur in zip(points, points[1:]):
+                if predicate(prev, cur):
+                    deltas.append((cur[0], round(cur[2] - prev[2], 2)))
+            rows.append(_delta_summary(basket, sample, deltas))
+    return rows
+
+
+def _delta_summary(basket: str, sample: str, deltas: list[tuple[str, float]]) -> dict:
+    if not deltas:
+        return {
+            "basket": basket,
+            "sample": sample,
+            "weeks": 0,
+            "mean_abs_change": None,
+            "stdev_change": None,
+            "share_flat": None,
+            "max_abs_change": None,
+            "max_abs_week": "",
+            "max_drop": None,
+            "max_drop_week": "",
+        }
+    changes = [change for _, change in deltas]
+    abs_changes = [abs(change) for change in changes]
+    max_abs_week, max_abs = max(deltas, key=lambda item: (abs(item[1]), item[0]))
+    drop_week, drop = min(deltas, key=lambda item: (item[1], item[0]))
+    flat = sum(1 for change in changes if change == 0.0)
+    deviation = stdev(changes) if len(changes) > 1 else 0.0
+    return {
+        "basket": basket,
+        "sample": sample,
+        "weeks": len(deltas),
+        "mean_abs_change": mean(abs_changes),
+        "stdev_change": deviation,
+        "share_flat": flat / len(changes),
+        "max_abs_change": abs(max_abs),
+        "max_abs_week": max_abs_week,
+        "max_drop": drop,
+        "max_drop_week": drop_week,
+    }
+
+
+WEEKLY_COLUMNS = (
+    "basket",
+    "sample",
+    "weeks",
+    "mean_abs_change",
+    "stdev_change",
+    "share_flat",
+    "max_abs_change",
+    "max_abs_week",
+    "max_drop",
+    "max_drop_week",
+)
+
+
+def write_weekly(rows: Sequence[Mapping[str, object]], path: Path) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.DictWriter(handle, fieldnames=list(WEEKLY_COLUMNS), lineterminator="\n")
+        writer.writeheader()
+        for row in rows:
+            rendered = {}
+            for column in WEEKLY_COLUMNS:
+                value = row[column]
+                if value is None or value == "":
+                    rendered[column] = ""
+                elif column in ("mean_abs_change", "stdev_change", "max_abs_change", "max_drop"):
+                    rendered[column] = f"{float(value):.4f}"
+                elif column == "share_flat":
+                    rendered[column] = f"{float(value):.4f}"
+                else:
+                    rendered[column] = str(value)
+            writer.writerow(rendered)
+
+
 def _short_band(band: object) -> str:
     text = str(band or "")
     if not text:
         return "—"
-    return (
-        text.replace(" Stability", "")
-        .replace(" Instability", "")
-    )
+    return text.replace(" Stability", "").replace(" Instability", "")
 
 
 def _num(value: object, digits: int = 2) -> str:
@@ -1061,7 +977,6 @@ def _num(value: object, digits: int = 2) -> str:
 
 
 def _signed(value: float) -> str:
-    """Plain range endpoint, with a minus sign for negatives."""
     number = float(value)
     if number.is_integer():
         text = str(int(number))
@@ -1076,566 +991,323 @@ def _by_date(rows: Sequence[Mapping[str, object]]) -> dict[str, Mapping[str, obj
     return {str(row["date"]): row for row in rows}
 
 
-def _window_rows(rows: Sequence[Mapping[str, object]], window: str) -> list[Mapping[str, object]]:
-    return [row for row in rows if row["window"] == window]
+def _cell(row: Mapping[str, object], index_key: str) -> str:
+    band_key = index_key.replace("_index", "_band")
+    if row.get(index_key) is None:
+        return "—"
+    return f"{_num(row[index_key])} {_short_band(row.get(band_key))}"
 
 
-def _summary_lookup(summary: Sequence[Mapping[str, object]], scenario: str, window: str) -> Mapping[str, object]:
+def _summary_lookup(summary: Sequence[Mapping], scenario: str, window: str) -> Mapping:
     for row in summary:
         if row["scenario"] == scenario and row["window"] == window:
             return row
     raise KeyError((scenario, window))
 
 
-def _range_phrase(summary_row: Mapping[str, object]) -> str:
+def _range_phrase(summary_row: Mapping) -> str:
     return (
         f"{_num(summary_row['min_index'])} ({summary_row['min_date']}) to "
         f"{_num(summary_row['max_index'])} ({summary_row['max_date']})"
     )
 
 
-def render_markdown(rows: Sequence[Mapping[str, object]], summary: Sequence[Mapping[str, object]]) -> str:
+def _weekly_lookup(weekly: Sequence[Mapping], basket: str, sample: str) -> Mapping:
+    for row in weekly:
+        if row["basket"] == basket and row["sample"] == sample:
+            return row
+    raise KeyError((basket, sample))
+
+
+def _direction(component: Optional[float], index: Optional[float]) -> str:
+    if component is None or index is None:
+        return "is missing, so its weight drops out"
+    if component > index + 0.05:
+        return f"normalizes to {_num(component)}, above the 1.1.1 reading, so it pulls the basket up"
+    if component < index - 0.05:
+        return f"normalizes to {_num(component)}, below the 1.1.1 reading, so it pulls the basket down"
+    return f"normalizes to {_num(component)}, close to the 1.1.1 reading"
+
+
+def render_markdown(
+    rows: Sequence[Mapping[str, object]],
+    summary: Sequence[Mapping[str, object]],
+    weekly: Sequence[Mapping[str, object]],
+    current: Mapping[str, object],
+    bundle: Optional[Mapping] = None,
+) -> str:
     """Results note. Numbers come from the rows just scored."""
+    bundle = load_v2_bundle() if bundle is None else bundle
     by_date = _by_date(rows)
-    food_lo, food_hi = TRIAL_RANGES["food_cpi_yoy"]
-    food_above_range = [
-        str(row["date"])
-        for row in rows
-        if row["v2_food_cpi_yoy"] is not None and float(row["v2_food_cpi_yoy"]) > food_hi
-    ]
-    food_below_range = [
-        str(row["date"])
-        for row in rows
-        if row["v2_food_cpi_yoy"] is not None and float(row["v2_food_cpi_yoy"]) < food_lo
-    ]
-    food_above_h1_floor = [
-        str(row["date"])
-        for row in rows
-        if row["v2_food_cpi_yoy"] is not None and float(row["v2_food_cpi_yoy"]) > 10
-    ]
-    food_mild_negative = [
-        str(row["date"])
-        for row in rows
-        if row["v2_food_cpi_yoy"] is not None
-        and food_lo <= float(row["v2_food_cpi_yoy"]) < 0
-    ]
-    gfc_v1 = _summary_lookup(summary, "v1_partial", "2008")
-    gfc_v1_held = _summary_lookup(summary, "v1_held", "2008")
-    gfc_v2 = _summary_lookup(summary, "v2", "2008")
-    covid_v1 = _summary_lookup(summary, "v1_partial", "2020")
-    covid_v1_held = _summary_lookup(summary, "v1_held", "2020")
-    covid_v2 = _summary_lookup(summary, "v2", "2020")
-    recent_v2 = _summary_lookup(summary, "v2", "recent")
-    april = by_date["2020-04-01"]
-    march = by_date["2020-03-01"]
-    oct_2009 = by_date["2009-10-01"]
-    nov_2008 = by_date["2008-11-01"]
-    aug_2026 = by_date["2026-08-01"]
-    jun_2022 = by_date["2022-06-01"]
-    sep_2022 = by_date["2022-09-01"]
-    oct_2025 = by_date["2025-10-01"]
-    apr_2026 = by_date["2026-04-01"]
+    scored = current["scored"]
+    values = current["values"]
+    pins = current["pins"]
 
-    def cell(row: Mapping[str, object], index_key: str) -> str:
-        band_key = index_key.replace("_index", "_band")
-        if row[index_key] is None:
-            return "—"
-        return f"{_num(row[index_key])} {_short_band(row[band_key])}"
+    def current_cell(basket_key: str) -> str:
+        if basket_key == "v1":
+            index = scored["v1"]["index"]
+            band = scored["v1"]["band"]
+        else:
+            index = scored["baskets"][basket_key]["index"]
+            band = scored["baskets"][basket_key]["band"]
+        return f"{_num(index)} {_short_band(band)}"
 
-    key_lines = [
-        "| Month | Why it is here | v1 held | h2 | h2, crime off | h2 + housing | h2 + consumer credit | h2 + both | v2, UNRATE instead | v2, debt added |",
-        "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |",
+    comparison = [
+        "| Reading | v1 1.1.1 | A labor and food | B cost of living | C financial stress |",
+        "| --- | --- | --- | --- | --- |",
+        (
+            f"| Current ({current['publication_date']} inputs, 1.1.1 checklist) | "
+            f"{current_cell('v1')} | {current_cell('a_labor_food')} | "
+            f"{current_cell('b_cost_of_living')} | {current_cell('c_financial')} |"
+        ),
     ]
     for day, reason in KEY_MONTHS:
         row = by_date[day]
-        key_lines.append(
-            "| {day} | {reason} | {h} | {v} | {c} | {hs} | {cc} | {both} | {u} | {d} |".format(
+        comparison.append(
+            "| {day} — {reason} | {v1} | {a} | {b} | {c} |".format(
                 day=day,
                 reason=reason,
-                h=cell(row, "v1_held_index"),
-                v=cell(row, "v2_index"),
-                c=cell(row, "v2_without_crime_index"),
-                hs=cell(row, "v2_if_housing_index"),
-                cc=cell(row, "v2_if_consumer_credit_index"),
-                both=cell(row, "v2_if_housing_and_consumer_index"),
-                u=cell(row, "v2_if_unrate_index"),
-                d=cell(row, "v2_if_debt_included_index"),
+                v1=_cell(row, "v1_111_index"),
+                a=_cell(row, "a_index"),
+                b=_cell(row, "b_index"),
+                c=_cell(row, "c_index"),
             )
         )
-    household_lines = [
-        "| Month | Mortgage % | Mortgage as-of | Card % | Card as-of | h2 | + housing | + consumer | + both |",
-        "| --- | --- | --- | --- | --- | --- | --- | --- | --- |",
-    ]
-    for day in HOUSEHOLD_COMPARE_MONTHS:
-        row = by_date[day]
-        household_lines.append(
-            "| {day} | {hv} | {hs} | {cv} | {cs} | {v} | {vh} | {vc} | {vb} |".format(
-                day=day,
-                hv=_num(row["v2_housing_delinquency"]),
-                hs=f"{row['v2_housing_observation_date']} {row['v2_housing_status']}",
-                cv=_num(row["v2_consumer_credit_delinquency"]),
-                cs=(
-                    f"{row['v2_consumer_credit_observation_date']} "
-                    f"{row['v2_consumer_credit_status']}"
-                ),
-                v=cell(row, "v2_index"),
-                vh=cell(row, "v2_if_housing_index"),
-                vc=cell(row, "v2_if_consumer_credit_index"),
-                vb=cell(row, "v2_if_housing_and_consumer_index"),
-            )
-        )
-    rent_lines = [
-        "| Month | 30%+ | 50%+ (not scored) | Burden as-of | h2 | + rent burden | + burden and cards | Rent CPI YoY | + rent CPI proxy |",
-        "| --- | --- | --- | --- | --- | --- | --- | --- | --- |",
-    ]
-    for day in HOUSEHOLD_COMPARE_MONTHS:
-        row = by_date[day]
-        rent_lines.append(
-            "| {day} | {p30} | {p50} | {asof} | {v} | {rb} | {both} | {yoy} | {proxy} |".format(
-                day=day,
-                p30=_num(row["v2_rent_burden_30"], 1),
-                p50=_num(row["v2_rent_burden_50"], 1),
-                asof=(
-                    f"{row['v2_rent_burden_observation_date']} "
-                    f"{row['v2_rent_burden_status']}"
-                ),
-                v=cell(row, "v2_index"),
-                rb=cell(row, "v2_if_rent_burden_index"),
-                both=cell(row, "v2_if_rent_burden_and_consumer_index"),
-                yoy=_num(row["v2_rent_cpi_yoy"]),
-                proxy=cell(row, "v2_if_rent_cpi_proxy_index"),
-            )
-        )
-    # Full ACS file, not only the years a replay window happens to carry.
-    annual_burden = load_v2_bundle()["rent_burden_30"]
-    burden_low_year = min(annual_burden, key=lambda stamp: (annual_burden[stamp], stamp))
-    burden_high_year = max(annual_burden, key=lambda stamp: (annual_burden[stamp], stamp))
-    proxy_values = [
-        (str(row["date"]), float(row["v2_rent_cpi_yoy"]))
-        for row in rows
-        if row["v2_rent_cpi_yoy"] is not None
-    ]
-    proxy_peak_day, proxy_peak = max(proxy_values, key=lambda item: (item[1], item[0]))
-    rent_lo, rent_hi = TRIAL_RANGES["rent_burden_30"]
-    proxy_lo, proxy_hi = TRIAL_RANGES["rent_cpi_yoy"]
-    rate_lines = [
-        "| Month | 10y % | Real 10y % | h2 | + 10y | + real yield | + both rates |",
-        "| --- | --- | --- | --- | --- | --- | --- |",
-    ]
-    kept_lines = [
-        "| Month | h2 | Debt status | h2 + debt | h2 + debt, HUD pin, Edelman pin | v1 held |",
-        "| --- | --- | --- | --- | --- | --- |",
-    ]
-    for day in HOUSEHOLD_COMPARE_MONTHS:
-        row = by_date[day]
-        rate_lines.append(
-            "| {day} | {y10} | {real} | {v} | {dgs} | {ry} | {both} |".format(
-                day=day,
-                y10=_num(row["v2_treasury_10y"]),
-                real=_num(row["v2_real_yield_10y"]),
-                v=cell(row, "v2_index"),
-                dgs=cell(row, "v2_if_dgs10_index"),
-                ry=cell(row, "v2_if_real_yield_index"),
-                both=cell(row, "v2_if_rates_index"),
-            )
-        )
-        kept_lines.append(
-            "| {day} | {v} | {debt} | {plus} | {kept} | {held} |".format(
-                day=day,
-                v=cell(row, "v2_index"),
-                debt=str(row["v1_debt_status"]),
-                plus=cell(row, "v2_if_debt_included_index"),
-                kept=cell(row, "v2_if_kept_debt_hud_trust_index"),
-                held=cell(row, "v1_held_index"),
-            )
-        )
-    treasury_sample = load_v2_bundle()["treasury_10y"]
-    real_sample = load_v2_bundle()["real_yield_10y"]
-    treasury_low = min(treasury_sample, key=lambda stamp: (treasury_sample[stamp], stamp))
-    treasury_high = max(treasury_sample, key=lambda stamp: (treasury_sample[stamp], stamp))
-    real_low = min(real_sample, key=lambda stamp: (real_sample[stamp], stamp))
-    real_high = max(real_sample, key=lambda stamp: (real_sample[stamp], stamp))
-    y10_lo, y10_hi = TRIAL_RANGES["treasury_10y"]
-    real_lo_end, real_hi_end = TRIAL_RANGES["real_yield_10y"]
-    aug_rates = float(aug_2026["v2_if_rates_index"])
-    aug_dgs = float(aug_2026["v2_if_dgs10_index"])
-    if aug_dgs >= 70 and aug_rates >= 55 and aug_rates < 70:
-        rates_read = (
-            "The 10-year level alone leaves August in High. Nominal and real yields "
-            "together put August in Moderate. That combined column gives long yields "
-            "two side-column weights (0.24). Read the 10-year column first."
-        )
-    elif aug_dgs >= 70 and aug_rates >= 70:
-        rates_read = "August stays High with the 10-year alone and with both yield series."
-    elif aug_dgs < 70:
-        rates_read = (
-            "The 10-year level alone moves August out of High. "
-            "That is the financing-cost column."
-        )
-    else:
-        rates_read = "See the table for the August bands."
 
-    summary_lines = [
-        "| Window | v1 partial | v1 held | v2 candidate | v2, crime always off |",
-        "| --- | --- | --- | --- | --- |",
-    ]
-    for window_name, title in (
+    window_titles = (
+        ("all", "Full history (Jan 2007–Aug 2026)"),
         ("2008", "2008 (Dec 2007–Dec 2009)"),
         ("2020", "2020 (Jan–Dec)"),
-        ("recent", "Recent (Jan 2022–Aug 2026)"),
-    ):
-        summary_lines.append(
-            "| {title} | {a} | {b} | {c} | {d} |".format(
-                title=title,
-                a=_range_phrase(_summary_lookup(summary, "v1_partial", window_name)),
-                b=_range_phrase(_summary_lookup(summary, "v1_held", window_name)),
-                c=_range_phrase(_summary_lookup(summary, "v2", window_name)),
-                d=_range_phrase(_summary_lookup(summary, "v2_without_crime", window_name)),
-            )
-        )
-
+        ("2022", "2022 inflation year"),
+    )
+    range_lines = [
+        "| Window | v1 1.1.1 | A labor and food | B cost of living | C financial stress |",
+        "| --- | --- | --- | --- | --- |",
+    ]
     band_lines = [
-        "| Window | Scenario | High | Moderate | Low | Critical |",
+        "| Window | Basket | High | Moderate | Low | Critical |",
         "| --- | --- | --- | --- | --- | --- |",
     ]
-    for window_name in V2_WINDOW_ORDER:
-        for scenario in ("v1_partial", "v1_held", "v2", "v2_without_crime"):
-            row = _summary_lookup(summary, scenario, window_name)
-            band_lines.append(
-                f"| {window_name} | {scenario} | {row['high']} | {row['moderate']} | {row['low']} | {row['critical']} |"
-            )
-
-    raw_lines = [
-        "| Month | CPI YoY | Food YoY | Labor blend | EPOP | LFPR | UNRATE | VIX mean | VIX max | Crime trial |",
-        "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |",
-    ]
-    for day, _reason in KEY_MONTHS:
-        row = by_date[day]
-        crime_text = "excluded" if row["v2_incident_status"] != "trial_observed" else _num(row["v2_incident_rate"])
-        raw_lines.append(
-            "| {day} | {cpi} | {food} | {labor} | {epop} | {lfpr} | {un} | {vix} | {vmax} | {crime} |".format(
-                day=day,
-                cpi=_num(row["v2_inflation_rate"]),
-                food=_num(row["v2_food_cpi_yoy"], 1),
-                labor=_num(row["v2_labor_utilization"]),
-                epop=_num(row["v2_prime_age_epop"], 1),
-                lfpr=_num(row["v2_prime_age_lfpr"], 1),
-                un=_num(row["v1_unemployment_rate"], 1),
-                vix=_num(row["v2_vix_month_mean"]),
-                vmax=_num(row["v2_vix_month_max"]),
-                crime=crime_text,
+    for window_name, title in window_titles:
+        range_lines.append(
+            "| {title} | {v1} | {a} | {b} | {c} |".format(
+                title=title,
+                v1=_range_phrase(_summary_lookup(summary, "v1_111", window_name)),
+                a=_range_phrase(_summary_lookup(summary, "a_labor_food", window_name)),
+                b=_range_phrase(_summary_lookup(summary, "b_cost_of_living", window_name)),
+                c=_range_phrase(_summary_lookup(summary, "c_financial", window_name)),
             )
         )
-
-    full_recent = _extremes(
-        [
-            (str(row["date"]), row["v2_index"])
-            for row in rows
-            if row["window"] == "recent" and abs(float(row["v2_weight_denominator"]) - 1.0) < 1e-9
-        ]
-    )
-    april_without_debt = _num(april["v1_held_without_debt_index"])
-    april_without_debt_band = _short_band(april["v1_held_without_debt_band"])
-    gfc_low_months = [
-        f"{row['date']} ({_num(row['v2_index'])})"
-        for row in rows
-        if row["window"] == "2008" and row["v2_band"] == "Low Stability"
-    ]
-    if gfc_v2["critical"] == 0:
-        gfc_critical = "No v2 month in that window is Critical."
-    else:
-        gfc_critical = f"{gfc_v2['critical']} v2 months in that window are Critical."
-
-    non_crime_weight = sum(
-        weight for name, weight in TRIAL_WEIGHTS.items() if name != "incident_rate"
-    )
-    food_lo_txt = _signed(food_lo)
-    food_hi_txt = _signed(food_hi)
-    labor_lo, labor_hi = TRIAL_RANGES["labor_utilization"]
-    oct_2008 = by_date["2008-10-01"]
-    gap_h1 = 68.72 - 45.62
-    gap_h2 = float(oct_2009["v2_index"]) - float(oct_2008["v2_index"])
-    if gap_h2 < gap_h1 - 0.05:
-        gap_read = (
-            f"October 2009 moved closer to October 2008 "
-            f"({gap_h2:.2f} points apart, versus {gap_h1:.2f} under h1)."
-        )
-        if (
-            float(oct_2009["v2_index"]) > float(oct_2008["v2_index"])
-            and oct_2009["v2_band"] == "Moderate Stability"
+        for scenario, title_s in (
+            ("v1_111", "v1 1.1.1"),
+            ("a_labor_food", "A"),
+            ("b_cost_of_living", "B"),
+            ("c_financial", "C"),
         ):
-            gap_read += (
-                " It is still Moderate, and October 2008 is still the lower score. "
-                "The tighter labor band did not make late 2009 the window's trough."
+            item = _summary_lookup(summary, scenario, window_name)
+            band_lines.append(
+                f"| {title} | {title_s} | {item['high']} | {item['moderate']} | "
+                f"{item['low']} | {item['critical']} |"
             )
-    elif gap_h2 > gap_h1 + 0.05:
-        gap_read = (
-            f"October 2009 moved farther from October 2008 "
-            f"({gap_h2:.2f} points apart, versus {gap_h1:.2f} under h1)."
-        )
-    else:
-        gap_read = (
-            f"The gap between October 2009 and October 2008 is about the same as under h1 "
-            f"({gap_h2:.2f} points, versus {gap_h1:.2f})."
-        )
-    june_h1 = H1_KEY_SCORES["2022-06-01"]["v2"][0]
-    june_h2 = float(jun_2022["v2_index"])
-    if june_h2 > june_h1 + 0.05:
-        food_move = (
-            f"June 2022 moves from h1 **{june_h1:.2f}** to h2 **{_num(jun_2022['v2_index'])}**. "
-            "That is less stressed than h1's hard floor on food, which is what the wider range was for."
-        )
-    elif june_h2 < june_h1 - 0.05:
-        food_move = (
-            f"June 2022 moves from h1 **{june_h1:.2f}** to h2 **{_num(jun_2022['v2_index'])}**, "
-            "more stressed than h1 even with the wider food range."
-        )
-    else:
-        food_move = (
-            f"June 2022 is **{_num(jun_2022['v2_index'])}**, about the same as h1 **{june_h1:.2f}**."
-        )
-    if food_above_range:
-        food_above_sentence = (
-            f"{len(food_above_range)} months are above {food_hi_txt} and clamp the food component at 0 "
-            f"({', '.join(food_above_range)})."
-        )
-    else:
-        food_above_sentence = (
-            f"No month in these windows has food inflation above {food_hi_txt}, so the food "
-            "component does not hit the fully-unstable clamp."
-        )
-    if food_below_range:
-        food_below_sentence = (
-            f"{len(food_below_range)} months are below {food_lo_txt} and clamp the food component at 100 "
-            f"({', '.join(food_below_range)})."
-        )
-    else:
-        food_below_sentence = (
-            f"No month in these windows has food inflation below {food_lo_txt}, so the food "
-            "component does not hit the fully-stable clamp."
-        )
-    h1_compare_lines = [
-        "| Month | h1 v2 | h1, crime off | h2 v2 | h2, crime off | v1 held |",
-        "| --- | --- | --- | --- | --- | --- |",
+
+    h2_lines = [
+        "| Month | Prior h2 |",
+        "| --- | --- |",
     ]
-    for day in H1_COMPARE_MONTHS:
-        prior = H1_KEY_SCORES[day]
-        row = by_date[day]
-        h1_compare_lines.append(
-            "| {day} | {hv} {hvb} | {hc} {hcb} | {v} | {c} | {held} |".format(
-                day=day,
-                hv=f"{prior['v2'][0]:.2f}",
-                hvb=prior["v2"][1],
-                hc=f"{prior['crime_off'][0]:.2f}",
-                hcb=prior["crime_off"][1],
-                v=cell(row, "v2_index"),
-                c=cell(row, "v2_without_crime_index"),
-                held=cell(row, "v1_held_index"),
+    for day, (index, band) in H2_PRIOR.items():
+        h2_lines.append(f"| {day} | {index:.2f} {band} |")
+
+    weight_rows = [
+        ("Headline CPI YoY (`CPIAUCSL`)", "0.15", "−10 to 15", "higher is less stable", "Live inflation input. In every basket."),
+        ("Crime, RTCI Nationwide Full Sample", "0.12", "500 to 8,000", "higher is less stable", "Live crime input from methodology 1.1.0. Absent before January 2018. Carried after the file's last month."),
+        ("Unemployment (`UNRATE`)", "0.12", "0 to 25", "higher is less stable", "Live labor input. Basket A adds EPOP beside it and does not replace it."),
+        ("Debt-to-GDP (`GFDEGDQ188S`)", "0.12", "0 to 200", "higher is less stable", "Live input. This replay uses the quarterly file through 2026 Q1."),
+        ("Homelessness", "0.09", "0 to 0.5", "higher is less stable", f"Held at the 1.1.1 checklist {_num(pins['homelessness_rate'], 2)} ({pins['homelessness_observation_date']}). Not a historical path."),
+        ("Trust in government", "0.12", "0 to 80", "higher is more stable", f"Held at the 1.1.1 checklist {_num(pins['trust_in_government'], 0)} (survey year {pins['trust_observation_date']}). Not a historical path."),
+        ("Food CPI YoY (`CPIUFDNS`)", "0.08", "−2 to 15", "higher is less stable", "Baskets A and B. Same one-decimal print as the food shadow. The live score does not use it."),
+        ("Prime-age EPOP (`LNS12300060`)", "0.08", "68 to 82", "higher is more stable", "Basket A only. Not the 0.70/0.30 labor blend."),
+        ("Mortgage delinquency (`DRSFRMACBS`)", "0.08", "1 to 12", "higher is less stable", "Basket B. Quarterly bank series, carried forward within the file."),
+        ("Rent burden, ACS 30%+ (`B25070`)", "0.08", "40 to 60", "higher is less stable", "Basket B. Annual. The 50%+ share is stored and not scored."),
+        ("VIX monthly mean (`VIXCLS`)", "0.08", "10 to 65", "higher is less stable", "Basket C. Mean of daily closes. The weekly path uses that week's mean in the same slot."),
+        ("Credit conditions (`NFCICREDIT`)", "0.08", "−4 to 4", "higher is less stable", "Basket C. Chicago Fed NFCI credit subindex, monthly mean of the Friday prints. Not an ICE or Moody's spread."),
+    ]
+    weight_lines = [
+        "| Input | Raw weight | Range | Direction | Where it sits |",
+        "| --- | --- | --- | --- | --- |",
+    ]
+    for label, weight, span, direction, where in weight_rows:
+        weight_lines.append(f"| {label} | {weight} | {span} | {direction} | {where} |")
+
+    credit_values = bundle["credit"]
+    credit_low = min(credit_values, key=lambda stamp: (credit_values[stamp], stamp))
+    credit_high = max(credit_values, key=lambda stamp: (credit_values[stamp], stamp))
+    epop_values = bundle["epop"]
+    epop_low = min(epop_values, key=lambda stamp: (epop_values[stamp], stamp))
+    epop_high = max(epop_values, key=lambda stamp: (epop_values[stamp], stamp))
+
+    weekly_lines = [
+        "| Basket | Sample | Weeks | Mean abs move | Stdev of move | Share flat | Largest move | Largest drop |",
+        "| --- | --- | --- | --- | --- | --- | --- | --- |",
+    ]
+    for basket, label in (
+        ("v1_111", "v1 1.1.1"),
+        ("a_labor_food", "A"),
+        ("b_cost_of_living", "B"),
+        ("c_financial", "C"),
+    ):
+        for sample in ("within_month", "all_fridays", "within_month_2008", "within_month_2020", "within_month_2022"):
+            item = _weekly_lookup(weekly, basket, sample)
+            weekly_lines.append(
+                "| {label} | {sample} | {n} | {mean} | {dev} | {flat} | {big} ({when}) | {drop} ({dwhen}) |".format(
+                    label=label,
+                    sample=sample,
+                    n=item["weeks"],
+                    mean=_num(item["mean_abs_change"], 2),
+                    dev=_num(item["stdev_change"], 2),
+                    flat=_num(float(item["share_flat"]) * 100, 1) + "%" if item["share_flat"] is not None else "—",
+                    big=_num(item["max_abs_change"]),
+                    when=item["max_abs_week"] or "—",
+                    drop=_num(item["max_drop"]),
+                    dwhen=item["max_drop_week"] or "—",
+                )
             )
-        )
 
-    text = f"""# v2 candidate replay (hypothesis h2)
+    v1_within = _weekly_lookup(weekly, "v1_111", "within_month")
+    c_within = _weekly_lookup(weekly, "c_financial", "within_month")
+    c_2008 = _weekly_lookup(weekly, "c_financial", "within_month_2008")
+    v1_all = _weekly_lookup(weekly, "v1_111", "all_fridays")
 
-This is a research note for methodology v2.0 planning. It is not a methodology version, and it is not the live BugOut Index. The tables below are **hypothesis h2**. Hypothesis h1 was the previous labeled basket on this branch: food CPI year-over-year range 0 to 10, labor blend range 70 to 83, and weights CPI 0.22, food 0.14, labor 0.28, VIX 0.18, crime 0.18. h1 is not recomputed here. Its six comparison months are copied from that earlier replay so the two baskets can be read side by side.
+    aug = by_date["2026-08-01"]
+    oct_2008 = by_date["2008-10-01"]
+    oct_2009 = by_date["2009-10-01"]
+    apr_2020 = by_date["2020-04-01"]
+    jun_2022 = by_date["2022-06-01"]
+    oct_2025 = by_date["2025-10-01"]
+    apr_2026 = by_date["2026-04-01"]
+    dec_2009 = by_date["2009-12-01"]
+    sep_2011 = by_date["2011-09-01"]
 
-The published score stays the locked v1.0.0 formula. On the 19 September 2026 inputs that formula still returns **57.11 Moderate Stability**. Nothing in this replay is wired into `compute_index`, the weekly publisher, or `docs/data/latest.json`. Merging the branch does not publish to GitHub Pages.
+    y2022 = [row for row in rows if row["window"] == "2022"]
+    y2022_v1_low = sum(1 for row in y2022 if row["v1_111_band"] == "Low Stability")
 
-Read this file. You do not need to run the harness. The month-by-month numbers are in [`output/v2_candidate_monthly.csv`](output/v2_candidate_monthly.csv). Window ranges and band counts are in [`output/v2_candidate_summary.csv`](output/v2_candidate_summary.csv). A small chart of the same series is [`output/v2_candidate_chart.svg`](output/v2_candidate_chart.svg).
+    a_norms = scored["baskets"]["a_labor_food"]["norms"]
+    b_norms = scored["baskets"]["b_cost_of_living"]["norms"]
+    c_norms = scored["baskets"]["c_financial"]["norms"]
+    v1_now = scored["v1"]["index"]
 
-v1 columns are `runtime.processing.formula.compute_index` (endpoints, weights, trust inversion, clamp, divide-by-sum-of-weights). v2 columns use `formula.normalize` and the same divide-by-sum rule on a **different basket**. Trial weights and ranges below are hypothesis h2. They are not a fitted contract.
+    text = f"""# v2 candidate replay (baskets A, B, and C)
 
-## What hypothesis h2 changes
+Research only. This note is not a methodology version, and it is not the live BugOut Index. The scores below are not inputs to `compute_index`, the weekly publisher, `docs/data/latest.json`, or the weekly history. Pew trust, Gallup confidence, and the shelter companions stay outside the score. Merging this branch does not publish to GitHub Pages.
 
-| Piece | h1 | h2 (this note) | Why h2 |
-| --- | --- | --- | --- |
-| Food CPI YoY range | 0 to 10 | {food_lo_txt} to {food_hi_txt} | The 0–10 draft clamped nine 2022–23 months at fully unstable and treated mild food deflation as fully stable. |
-| Labor blend range | 70 to 83 | {labor_lo:g} to {labor_hi:g} | October 2009 (blend about 77, UNRATE 10.0) scored too calm next to the VIX-timed October 2008 Low. A tighter band pulls that labor stress up. This is not a participation penalty. |
-| CPI / food / labor / VIX / crime weights | 0.22 / 0.14 / 0.28 / 0.18 / 0.18 | {TRIAL_WEIGHTS['inflation_rate']:.2f} / {TRIAL_WEIGHTS['food_cpi_yoy']:.2f} / {TRIAL_WEIGHTS['labor_utilization']:.2f} / {TRIAL_WEIGHTS['vix_month_mean']:.2f} / {TRIAL_WEIGHTS['incident_rate']:.2f} | Nudge labor up and VIX down so the Great Recession window is less pure-VIX and the late-2009 unemployment era registers more. Crime stays in the same ballpark. |
+**Stay on methodology 1.1.1.** The current reading is **{_num(v1_now)} {_short_band(scored['v1']['band'])}**. Basket A is **{current_cell('a_labor_food')}**, basket B is **{current_cell('b_cost_of_living')}**, and basket C is **{current_cell('c_financial')}**. All four sit in Moderate. The previous hypothesis h2 printed **77.28 High** for August 2026. That basket dropped debt, homelessness, and trust and filled the weight with a calm labor blend and a calm VIX. The High reading was that composition. These three baskets keep the six 1.1.1 inputs. Each add-on that is calm today lifts the reading, and each basket that catches one stress period is calm through another. Headline CPI already puts every month of 2022 in Low Stability on 1.1.1 ({y2022_v1_low} of {len(y2022)} months). A new published basket is not required to see that year.
 
-Headline CPI endpoints, the VIX range, the crime range, the labor blend formula (`0.70 × EPOP + 0.30 × LFPR`), and the crime trial rule are unchanged. Crime is still excluded when the RTCI month is absent. 2008 is not backfilled. The published crime input stays locked at {PUBLISHED_INCIDENT_RATE:.0f}.
+Read this file. You do not need to run the harness. Month-by-month numbers are in [`output/v2_candidate_monthly.csv`](output/v2_candidate_monthly.csv). Window ranges are in [`output/v2_candidate_summary.csv`](output/v2_candidate_summary.csv). Friday-to-Friday moves are in [`output/v2_candidate_weekly.csv`](output/v2_candidate_weekly.csv). A chart of the same monthly series is [`output/v2_candidate_chart.svg`](output/v2_candidate_chart.svg).
 
-### h1 versus h2 on six months
+The 19 September 2026 published row still scores **57.11 Moderate** through `compute_index` under methodology 1.0.0 (crime 2723, homelessness 0.23, trust 41). The committed `latest.json` is the 9 October 2026 week, methodology 1.1.0, index **{_num(current['published_file_index'])}**. Scoring those six published raws through `compute_index` returns **{_num(current['published_index'])} {_short_band(current['published_band'])}**. This replay does not rewrite that file. The 1.1.1 restatement changes only the two checklist cells.
 
-h1 figures are the prior committed replay. h2 figures are this run. v1 held is the locked formula and does not change between hypotheses.
+## Current reading next to the stress months
 
-{chr(10).join(h1_compare_lines)}
+The current row uses the 9 October 2026 published raws for inflation, unemployment, debt, and crime, and the 1.1.1 checklist for homelessness (**{_num(pins['homelessness_rate'], 2)}**, {pins['homelessness_observation_date']}) and trust (**{_num(pins['trust_in_government'], 0)}**, survey year {pins['trust_observation_date']}). Food is the shadow print **{_num(values['food_cpi_yoy'], 1)}** ({current['food_date']}). Prime-age EPOP is the shadow print **{_num(values['prime_age_epop'], 1)}** ({current['epop_date']}). Mortgage delinquency is **{_num(values['housing_delinquency'])}** ({current['housing_date']}, {current['housing_status']}). Rent burden is **{_num(values['rent_burden_30'], 1)}** ({current['rent_date']}, {current['rent_status']}). VIX is the week ending **{current['vix_week']}** mean **{_num(values['vix_month_mean'])}**. Credit conditions are the Chicago Fed print for **{current['credit_week']}**, **{_num(values['credit_conditions'], 3)}**.
 
-## What the h2 basket is
+August 2026 in the monthly file is a different row: unemployment is the August print 4.1, EPOP is 80.4, and VIX is the August monthly mean. Crime on both rows is the April 2026 Nationwide Full Sample rate **{_num(apr_2026['incident_rate'])}**, carried forward after the RTCI file ends. The unweighted agency mean that month is **{_num(apr_2026['incident_unweighted'])}** and is not scored.
 
-| Trial input | Weight | Range | Direction | Where it comes from |
-| --- | --- | --- | --- | --- |
-| Headline CPI YoY (`CPIAUCSL`) | {TRIAL_WEIGHTS['inflation_rate']:.2f} | −10 to 15 | higher is less stable | Same construction as the live inflation fetcher. Endpoints are the v1.0.0 endpoints. Unchanged from h1. |
-| Food CPI YoY (`CPIUFDNS`) | {TRIAL_WEIGHTS['food_cpi_yoy']:.2f} | {food_lo_txt} to {food_hi_txt} | higher is less stable | Same one-decimal public print as `fetch_food_shadow`. h2 range. The live site does not apply it. |
-| Labor blend | {TRIAL_WEIGHTS['labor_utilization']:.2f} | {labor_lo:g} to {labor_hi:g} | higher is more stable | `0.70 × LNS12300060 + 0.30 × LNS11300060`. A simple composite, not the incubating essay's unspecified participation penalty. h2 range. |
-| VIX monthly mean (`VIXCLS`) | {TRIAL_WEIGHTS['vix_month_mean']:.2f} | 10 to 65 | higher is less stable | Mean of daily closes in the calendar month. The month's maximum close is stored and not scored. Range unchanged from h1. |
-| Crime trial (RTCI) | {TRIAL_WEIGHTS['incident_rate']:.2f} | 500 to 8,000 | higher is less stable | Unweighted agency mean, same construction as the crime diagnostic. v1 endpoints. Included only when that month is in the file. |
+{chr(10).join(comparison)}
 
-When an input is missing, its weight drops out and the denominator shrinks. The four non-crime weights sum to **{non_crime_weight:.2f}**. All five sum to **1.00**.
+Bands are the live bands from `interpret`: High at or above 70, Moderate at or above 55, Low at or above 40, Critical below 40. Applying those bands to a wider basket is part of the research. The thresholds were not retuned.
 
-Demoted from the v2 primary, on purpose, so the side-by-side can be discussed:
+## What the three baskets are
 
-- **Debt-to-GDP** is out of the primary. The sensitivity `v2_if_debt_included` adds it back at the v1 raw weight **0.12** and the v1 endpoints (0 to 200).
-- **Mortgage delinquency** and **credit-card delinquency** are out of the primary. They are side columns (`v2_if_housing`, `v2_if_consumer_credit`, `v2_if_housing_and_consumer`) at trial weight 0.12 each. They answer a coverage question. They do not replace h2.
-- **Rent burden** is out of the primary. `v2_if_rent_burden` adds the ACS 30%+ share at trial weight {RENT_BURDEN_WEIGHT:.2f}. `v2_if_rent_burden_and_consumer` adds that share and card delinquency. The 50%+ share is stored and not scored. `v2_if_rent_cpi_proxy` is rent-of-primary-residence inflation, labeled as a proxy, not as rent burden.
-- **Treasury yields** are out of the primary. `v2_if_dgs10` adds the 10-year yield, `v2_if_real_yield` adds the 10-year real yield, and `v2_if_rates` adds both. Corporate credit spreads stay out.
-- **`v2_if_kept_debt_hud_trust`** puts debt (when a print exists) and the locked HUD and Edelman pins back on h2 at their v1.0.0 weights. It is a replacement check before demotion. It is not a historical path for homelessness or trust, and it does not unlock crime.
-- **Homelessness** and **Edelman trust** are out of every v2 column. There is still no monthly history. The "if removed" columns are the locked formula with that held-constant input left out.
-- **UNRATE alone** is not the v2 labor input. `v2_if_unrate` puts headline unemployment back in the labor slot (v1 range 0 to 25, weight {TRIAL_WEIGHTS['labor_utilization']:.2f}) so the composite can be compared with the series it would replace.
-- **`v2_if_epop_only`** uses prime-age EPOP alone (hypothesis range 68 to 82) instead of the 0.70/0.30 blend.
-- **`v2_if_crime_held`** pins crime at the locked published input **{PUBLISHED_INCIDENT_RATE:.0f}** and labels it held constant. That pin is the 19 September 2026 baseline (`{HELD_CONSTANT_BASELINE['name']}`), not a 2008 or 2020 observation.
+Every basket starts from the six live inputs and their live weights. The weights sum to 0.72 before any add-on. Each add-on has raw weight **0.08**. When an input is missing, its weight drops out and the denominator shrinks. The index is `Σ(normalized × weight) / Σ weight`, the same rule as `compute_index`. v1 component scores in the `v1_111` column are `compute_index` itself.
 
-`v2_without_crime` is the same basket with crime always excluded. Use it when comparing 2008 (no RTCI) with later years (RTCI present).
+{chr(10).join(weight_lines)}
 
-Bands on every column are the v1.0.0 bands from `interpret`: High ≥ 70, Moderate ≥ 55, Low ≥ 40, Critical below 40. Applying those bands to a different basket is part of the hypothesis, not a retune.
+Basket A is the live score plus food CPI and prime-age EPOP. Basket B is the live score plus food CPI, mortgage delinquency, and the ACS 30%+ rent-burden share. Basket C is the live score plus the VIX monthly mean and the Chicago Fed NFCI credit subindex. Food is in both A and B so the 2022 food spike is visible in the cost-of-living basket and in the labor basket. The 0.70 × EPOP + 0.30 × participation blend from hypothesis h2 is not used.
 
-## Results
+Prime-age EPOP in the BLS fixture runs **{_num(epop_values[epop_low], 1)}** ({epop_low}) to **{_num(epop_values[epop_high], 1)}** ({epop_high}). The Chicago Fed credit file in this replay runs **{_num(credit_values[credit_low], 3)}** ({credit_low}) to **{_num(credit_values[credit_high], 3)}** ({credit_high}). The −4 to 4 credit range sits outside that file. It was not chosen to push the current reading under 70.
 
-{chr(10).join(summary_lines)}
+### Why the credit input is not an ICE spread
 
-Ranges are the lowest and highest scored month in that column. A blank month is not in the range. October 2025 is scored from whatever inputs exist that month, so it is inside these ranges and it is not a full-basket reading. See the recent-path section.
+ICE BofA high-yield OAS (`BAMLH0A0HYM2`) and Moody's seasoned Baa yield are the usual credit-spread prints. Both licenses forbid copying the series into this repository. FRED's ICE history is also a rolling three-year window as of April 2026, so that file cannot cover 2008. Basket C uses the Chicago Fed NFCI credit subindex (`NFCICREDIT`), which the Chicago Fed publishes as a weekly credit-conditions index (average 0, standard deviation 1 since 1971). Positive means tighter than that average. It is built from credit-condition measures. It is not a bond spread in percentage points, and it is not labeled as one.
 
-Band counts use the v1.0.0 thresholds on whatever number that column produced. A blank month is not counted.
+### What hypothesis h2 did
+
+h2 is the previous labeled basket on this branch: CPI, food, a labor blend, VIX, and an unweighted crime trial. Debt, homelessness, and trust were out. Those six months are the prior committed replay. This command does not recompute them.
+
+{chr(10).join(h2_lines)}
+
+August 2026 on h2 was **77.28 High** against a v1 held-constant score of **57.11 Moderate**. The gap was the basket. A calm labor blend and a calm VIX replaced unemployment, and the three slower stressed series were gone. Keeping those three series is why the current 1.1.1 reading and all three new baskets stay in Moderate.
+
+## Full history and the stress windows
+
+The monthly file is every month from January 2007 through August 2026 for which the BLS CPI fixture can form a year-over-year rate. October 2025 stays blank for CPI, food, unemployment, and EPOP. Debt is the quarterly `GFDEGDQ188S` file fetched {DEBT_FULL_PULL_DATE}, and it covers this span, so 2022 is no longer a debt gap. The earlier h2 note excluded 2022–2025 Q3 debt because that fixture did not contain the quarters. Crime is the population-weighted Nationwide Full Sample rate. Before January 2018 the weight drops out. From May 2026 through August 2026 the April 2026 rate is carried forward and labeled `carried_forward`.
+
+{chr(10).join(range_lines)}
 
 {chr(10).join(band_lines)}
 
-### Key months
+No month in this file is High on v1 or on A, B, or C. No month is Critical.
 
-h2 is still the primary candidate. Housing delinquency, card delinquency, rent burden, and the rent-CPI proxy are side columns for the coverage question “August 2026 High feels wrong.” They are not a new primary basket and they are not in the live score. UNRATE-instead and debt-added stay in this table; v1 partial stays in the monthly CSV. The rent-burden comparison is in the next section.
+Basket B's full-history low is {_cell(sep_2011, 'b_index')} on {sep_2011['date']}. Rent burden that month is the 2011 survey peak {_num(sep_2011['rent_burden_30'], 1)} ({sep_2011['rent_observation_date']}), and mortgage delinquency is {_num(sep_2011['housing_delinquency'])}. Unemployment is {_num(sep_2011['unemployment_rate'], 1)}. 1.1.1 is {_cell(sep_2011, 'v1_111_index')}. The two household add-ons are stressed at once, and that is what pushes B below v1.
 
-{chr(10).join(key_lines)}
+## Composition
 
-### Household stress side columns
+Component scores use the ranges above. A component above the 1.1.1 reading pulls a basket up. A component below it pulls the basket down. The displayed component is rounded to two decimals. The index uses the unrounded component, then rounds the quotient, the same way `compute_index` does.
 
-These two series are household payment difficulty, not corporate credit spreads. The public FRED graph CSV did not return a body on this pull. The levels are the Federal Reserve Board charge-off and delinquency release (CHGDEL), the release FRED uses for these series, downloaded 2026-09-26. The package observations run through 2026-06-30. Each print is stored on the quarter-start month. Later months in the harness use that print as `carried_forward`, the same rule as debt-to-GDP. A month with no print on or before it would drop the weight. None of the three windows are in that state.
+**Current reading ({current['publication_date']}).** 1.1.1 is {_num(v1_now)} {_short_band(scored['v1']['band'])}. Food {_direction(a_norms.get('food_cpi_yoy'), v1_now)}. Prime-age EPOP {_direction(a_norms.get('prime_age_epop'), v1_now)}. Mortgage delinquency {_direction(b_norms.get('housing_delinquency'), v1_now)}. Rent burden {_direction(b_norms.get('rent_burden_30'), v1_now)}. VIX {_direction(c_norms.get('vix_month_mean'), v1_now)}. Credit conditions {_direction(c_norms.get('credit_conditions'), v1_now)}. The lift in A is mostly EPOP near the top of 68–82. The lift in B is the calm delinquency print overpowering a rent-burden score that does sit below the index. The lift in C is a calm VIX. Credit is about average on the −4 to 4 range and barely moves the reading. None of that is a claim that household stress fell inside the six live inputs.
 
-| Series | FRED id | What it measures | Frequency | Trial weight | Trial range |
-| --- | --- | --- | --- | --- | --- |
-| Mortgage delinquency | `DRSFRMACBS` | Delinquency rate on loans secured by one- to four-family residential property, including home-equity lines, all commercial banks, seasonally adjusted, percent. Fed table column “Residential,” booked in domestic offices. | Quarterly | {HOUSING_STRESS_WEIGHT:.2f} | 1 to 12 |
-| Credit-card delinquency | `DRCCLACBS` | Delinquency rate on consumer credit card loans, all commercial banks, seasonally adjusted, percent. Issue #48. Not a bond spread. | Quarterly | {CONSUMER_CREDIT_WEIGHT:.2f} | 1 to 8 |
+**October 2008.** 1.1.1 is {_cell(oct_2008, 'v1_111_index')}. Unemployment is {_num(oct_2008['unemployment_rate'], 1)} and crime is excluded, so the financial spike is outside v1. Basket C is {_cell(oct_2008, 'c_index')}. VIX {_direction(oct_2008['vix_normalized'], oct_2008['v1_111_index'])}. Credit {_direction(oct_2008['credit_normalized'], oct_2008['v1_111_index'])}. That is the month C is for. Basket A is {_cell(oct_2008, 'a_index')}: EPOP was still {_num(oct_2008['prime_age_epop'], 1)} and {_direction(oct_2008['epop_normalized'], oct_2008['v1_111_index'])}. Basket B is {_cell(oct_2008, 'b_index')}. Mortgage delinquency was {_num(oct_2008['housing_delinquency'])}, already rising, and the rent-burden print is the 2008 survey carried from January.
 
-Higher delinquency is less stable. This pull’s sample runs from 1991 Q1 through 2026 Q2: mortgage delinquency 1.41 to 11.48, card delinquency 1.53 to 6.77. The ranges leave those peaks short of a hard floor. Weight 0.12 matches the debt side column. It is a hypothesis, not a fitted share of h2.
+**October 2009.** 1.1.1 is {_cell(oct_2009, 'v1_111_index')} with unemployment {_num(oct_2009['unemployment_rate'], 1)}. Basket B is {_cell(oct_2009, 'b_index')} because mortgage delinquency is {_num(oct_2009['housing_delinquency'])} and {_direction(oct_2009['housing_normalized'], oct_2009['v1_111_index'])}. Basket A is {_cell(oct_2009, 'a_index')}. Food CPI was {_num(oct_2009['food_cpi_yoy'], 1)} and {_direction(oct_2009['food_normalized'], oct_2009['v1_111_index'])}. That food add-on makes the unemployment-peak month look calmer. EPOP at {_num(oct_2009['prime_age_epop'], 1)} {_direction(oct_2009['epop_normalized'], oct_2009['v1_111_index'])}. Basket C is {_cell(oct_2009, 'c_index')}: the VIX spike was over, and credit had eased, so C does not mark the labor trough of the recession.
 
-{chr(10).join(household_lines)}
+**December 2009.** 1.1.1 is {_cell(dec_2009, 'v1_111_index')} with crime still excluded. The 1.0.0 held-constant column, which pins crime at 2723, is {_cell(dec_2009, 'v1_100_held_index')}. Part of the gap is the missing crime history. A calm pinned crime rate adds weight on the stable side of the scale. That Low reading is not a 2009 crime spike.
 
-August 2026 is **{cell(aug_2026, 'v2_index')}** on h2, **{cell(aug_2026, 'v2_if_housing_index')}** with mortgage delinquency, **{cell(aug_2026, 'v2_if_consumer_credit_index')}** with card delinquency, and **{cell(aug_2026, 'v2_if_housing_and_consumer_index')}** with both. The rates that month are the 2026 Q2 prints carried forward ({_num(aug_2026['v2_housing_delinquency'])}% mortgages, {_num(aug_2026['v2_consumer_credit_delinquency'])}% cards, observation {aug_2026['v2_housing_observation_date']}). There is no 2026 Q3 print in this file. Mortgage delinquency is near the calm end of the sample, so adding it does not pull August toward Moderate. Card delinquency is above its trough and far below the 2009 peak, and the 0.12 weight does not move August out of High either.
+**April 2020.** 1.1.1 is {_cell(apr_2020, 'v1_111_index')} (unemployment {_num(apr_2020['unemployment_rate'], 1)}, Nationwide Full Sample crime {_num(apr_2020['incident_rate'])}). The inflation-unemployment-debt partial, the same three-input replay as the locked v1.0.0 harness, is {_cell(apr_2020, 'v1_partial_index')}. The 1.0.0 pins on those FRED inputs are {_cell(apr_2020, 'v1_100_held_index')}. Basket A is {_cell(apr_2020, 'a_index')}. EPOP was {_num(apr_2020['prime_age_epop'], 1)} and {_direction(apr_2020['epop_normalized'], apr_2020['v1_111_index'])}. A marks the labor break harder than v1. Basket B is {_cell(apr_2020, 'b_index')}. Mortgage delinquency was {_num(apr_2020['housing_delinquency'])} and {_direction(apr_2020['housing_normalized'], apr_2020['v1_111_index'])}. Rent burden is the 2019 survey carried forward ({_num(apr_2020['rent_burden_30'], 1)}, {apr_2020['rent_observation_date']}), the low in this ACS file, and {_direction(apr_2020['rent_normalized'], apr_2020['v1_111_index'])}. Bank delinquency did not show the COVID labor shock. Forbearance kept the series calm, and that calm series pulls B back to Moderate. Basket C is {_cell(apr_2020, 'c_index')}. VIX and credit were stressed, and both sit below the 1.1.1 reading, so C stays in Low with v1.
 
-October 2009 is where the mortgage series does the work h2’s labor blend did not. Mortgage delinquency is {_num(oct_2009['v2_housing_delinquency'])}% and card delinquency is {_num(oct_2009['v2_consumer_credit_delinquency'])}%. h2 is **{cell(oct_2009, 'v2_index')}**. With both side series it is **{cell(oct_2009, 'v2_if_housing_and_consumer_index')}**. October 2008 is already a VIX Low on h2 (**{cell(oct_2008, 'v2_index')}**); adding both household series scores **{cell(oct_2008, 'v2_if_housing_and_consumer_index')}**.
+**June 2022.** 1.1.1 is {_cell(jun_2022, 'v1_111_index')} with headline CPI {_num(jun_2022['inflation_rate'])} and debt {_num(jun_2022['debt_to_gdp_ratio'])} ({jun_2022['debt_observation_date']}, {jun_2022['debt_status']}). Food CPI was {_num(jun_2022['food_cpi_yoy'], 1)} and {_direction(jun_2022['food_normalized'], jun_2022['v1_111_index'])}. EPOP was {_num(jun_2022['prime_age_epop'], 1)} and {_direction(jun_2022['epop_normalized'], jun_2022['v1_111_index'])}. Those two add-ons pull in opposite directions, and basket A is {_cell(jun_2022, 'a_index')}, a small step above v1 rather than a deeper inflation reading. Basket B is {_cell(jun_2022, 'b_index')}. Mortgage delinquency was {_num(jun_2022['housing_delinquency'])} and {_direction(jun_2022['housing_normalized'], jun_2022['v1_111_index'])}, which offsets food and the rent-burden score ({_num(jun_2022['rent_normalized'])}). Basket C is {_cell(jun_2022, 'c_index')}. VIX {_direction(jun_2022['vix_normalized'], jun_2022['v1_111_index'])}. Credit {_direction(jun_2022['credit_normalized'], jun_2022['v1_111_index'])}. 2022 was an inflation year. It was not a 2008-style credit break, and C does not treat it as one.
 
-April 2020 is the opposite case. Bank delinquency was low while prime-age employment had already broken, which is what forbearance does to this series. h2 is **{cell(april, 'v2_index')}**. With both household series it is **{cell(april, 'v2_if_housing_and_consumer_index')}**. These columns do not mark the COVID labor trough.
+**October 2025.** CPI, food, unemployment, and EPOP are blank. 1.1.1 is {_cell(oct_2025, 'v1_111_index')} on debt, crime, homelessness, and trust (`{oct_2025['v1_111_inputs_present']}`). The inflation-unemployment-debt partial has only the debt print that month and is {_cell(oct_2025, 'v1_partial_index')}. Basket A is {_cell(oct_2025, 'a_index')}, the same number as 1.1.1, because both of its add-ons are missing and the denominator does not change. Baskets B and C are {_cell(oct_2025, 'b_index')} and {_cell(oct_2025, 'c_index')}. Calm delinquency and a calm VIX are still present, so they lift a thin month. That is not a recovery.
 
-### Rent burden side column
+## Weekly volatility
 
-There is no monthly national rent-burden series. Rent burden here is the share of renter households whose gross rent is at least 30% of household income, the Census cost-burden convention. It is not mortgage delinquency (`DRSFRMACBS`) and it is not corporate credit.
+A Friday publish of methodology 1.1.1, basket A, or basket B does not move inside a calendar month in this vintage. Inflation, unemployment, food, and EPOP update monthly. Debt, delinquency, and rent burden are quarterly or annual and are carried inside the month. Homelessness and trust are the held checklist. Crime is a monthly file rate. Across {v1_within['weeks']} within-month Friday pairs, v1, A, and B are flat on every pair (share flat {_num(float(v1_within['share_flat']) * 100, 1)}%, mean absolute move {_num(v1_within['mean_abs_change'], 2)}).
 
-The source is ACS table **B25070**, Gross Rent as a Percentage of Household Income in the Past 12 Months, national 1-year estimates. The scored share is `(30–34.9% + 35–39.9% + 40–49.9% + 50% or more) / (total − not computed) × 100`, rounded half-up to one decimal. “Not computed” stays out of the denominator. The **50%+** share uses the same denominator and is the severe-burden convention. It is a subset of the 30% group, so it is stored on the row and not given a second weight.
+Basket C is the weekly series. The credit subindex is a Friday print, and the VIX slot uses that week's mean close. Within-month, the mean absolute move is **{_num(c_within['mean_abs_change'], 2)}**, the standard deviation of the signed move is **{_num(c_within['stdev_change'], 2)}**, and {_num(float(c_within['share_flat']) * 100, 1)}% of those pairs are flat at two decimals. The largest within-month move is **{_num(c_within['max_abs_change'])}** on the week of {c_within['max_abs_week']}. Inside the 2008 window the largest within-month drop is **{_num(c_2008['max_drop'])}** on the week of {c_2008['max_drop_week']}.
 
-| Piece | Choice |
-| --- | --- |
-| Series | `B25070` national 1-year. 2007–2009 from the ACS summary file (sequences 134, 138, and 148; United States logrecno 1). 2010–2019 and 2021–2024 from `data.census.gov` product `ACSDT1Y{{year}}.B25070`, geography United States. Pulled {RENT_DATA_PULL_DATE}. |
-| What is missing | **2020** has no standard 1-year ACS (the experimental 2020 1-year is not used). **2025** is not in that API on this pull. No month is invented. |
-| Frequency and lag | Annual. The 1-year ACS for survey year Y is usually released the following September. This file dates the print at January of the survey year, the same revised-vintage convention as the rest of this note, not the release month and not ALFRED. Later months carry that print forward until the next survey year. 2020 carries 2019. August 2026 carries 2024. |
-| Trial weight and range | {RENT_BURDEN_WEIGHT:.2f}, endpoints {rent_lo:g} to {rent_hi:g}. Higher share is less stable. In this file the annual 30%+ share runs **{_num(annual_burden[burden_low_year], 1)}** ({burden_low_year}) to **{_num(annual_burden[burden_high_year], 1)}** ({burden_high_year}). The range leaves that low short of fully stable and that high short of a hard floor. It was not chosen to push August under 70. A missing year drops the weight. None of these windows start before 2007. |
+The `all_fridays` sample also counts the step into a new month, which is when a new CPI or unemployment print arrives. For v1 that mean absolute Friday-to-Friday move is **{_num(v1_all['mean_abs_change'], 2)}** and the largest step is **{_num(v1_all['max_abs_change'])}** on the week of {v1_all['max_abs_week']}. That step is a monthly update landing on a Friday, not a week of market noise.
 
-`v2_if_rent_burden` is h2 plus that 30% share. `v2_if_rent_burden_and_consumer` also adds `DRCCLACBS` at weight {CONSUMER_CREDIT_WEIGHT:.2f}. h2 stays the primary.
+{chr(10).join(weekly_lines)}
 
-The last column is an honest high-frequency **proxy**, not rent burden. It is BLS `CUUR0000SEHA`, CPI-U rent of primary residence, not seasonally adjusted, 12-month percent change, same construction as headline CPI. Pulled {RENT_DATA_PULL_DATE}. Trial weight {RENT_CPI_PROXY_WEIGHT:.2f}, range {_signed(proxy_lo)} to {proxy_hi:g}. October 2025 is blank in this series (the appropriations lapse), so that month drops the proxy weight. The highest proxy print in these windows is **{_num(proxy_peak)}** on {proxy_peak_day}.
+This path uses the revised vintage. A Friday in 2008 is scored with the revised print for that month, not with the print that had been published by that Friday. It is not an ALFRED real-time path.
 
-{chr(10).join(rent_lines)}
+## Cadence, freshness, and source reliability
 
-August 2026 is **{cell(aug_2026, 'v2_index')}** on h2. The rent-burden input that month is the **2024** ACS print carried forward: **{_num(aug_2026['v2_rent_burden_30'], 1)}%** of renters at the 30% line and **{_num(aug_2026['v2_rent_burden_50'], 1)}%** at the 50% line (observation {aug_2026['v2_rent_burden_observation_date']}). Adding the 30% share scores **{cell(aug_2026, 'v2_if_rent_burden_index')}**. Adding the 30% share and card delinquency scores **{cell(aug_2026, 'v2_if_rent_burden_and_consumer_index')}**. The rent-CPI proxy that month is **{_num(aug_2026['v2_rent_cpi_yoy'])}%** and scores **{cell(aug_2026, 'v2_if_rent_cpi_proxy_index')}**. The 2022, 2023, and 2024 surveys sit on top of each other near 52%, so carrying 2024 into August 2026 is not hiding a later collapse that this file contains. It also cannot see a 2025 or 2026 change in the income share, because those ACS years are not published here. Shelter inflation has cooled from the {proxy_peak_day[:7]} peak, which is why the proxy moves August less than the burden share does. Neither column puts August in Moderate.
+Freshness is measured against this research pull. The BLS, household, rent, and monthly VIX fixtures are the {DATA_PULL_DATE} / 2026-09-27 pull. Debt, the credit subindex, and the weekly VIX file were added {DEBT_FULL_PULL_DATE}. The current row's inflation, unemployment, crime, debt, food, and EPOP are the values already in the committed `latest.json` shadows and metrics.
 
-October 2009’s burden print is the 2009 survey (**{_num(oct_2009['v2_rent_burden_30'], 1)}%** at 30%+, observation {oct_2009['v2_rent_burden_observation_date']}). h2 is **{cell(oct_2009, 'v2_index')}**. With the burden share it is **{cell(oct_2009, 'v2_if_rent_burden_index')}**. Rent of primary residence that month is only **{_num(oct_2009['v2_rent_cpi_yoy'])}%** year over year, so the proxy scores **{cell(oct_2009, 'v2_if_rent_cpi_proxy_index')}**. The income share and the rent-price change are different facts: burden rose through the recession while rent inflation slowed.
-
-April 2020 has no 2020 ACS 1-year. The burden cell is the **2019** survey carried forward (**{_num(april['v2_rent_burden_30'], 1)}%**, the low in this file). h2 is **{cell(april, 'v2_index')}**. With that carried print it is **{cell(april, 'v2_if_rent_burden_index')}**. That is not a COVID rent-burden observation.
-
-October 2008 uses the 2008 survey (**{_num(oct_2008['v2_rent_burden_30'], 1)}%**), which was not published until the following year. h2 is **{cell(oct_2008, 'v2_index')}** and h2 plus burden is **{cell(oct_2008, 'v2_if_rent_burden_index')}**. June 2022 uses the 2022 survey (**{_num(jun_2022['v2_rent_burden_30'], 1)}%**). h2 is **{cell(jun_2022, 'v2_index')}** and h2 plus burden is **{cell(jun_2022, 'v2_if_rent_burden_index')}**.
-
-### Financing stress: Treasury yields
-
-These columns are the cost of long-term borrowing. They are not mortgage delinquency, not rent burden, and not a corporate bond spread. BBB and high-yield OAS stay out of the replay.
-
-The scored nominal series is the monthly mean of the daily 10-year Treasury constant-maturity yield, FRED `DGS10`. The companion is the monthly mean of the 10-year real yield, FRED `DFII10` (TIPS). Both files are the FRED graph CSV pulled {RATES_DATA_PULL_DATE}, daily prints through 24 September 2026, collapsed to a month mean. The fixture keeps January 2003 through August 2026. September 2026 is a partial month on this pull and is not stored. A missing month would drop the weight. Every month in these windows has a print, so the status is `observed`.
-
-The scored input is the **level**, not the year-over-year change. August 2026 is {_num(aug_2026['v2_treasury_10y'])}% on the 10-year. That is the mortgage benchmark. A small change from a high level would still be expensive financing, and a drop during a crisis (October 2008, April 2020) is flight to Treasuries, not a sign that household borrowing was easy in every other sense. Higher yield is less stable.
-
-| Piece | Choice |
-| --- | --- |
-| Nominal | `DGS10` monthly mean. Trial weight {TREASURY_10Y_WEIGHT:.2f}. Range {y10_lo:g} to {y10_hi:g}. In this file the monthly mean runs **{_num(treasury_sample[treasury_low])}** ({treasury_low}) to **{_num(treasury_sample[treasury_high])}** ({treasury_high}). |
-| Real | `DFII10` monthly mean. Trial weight {REAL_YIELD_WEIGHT:.2f}. Range {_signed(real_lo_end)} to {real_hi_end:g}. In this file **{_num(real_sample[real_low])}** ({real_low}) to **{_num(real_sample[real_high])}** ({real_high}). |
-| Why this range | Daily `DGS10` goes back to 1962 and the monthly mean peaked near 15 in the early 1980s. A 0-to-16 range would score a 4–5% yield as mostly calm. This side column is financing conditions in the same era as the real-yield series, which starts in 2003. The endpoints sit just outside that sample. They were not chosen to push August under 70. |
-| Not scored | `T10Y2Y` (10-year minus 2-year) and `T10YIE` (breakeven inflation) were on the same FRED pull. The term spread steepened in the 2008 crisis while the real yield spiked, and a positive spread is not cheap long-term borrowing. Breakevens are already inside `DFII10`. Neither is a column. |
-
-`v2_if_dgs10` is h2 plus the nominal yield. `v2_if_real_yield` is h2 plus the real yield. `v2_if_rates` is h2 plus both. h2 stays the primary.
-
-{chr(10).join(rate_lines)}
-
-August 2026 is **{cell(aug_2026, 'v2_index')}** on h2, **{cell(aug_2026, 'v2_if_dgs10_index')}** with the 10-year at {_num(aug_2026['v2_treasury_10y'])}%, **{cell(aug_2026, 'v2_if_real_yield_index')}** with the real yield at {_num(aug_2026['v2_real_yield_10y'])}%, and **{cell(aug_2026, 'v2_if_rates_index')}** with both. {rates_read}
-
-October 2008 is the month the two yields disagree in a useful way. h2 is already **{cell(oct_2008, 'v2_index')}** on VIX. The nominal mean is {_num(oct_2008['v2_treasury_10y'])}% and h2 plus that yield is **{cell(oct_2008, 'v2_if_dgs10_index')}**, a nudge. The real yield is {_num(oct_2008['v2_real_yield_10y'])}% because breakevens had collapsed, close to the file high of {_num(real_sample[real_high])} in {real_high}. h2 plus the real yield is **{cell(oct_2008, 'v2_if_real_yield_index')}**. Both together are **{cell(oct_2008, 'v2_if_rates_index')}**. The nominal 10-year is not the stress in that month. The real yield is.
-
-April 2020 is the other case. The 10-year mean is {_num(april['v2_treasury_10y'])}% and the real yield is {_num(april['v2_real_yield_10y'])}%. h2 is **{cell(april, 'v2_index')}**. With the 10-year it is **{cell(april, 'v2_if_dgs10_index')}**. Long rates were easy while employment had broken, so these columns do not mark the COVID labor trough.
-
-October 2009 nominal is {_num(oct_2009['v2_treasury_10y'])}% (h2 **{cell(oct_2009, 'v2_index')}**, plus the 10-year **{cell(oct_2009, 'v2_if_dgs10_index')}**). June 2022 nominal is {_num(jun_2022['v2_treasury_10y'])}% (h2 **{cell(jun_2022, 'v2_index')}**, plus the 10-year **{cell(jun_2022, 'v2_if_dgs10_index')}**, plus both yields **{cell(jun_2022, 'v2_if_rates_index')}**).
-
-### If debt, HUD, and Edelman stayed
-
-h2 drops debt, homelessness, and Edelman trust. v1 held keeps them, and on the live formula August is the locked **{_num(aug_2026['v1_held_index'])}**. Those are different baskets. This section is the literal replacement on **h2**, before treating the drop as settled.
-
-`v2_if_debt_included` adds debt-to-GDP at weight {DEBT_SENSITIVITY_WEIGHT:.2f} and the v1 endpoints (0 to 200) when that month has a print. `v2_if_kept_debt_hud_trust` adds that same debt rule plus homelessness **{HELD_CONSTANT_BASELINE['homelessness_rate']}** at the v1 weight {HUD_KEPT_WEIGHT:.2f} (range 0 to 0.5) and trust **{HELD_CONSTANT_BASELINE['trust_in_government']:.0f}** at the v1 weight {TRUST_KEPT_WEIGHT:.2f} (range 0 to 80, higher trust more stable). The HUD and Edelman numbers are the 19 September 2026 pins on every month. They are not a historical series. Crime stays on the h2 rule: absent months stay absent. The crime lock is not put back.
-
-{chr(10).join(kept_lines)}
-
-August 2026 on h2 is **{cell(aug_2026, 'v2_index')}**. Debt that month is the carried 2026 print (status {aug_2026['v1_debt_status']}). h2 plus debt is **{cell(aug_2026, 'v2_if_debt_included_index')}**. h2 plus debt and the two pins is **{cell(aug_2026, 'v2_if_kept_debt_hud_trust_index')}**. The live held basket is **{cell(aug_2026, 'v1_held_index')}**. On that live basket, dropping debt scores **{cell(aug_2026, 'v1_held_without_debt_index')}**, dropping homelessness scores **{cell(aug_2026, 'v1_held_without_homelessness_index')}**, and dropping trust scores **{cell(aug_2026, 'v1_held_without_trust_index')}**. Putting the three demoted inputs back on h2 does not reproduce 57.11. The live score still uses unemployment, the crime lock, and the v1 weights. h2 that month has a calm labor blend, calm VIX, and no crime trial.
-
-June 2022 has no debt print in this replay ({jun_2022['v1_debt_status']}), so the kept column that month is h2 plus the two pins only: **{cell(jun_2022, 'v2_if_kept_debt_hud_trust_index')}** against h2 **{cell(jun_2022, 'v2_index')}**. October 2008 and April 2020 do have debt. Their kept scores are **{cell(oct_2008, 'v2_if_kept_debt_hud_trust_index')}** and **{cell(april, 'v2_if_kept_debt_hud_trust_index')}**.
-
-### Inputs behind those months
-
-{chr(10).join(raw_lines)}
-
-### What the windows show
-
-**Great Recession window.** The locked partial replay (inflation, unemployment, debt only) runs {_range_phrase(gfc_v1)}. All {gfc_v1['months_scored']} months are Moderate. Held-constant crime, homelessness, and trust keep that window Moderate as well ({_range_phrase(gfc_v1_held)}). The v2 candidate runs {_range_phrase(gfc_v2)}. The low is **October 2008 at {_num(gfc_v2['min_index'])} {_short_band(by_date[str(gfc_v2['min_date'])]['v2_band'])}**, with a VIX monthly mean of {_num(by_date['2008-10-01']['v2_vix_month_mean'])}. November is the VIX-mean peak at {_num(nov_2008['v2_vix_month_mean'])} (highest daily close {_num(nov_2008['v2_vix_month_max'])}) and scores **{_num(nov_2008['v2_index'])} {_short_band(nov_2008['v2_band'])}**, a bit higher than October because headline CPI had already cooled. The Low months are {', '.join(gfc_low_months)}. October 2009, the UNRATE peak at 10.0 and a labor blend of {_num(oct_2009['v2_labor_utilization'])}, is v1 partial **{_num(oct_2009['v1_partial_index'])} {_short_band(oct_2009['v1_partial_band'])}** and h2 **{_num(oct_2009['v2_index'])} {_short_band(oct_2009['v2_band'])}**. h1 scored October 2008 at 45.62 Low and October 2009 at 68.72 Moderate. {gap_read} There is no RTCI month in this window, so the v2 candidate and the crime-off series are the same path. {gfc_critical} None of the locked partial months leave Moderate.
-
-**COVID window.** Locked partial runs {_range_phrase(covid_v1)}. April 2020 is **{_num(april['v1_partial_index'])} {_short_band(april['v1_partial_band'])}** partial and **{_num(april['v1_held_index'])} {_short_band(april['v1_held_band'])}** held constant (UNRATE 14.8, debt-to-GDP 132.66). Taking debt out of that held basket moves April to **{april_without_debt} {april_without_debt_band}**. Taking homelessness or trust out does not clear the Low band. Through the Great Recession window the held basket stays Moderate with or without debt, homelessness, or trust. The v2 candidate runs {_range_phrase(covid_v2)}. March 2020, the VIX monthly-mean peak at {_num(march['v2_vix_month_mean'])} (highest daily close {_num(march['v2_vix_month_max'])}), scores **{_num(march['v2_index'])} {_short_band(march['v2_band'])}** because the labor blend is still {_num(march['v2_labor_utilization'])}. April, when prime-age EPOP is {_num(april['v2_prime_age_epop'], 1)} and the blend is {_num(april['v2_labor_utilization'])}, scores **{_num(april['v2_index'])} {_short_band(april['v2_band'])}** (h1 was 48.32 Low). With crime excluded that month is **{_num(april['v2_without_crime_index'])} {_short_band(april['v2_without_crime_band'])}**, because the labor trough is a larger share of the {non_crime_weight:.2f} denominator. That is the same month without the trial crime input, not a second shock. Replacing the blend with UNRATE that month scores **{_num(april['v2_if_unrate_index'])} {_short_band(april['v2_if_unrate_band'])}**. The trial crime rate that month is {_num(april['v2_incident_rate'])}, not {PUBLISHED_INCIDENT_RATE:.0f}. Held-constant v1 for the whole year runs {_range_phrase(covid_v1_held)}.
-
-**Recent path.** January 2022 through August 2026. Debt is excluded on the v1 partial column before October 2025: this pull does not contain 2022–2025Q3 `GFDEGDQ188S` prints, and those months are not filled by carrying 2020 forward. The 2022 v1 partial lows are inflation plus unemployment only. June 2022 is **{_num(jun_2022['v1_partial_index'])} {_short_band(jun_2022['v1_partial_band'])}** on that two-input v1 basket, and **{_num(jun_2022['v1_held_index'])} {_short_band(jun_2022['v1_held_band'])}** once crime, homelessness, and trust are pinned at the 2026 baselines.
-
-October 2025 is a BLS gap. CPI, food, unemployment, EPOP, and participation were non-numeric (`-(X)` or `-(9)`) and are blank. v1 partial that month is debt alone (**{_num(oct_2025['v1_partial_index'])} {_short_band(oct_2025['v1_partial_band'])}**). The v2 candidate uses only `{oct_2025['v2_inputs_present']}` (denominator {_num(oct_2025['v2_weight_denominator'])}) and prints **{_num(oct_2025['v2_index'])} {_short_band(oct_2025['v2_band'])}**. That pair is the same thin month, not a crash and not a boom. Among recent months with all five trial inputs present, the v2 candidate runs {_num(full_recent['min'])} ({full_recent['min_date']}) to {_num(full_recent['max'])} ({full_recent['max_date']}).
-
-From October 2025 the debt print on v1 is the published 122.56815. From January 2026 it is the fixture print 122.59387, carried the way the live publisher carries a quarter. August 2026 held-constant v1 is **{_num(aug_2026['v1_held_index'])}**, the same six inputs as the locked 57.11. The v2 candidate that month is **{_num(aug_2026['v2_index'])} {_short_band(aug_2026['v2_band'])}** with crime excluded (the RTCI file ends April 2026, trial rate {_num(apr_2026['v2_incident_rate'])}). The gap versus 57.11 is the basket: debt, homelessness, and trust are out, and the labor blend and VIX are calm. It is not a claim that stability improved inside v1.0.0.
-
-Food CPI year-over-year uses the h2 range {food_lo_txt} to {food_hi_txt}. {food_above_sentence} {food_below_sentence} {len(food_mild_negative)} months have negative food inflation inside that range, so they lean stable without scoring fully stable. {len(food_above_h1_floor)} months are above the h1 ceiling of 10 ({', '.join(food_above_h1_floor)}). Under h1 those months clamped food at fully unstable. June 2022 food is {_num(jun_2022['v2_food_cpi_yoy'], 1)} and September 2022 is {_num(sep_2022['v2_food_cpi_yoy'], 1)}; the h2 candidate those months is {_num(jun_2022['v2_index'])} and {_num(sep_2022['v2_index'])}. {food_move} The recent-window low on the v2 candidate, including thin months, is **{_num(recent_v2['min_index'])} on {recent_v2['min_date']}**.
-
-## Crime trial, and why 2008 cannot use it
-
-The RTCI cleaned file in this pull covers **January 2018 through April 2026**. The 2008 window has no trial rate. Fair replay does not backfill those months with the locked 2723, with a later RTCI month, or with a different crime series.
-
-The live fetcher still returns `incident_rate` **{PUBLISHED_INCIDENT_RATE:.0f}** and does not score the file. Its diagnostic month is the latest calendar month in the RTCI file, parsed from the date rather than a text sort of the month name. This replay uses that same calendar month, and it does not change the lock. September 2025 in the file is a trial rate of about {_num(by_date['2025-09-01']['v2_incident_rate'])}, not 2723. Every usable month in this download has **621** agencies. That is a balanced sample, not a national census, and the rate's level is not comparable to a historical UCR series that this repo does not reconstruct.
-
-From May 2026 through August 2026 the primary candidate excludes crime again, so the denominator changes. Compare those months with `v2_without_crime_index` before reading a jump as stress or relief.
-
-## Debt, homelessness, trust, and UNRATE
-
-Homelessness and trust cannot be replayed. The held-constant columns pin them at **0.23** and **41**. Removing one of them is `v1_held_without_homelessness` or `v1_held_without_trust` in the monthly CSV. That is the locked formula with one held input left out. It is not a historical path for that series.
-
-Debt is historical inside the 2008 and 2020 windows (the locked fixture, including ordinary within-quarter carry-forward). It is not historical for most of the recent window. Adding it back onto the v2 basket only changes the score in months where a print is actually in hand.
-
-UNRATE remains the v1 labor input. The composite is lower in April 2020 than a calm month, and it does not by itself mark October 2009 as the Great Recession trough. `v2_if_unrate` and `v2_if_epop_only` are in the CSV for that comparison. The blend and the EPOP-only range are hypotheses that bracket this sample. They are not estimated endpoints.
+| Input | Cadence | Latest observation used | Freshness | Reliability |
+| --- | --- | --- | --- | --- |
+| Headline CPI | Monthly | {current['inflation_date']} | About six weeks behind a 9 October publication. October 2025 is a real publication gap and stays blank. | BLS CPI-U via the same series as the live fetcher. Revised vintage, not ALFRED. |
+| Unemployment | Monthly | {current['unemployment_date']} | The October publication has the September print. The monthly file ends August 2026. | BLS `UNRATE`. Revised vintage. |
+| Crime | Monthly file, published as the latest month | {current['incident_date']} | The 9 October week still carries April 2026. About five months of lag. | RTCI Nationwide Full Sample, population-weighted violent plus property per 100,000. 621 agencies in this file, a balanced sample, not a census of every U.S. agency. No fair rate before January 2018. |
+| Debt-to-GDP | Quarterly | {current['debt_date']} | 2026 Q1, carried into October. The next quarter is not in this file. | FRED `GFDEGDQ188S`, OMB debt and BEA GDP, constructed by the St. Louis Fed. Revised. Overlap with the locked 2026-09-23 crisis fixture matches. |
+| Homelessness | Annual checklist | {pins['homelessness_observation_date']} | 2025 AHAR point-in-time count. Held on every historical month. | HUD AHAR. The checklist value is 0.22. There is no monthly history. |
+| Trust | Annual checklist | {pins['trust_observation_date']} | Edelman survey year 2026. Held on every historical month. | Edelman Trust Barometer, United States, Government. A private barometer with a year stamp, not a statistical-agency microdata release. There is no monthly history. |
+| Food CPI | Monthly | {current['food_date']} | Same lag and the same October 2025 gap as headline CPI. | BLS `CPIUFDNS` / `CUUR0000SAF1`, the food shadow. Not in the live score. |
+| Prime-age EPOP | Monthly | {current['epop_date']} | September 2026 on the live shadow. The monthly fixture ends August. | BLS `LNS12300060`. Not in the live score. |
+| Mortgage delinquency | Quarterly | {current['housing_date']} | 2026 Q2, carried into October. | Federal Reserve CHGDEL, residential column, all commercial banks. It misses household forbearance, which is why April 2020 stays calm. |
+| Rent burden | Annual | {current['rent_date']} | 2024 ACS 1-year, carried into 2026. No 2020 standard 1-year and no 2025 1-year in this file. | Census ACS `B25070`, national, 30%+ of income. A real household measure. Too slow to move a weekly score, and the latest year is stale. |
+| VIX | Daily; scored as a week or month mean | {current['vix_week']} | The week of the 9 October publication. Close on 9 October 2026 is in the CBOE file. | CBOE `VIX_History.csv`, the series FRED publishes as `VIXCLS`. An equity-volatility index, not a credit spread. |
+| Credit conditions | Weekly, Friday | {current['credit_week']} | One week behind the 9 October publication. | Chicago Fed NFCI credit subindex. Public index, revised, not a licensed OAS series. |
 
 ## What still blocks a v2.0 contract
 
-- These weights and ranges are hypothesis h2. They were not fit to a loss, a utility function, or a decision threshold. h1 is the prior labeled basket, not a rejected contract.
-- Rent burden is a side column, not part of h2. It is ACS 1-year `B25070` (30%+ of income), annual, carried forward from the survey-year January. The latest survey in this pull is 2024. There is no 2020 standard 1-year and no 2025 1-year here, and neither gap is filled. The 50%+ share is diagnostic only. `CUUR0000SEHA` year-over-year is a labeled rent-inflation proxy, not the income share. Neither series is in the live score.
-- A household survey of missed housing payments is still not in the replay. Bank delinquency still ends at 2026 Q2.
-- Treasury yields are side columns, not part of h2. `DGS10` is the nominal 10-year level and `DFII10` is the real 10-year level. `T10Y2Y` and `T10YIE` are not scored. Corporate credit spreads are still not in the replay. VIX is an equity-volatility index, not a credit spread. Card delinquency (`DRCCLACBS`, issue #48) is a side column only. It is not a BBB or high-yield OAS series.
-- The labor composite is not the incubating participation penalty. That penalty still has no formula. The h2 band 72–82 is a tighter hypothesis range, not that penalty.
-- The h2 food range {food_lo_txt} to {food_hi_txt} is still a draft. Prints outside it still clamp. h1's 0–10 range is what clamped the 2022 peak at fully unstable and mild deflation at fully stable.
-- Crime has no fair 2008 path from RTCI. The published input remains locked at 2723. Agency coverage and the 12-month RTCI definition are not a national historical crime rate.
-- Homelessness and Edelman trust still have no monthly history. `v2_if_kept_debt_hud_trust` pins them at the 19 September 2026 values so the demotion can be compared with leaving them in. That pin is not a 2008 or 2020 observation.
-- Debt-to-GDP for 2022 through 2025Q3 was not in the locked fixture, and the FRED graph download did not return a body on this pull. Those months stay excluded rather than invented.
-- The pull is a current revised vintage (BLS / CBOE / RTCI on {DATA_PULL_DATE}; v1 crisis fixture {FIXTURE_DOWNLOAD_DATE}). It is not ALFRED. A 2008 row is not the print available during 2008.
-- Real-time vintage choice, population-adjusted crime, and a published methodology version are still open. This note does not close them.
+- The recommendation is to keep publishing methodology 1.1.1. The weights and ranges above are the baskets that were scored. They were not fit to a loss, a utility function, or a band boundary.
+- Basket A lifts today's reading because prime-age employment is strong, and it makes October 2009 look calmer because food prices were falling. It does mark April 2020.
+- Basket B marks the 2009 delinquency peak and September 2011, when the rent-burden peak and a 10.5 delinquency print land together. It then treats April 2020 as Moderate, because the bank series did not see the labor break. Rent burden is a flat annual share. The 2024 survey is still the latest print.
+- Basket C marks October 2008 and moves every week. It does not mark 2022 inflation, and a calm VIX lifts the current reading. The credit series is a conditions index, not a corporate spread. ICE OAS and Moody's Baa were not copied.
+- Homelessness and trust still have no monthly history. Holding the 1.1.1 checklist on 2008 and 2020 is a level shift, not a path for those series.
+- Crime has no fair pre-2018 path. Carrying April 2026 into later months copies the live publisher's "latest file month" rule. It is not an August crime observation.
+- The pull is a current revised vintage. A 2008 row is not the print available during 2008.
+- Companions stay outside the score.
 
 ## Reproduce
 
@@ -1645,9 +1317,9 @@ From the repository root, with the existing test dependencies and no API key:
 python -m runtime.backtest.v2_candidate --check-locked
 ```
 
-That reprints the locked 57.11 line and rewrites the CSV, this note, and the chart under `runtime/backtest/output/` and `runtime/backtest/V2_CANDIDATE.md`. It does not run the weekly publisher.
+That reprints the locked 57.11 line and the 1.1.1 restatement, and rewrites the CSV files, this note, and the chart. It does not run the weekly publisher.
 
-`python -m runtime.backtest` is still the v1.0.0-only replay from pull #83. The v2 command does not replace it.
+`python -m runtime.backtest` remains the v1.0.0-only replay. The v2 command does not replace it.
 
 CI runs the backtest tests on pull requests and on manual dispatch. That workflow is read-only. It is not the Friday publish job.
 """
@@ -1655,29 +1327,31 @@ CI runs the backtest tests on pull requests and on manual dispatch. That workflo
 
 
 def render_svg(rows: Sequence[Mapping[str, object]]) -> str:
-    """Three small line charts. Not a publication graphic."""
+    """Four line charts: full history and the three stress windows."""
     width = 760
-    height = 220
+    height = 210
     left = 48
     right = 16
     top = 28
     bottom = 36
     colors = {
-        "v1_partial_index": "#5c6b7a",
-        "v1_held_index": "#1d4e89",
-        "v2_index": "#b45309",
-        "v2_without_crime_index": "#0f766e",
-        "v2_if_rent_burden_index": "#7c3aed",
-        "v2_if_dgs10_index": "#9f1239",
+        "v1_111_index": "#1d4e89",
+        "a_index": "#b45309",
+        "b_index": "#7c3aed",
+        "c_index": "#0f766e",
     }
-    dashes = {
-        "v2_without_crime_index": "4 3",
-        "v2_if_rent_burden_index": "1 3",
-        "v2_if_dgs10_index": "6 3",
-    }
+    panels_spec = (
+        ("all", "Full history"),
+        ("2008", "2008 window"),
+        ("2020", "2020 window"),
+        ("2022", "2022 inflation year"),
+    )
     panels = []
-    for index, window_name in enumerate(V2_WINDOW_ORDER):
-        subset = _window_rows(rows, window_name)
+    for index, (window_name, title) in enumerate(panels_spec):
+        if window_name == "all":
+            subset = list(rows)
+        else:
+            subset = [row for row in rows if row["window"] == window_name]
         y0 = index * height
         values = []
         for key in colors:
@@ -1691,9 +1365,9 @@ def render_svg(rows: Sequence[Mapping[str, object]]) -> str:
         plot_w = width - left - right
         plot_h = height - top - bottom
 
-        def xy(i: int, value: float) -> tuple[float, float]:
+        def xy(i: int, value: float, y_origin: float = y0, low: float = lo, high: float = hi) -> tuple[float, float]:
             x = left + (plot_w * i / max(len(subset) - 1, 1))
-            y = y0 + top + (hi - value) / (hi - lo) * plot_h
+            y = y_origin + top + (high - value) / (high - low) * plot_h
             return x, y
 
         lines = []
@@ -1702,24 +1376,18 @@ def render_svg(rows: Sequence[Mapping[str, object]]) -> str:
             for i, row in enumerate(subset):
                 if row[key] is None:
                     if points:
-                        lines.append((color, points, dashes.get(key)))
+                        lines.append((color, points))
                         points = []
                     continue
                 points.append(xy(i, float(row[key])))
             if points:
-                lines.append((color, points, dashes.get(key)))
+                lines.append((color, points))
         path_markup = []
-        for color, points, dashed in lines:
+        for color, points in lines:
             coords = " ".join(f"{x:.1f},{y:.1f}" for x, y in points)
-            dash = f' stroke-dasharray="{dashed}"' if dashed else ""
             path_markup.append(
-                f'<polyline fill="none" stroke="{color}" stroke-width="1.6"{dash} points="{coords}"/>'
+                f'<polyline fill="none" stroke="{color}" stroke-width="1.6" points="{coords}"/>'
             )
-        title = {
-            "2008": "2008 window",
-            "2020": "2020 window",
-            "recent": "Recent window",
-        }[window_name]
         start = subset[0]["date"]
         end = subset[-1]["date"]
         panels.append(
@@ -1730,17 +1398,15 @@ def render_svg(rows: Sequence[Mapping[str, object]]) -> str:
             + f'<text x="{left}" y="{y0 + height - 12}" font-size="11" font-family="sans-serif" fill="#555">{_num(lo)}–{_num(hi)} on the index scale</text>'
         )
     legend = (
-        f'<text x="{left}" y="{len(V2_WINDOW_ORDER) * height - 4}" font-size="11" font-family="sans-serif">'
-        '<tspan fill="#5c6b7a">v1 partial</tspan>'
-        '<tspan fill="#1d4e89">   v1 held</tspan>'
-        '<tspan fill="#b45309">   v2 candidate h2</tspan>'
-        '<tspan fill="#0f766e">   v2 crime off</tspan>'
-        '<tspan fill="#7c3aed">   h2 + rent burden</tspan>'
-        '<tspan fill="#9f1239">   h2 + 10y</tspan>'
+        f'<text x="{left}" y="{len(panels_spec) * height - 4}" font-size="11" font-family="sans-serif">'
+        '<tspan fill="#1d4e89">v1 1.1.1</tspan>'
+        '<tspan fill="#b45309">   A labor and food</tspan>'
+        '<tspan fill="#7c3aed">   B cost of living</tspan>'
+        '<tspan fill="#0f766e">   C financial stress</tspan>'
         "</text>"
     )
     body = "".join(panels) + legend
-    total_h = len(V2_WINDOW_ORDER) * height
+    total_h = len(panels_spec) * height
     return (
         '<?xml version="1.0" encoding="UTF-8"?>\n'
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{total_h}" '
@@ -1751,33 +1417,41 @@ def render_svg(rows: Sequence[Mapping[str, object]]) -> str:
 
 
 def write_outputs(output_dir: Path = OUTPUT_DIR, note_path: Optional[Path] = None) -> list[Path]:
-    rows = build_v2_rows()
+    bundle = load_v2_bundle()
+    rows = build_v2_rows(bundle)
     summary = summarize(rows)
+    weekly = weekly_volatility(bundle)
+    current = current_reading(bundle)
     monthly = output_dir / MONTHLY_NAME
     summary_path = output_dir / SUMMARY_NAME
+    weekly_path = output_dir / WEEKLY_NAME
     chart_path = output_dir / CHART_NAME
     note = PACKAGE_DIR / NOTE_NAME if note_path is None else note_path
     write_monthly(rows, monthly)
     write_summary(summary, summary_path)
+    write_weekly(weekly, weekly_path)
     chart_path.parent.mkdir(parents=True, exist_ok=True)
     chart_path.write_text(render_svg(rows), encoding="utf-8")
-    note.write_text(render_markdown(rows, summary), encoding="utf-8")
-    return [monthly, summary_path, chart_path, note]
+    note.write_text(
+        render_markdown(rows, summary, weekly, current, bundle),
+        encoding="utf-8",
+    )
+    return [monthly, summary_path, weekly_path, chart_path, note]
 
 
 def main(argv: Optional[list[str]] = None) -> int:
     parser = argparse.ArgumentParser(
         prog="python -m runtime.backtest.v2_candidate",
         description=(
-            "Score a labeled v2 candidate hypothesis beside the locked v1.0.0 "
-            "replay. Does not publish the weekly score."
+            "Score methodology 1.1.1 beside three research baskets. "
+            "Does not publish the weekly score."
         ),
     )
     parser.add_argument(
         "--output",
         type=Path,
         default=OUTPUT_DIR,
-        help="Directory for the monthly CSV, summary CSV, and chart",
+        help="Directory for the monthly CSV, summary CSV, weekly CSV, and chart",
     )
     parser.add_argument(
         "--note",
@@ -1799,6 +1473,11 @@ def main(argv: Optional[list[str]] = None) -> int:
             return 1
         band = interpret(scored["index"])["band"]
         print(f"{PUBLISHED_DATE} {scored['index']:.2f} {band} methodology 1.0.0")
+        current = current_reading()
+        print(
+            f"{current['publication_date']} {current['scored']['v1']['index']:.2f} "
+            f"{current['scored']['v1']['band']} methodology 1.1.1 restatement"
+        )
     for path in write_outputs(args.output, args.note):
         print(path)
     return 0

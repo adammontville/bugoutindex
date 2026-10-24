@@ -1,10 +1,11 @@
 # BugOutIndex
 # Copyright (C) 2025 Adam Montville
 # Dual-licensed under AGPL-3.0 and a commercial license.
-"""v2 candidate replay stays off the live score and matches its checked-in note."""
+"""v2 basket replay stays off the live score and matches its checked-in note."""
 from __future__ import annotations
 
 import csv
+import json
 from pathlib import Path
 
 from runtime.backtest.cli import main as v1_main
@@ -12,207 +13,176 @@ from runtime.backtest.harness import (
     OUTPUT_DIR,
     load_fixtures,
     load_published_raws,
+    parse_series_csv,
     score_published_inputs,
 )
 from runtime.backtest.v2_candidate import (
+    ADDON_WEIGHT,
+    BASKET_ADDONS,
     CANDIDATE_LABEL,
+    CHART_NAME,
     COLUMNS,
-    DATA_PULL_DATE,
     MONTHLY_NAME,
     NOTE_NAME,
     OUTPUT_DIR as V2_OUTPUT_DIR,
     PACKAGE_DIR,
-    PUBLISHED_INCIDENT_RATE,
+    RANGES,
     SUMMARY_NAME,
-    TRIAL_WEIGHTS,
+    WEEKLY_NAME,
     build_v2_rows,
     csv_fields,
+    current_reading,
     food_public_yoy,
-    load_v2_bundle,
     main,
-    render_markdown,
-    summarize,
+    weekly_volatility,
+    write_outputs,
 )
 from runtime.data.fetch.fetch_food_shadow import _public_yoy
-from runtime.processing.formula import WEIGHTS
+from runtime.processing.formula import CORE_METRICS, METRIC_RANGES, WEIGHTS
 from runtime.processing.formula import compute_index as formula_compute_index
 from runtime.publish.weekly_run import compute_index as weekly_compute_index
 
 ROOT = Path(__file__).resolve().parents[1]
+LIVE_PATHS = (
+    ROOT / "runtime" / "processing" / "formula.py",
+    ROOT / "runtime" / "publish" / "weekly_run.py",
+    ROOT / "runtime" / "publish" / "render.py",
+    ROOT / "runtime" / "publish" / "snapshot_schema.py",
+    ROOT / "docs" / "data" / "latest.json",
+    ROOT / "runtime" / "data" / "weekly_bugout_index.csv",
+    ROOT / ".github" / "workflows" / "weekly-update.yml",
+)
+# Series the live site already shows as shadows or pulse. They must stay
+# out of the scored formula. The basket-only series must stay out of the
+# publisher entirely.
+SHADOW_SERIES = ("LNS12300060", "CPIUFDNS", "VIXCLS")
+BASKET_ONLY_MARKERS = ("v2_candidate", "NFCICREDIT", "B25070", "DRSFRMACBS")
 
 
 def _by_date(rows):
     return {row["date"]: row for row in rows}
 
 
+def _payload(raws):
+    return {metric: {"data": {metric: value}} for metric, value in raws.items()}
+
+
 def test_locked_score_and_live_path_are_untouched():
     raws = load_published_raws()
     assert score_published_inputs(raws)["index"] == 57.11
-    payload = {metric: {"data": {metric: value}} for metric, value in raws.items()}
-    assert formula_compute_index(payload)["index"] == 57.11
-    assert weekly_compute_index(payload)["index"] == 57.11
+    assert formula_compute_index(_payload(raws))["index"] == 57.11
+    assert weekly_compute_index(_payload(raws))["index"] == 57.11
+    latest = json.loads((ROOT / "docs" / "data" / "latest.json").read_text(encoding="utf-8"))
+    assert latest["methodology_version"] == "1.1.0"
+    assert latest["bugout_index"] == 57.66
+    published = {metric: float(latest["metrics"][metric]["raw"]) for metric in CORE_METRICS}
+    assert formula_compute_index(_payload(published))["index"] == 57.66
+    schema = (ROOT / "runtime" / "publish" / "snapshot_schema.py").read_text(encoding="utf-8")
+    assert 'METHODOLOGY_VERSION = "1.1.1"' in schema
     formula = (ROOT / "runtime" / "processing" / "formula.py").read_text(encoding="utf-8")
+    for marker in SHADOW_SERIES + BASKET_ONLY_MARKERS:
+        assert marker not in formula, marker
+    for path in LIVE_PATHS:
+        text = path.read_text(encoding="utf-8")
+        for marker in BASKET_ONLY_MARKERS:
+            assert marker not in text, f"{marker} in {path.name}"
     weekly = (ROOT / "runtime" / "publish" / "weekly_run.py").read_text(encoding="utf-8")
-    render = (ROOT / "runtime" / "publish" / "render.py").read_text(encoding="utf-8")
-    latest = (ROOT / "docs" / "data" / "latest.json").read_text(encoding="utf-8")
-    workflow = (ROOT / ".github" / "workflows" / "weekly-update.yml").read_text(encoding="utf-8")
-    assert "v2_candidate" not in formula
-    assert "v2_candidate" not in weekly
-    assert "v2_candidate" not in render
-    assert "v2_candidate" not in latest
     assert "runtime.backtest" not in weekly
-    assert "v2_candidate" not in workflow
-    assert "LNS12300060" not in formula
-    assert "CPIUFDNS" not in formula
-    assert "VIXCLS" not in formula
     assert sum(WEIGHTS.values()) == 0.72
-    assert abs(sum(TRIAL_WEIGHTS.values()) - 1.0) < 1e-9
-    assert set(TRIAL_WEIGHTS) != set(WEIGHTS)
+    assert ADDON_WEIGHT == 0.08
+    addon_names = {name for names in BASKET_ADDONS.values() for name in names}
+    assert addon_names.isdisjoint(WEIGHTS)
+    for metric in CORE_METRICS:
+        assert RANGES[metric] == METRIC_RANGES[metric]
+    joined = " ".join(addon_names)
+    assert "pew" not in joined and "gallup" not in joined and "shelter" not in joined
 
 
-def test_crisis_v1_columns_match_the_locked_replay():
-    rows = _by_date(build_v2_rows())
-    april = rows["2020-04-01"]
+def test_april_2020_keeps_the_locked_partial_and_uses_nationwide_crime():
+    april = _by_date(build_v2_rows())["2020-04-01"]
+    assert april["methodology_reference"] == "1.1.1"
+    assert april["candidate_label"] == CANDIDATE_LABEL
     assert april["v1_partial_index"] == 45.51
     assert april["v1_partial_band"] == "Low Stability"
-    assert april["v1_held_index"] == 51.67
-    assert april["v1_held_band"] == "Low Stability"
-    assert april["v1_unemployment_rate"] == 14.8
-    assert april["v1_level_source"] == "locked_fred_fixture_2026-09-23"
-    assert april["methodology_reference"] == "1.0.0"
-    assert april["candidate_label"] == CANDIDATE_LABEL
-    october = rows["2009-10-01"]
-    assert october["v1_unemployment_rate"] == 10.0
-    assert october["v1_partial_band"] == "Moderate Stability"
-    assert october["v2_incident_status"] == "excluded"
-    assert october["v2_index"] == october["v2_without_crime_index"]
+    assert april["v1_100_held_index"] == 51.67
+    assert april["v1_100_held_band"] == "Low Stability"
+    assert april["v1_111_band"] == "Low Stability"
+    assert april["v1_111_index"] != 51.67
+    assert april["unemployment_rate"] == 14.8
+    assert april["incident_status"] == "observed"
+    assert april["incident_rate"] == 2955.84
+    assert april["incident_unweighted"] == 2642.84
+    assert april["incident_rate"] != 2723
+    assert april["incident_agencies"] == 621
+    assert "incident_rate" in april["v1_111_inputs_present"]
+    assert april["b_index"] > april["v1_111_index"]
+    assert april["a_index"] < april["v1_111_index"]
 
 
 def test_august_2026_held_constant_is_still_57_11():
     august = _by_date(build_v2_rows())["2026-08-01"]
-    assert august["v1_held_index"] == 57.11
-    assert august["v1_held_band"] == "Moderate Stability"
-    assert august["v1_level_source"] == "bls_pull_2026-09-26_plus_published_debt"
-    assert august["v2_food_cpi_yoy"] == 2.7
-    assert august["v2_prime_age_epop"] == 80.4
-    assert august["v2_prime_age_lfpr"] == 83.4
-    assert august["v2_incident_status"] == "excluded"
-    assert august["v2_index"] == august["v2_without_crime_index"]
-    assert august["v2_index"] != 57.11
-    non_crime = sum(weight for name, weight in TRIAL_WEIGHTS.items() if name != "incident_rate")
-    assert abs(august["v2_weight_denominator"] - non_crime) < 1e-9
-    assert abs(non_crime - 0.80) < 1e-9
+    assert august["v1_100_held_index"] == 57.11
+    assert august["v1_100_held_band"] == "Moderate Stability"
+    assert august["v1_111_band"] == "Moderate Stability"
+    assert august["v1_111_index"] != 57.11
+    assert august["incident_status"] == "carried_forward"
+    assert august["incident_rate"] == 2443.27
+    assert august["incident_observation_date"] == "2026-04-01"
+    assert august["incident_unweighted"] == 2074.97
+    assert august["food_cpi_yoy"] == 2.7
+    assert august["prime_age_epop"] == 80.4
+    assert abs(august["a_denominator"] - 0.88) < 1e-9
+    assert abs(august["b_denominator"] - 0.96) < 1e-9
+    assert abs(august["c_denominator"] - 0.88) < 1e-9
 
 
-def test_crime_trial_does_not_replace_the_lock_and_does_not_cover_2008():
+def test_pre_2018_crime_is_excluded_and_2022_v1_is_low():
     rows = build_v2_rows()
-    assert all(row["v2_incident_rate"] != PUBLISHED_INCIDENT_RATE for row in rows)
-    assert all(row["window"] != "2008" or row["v2_incident_status"] == "excluded" for row in rows)
-    april = _by_date(rows)["2020-04-01"]
-    assert april["v2_incident_status"] == "trial_observed"
-    assert april["v2_incident_rate"] == 2642.84
-    assert april["v2_incident_agencies"] == 621
-    assert abs(april["v2_weight_denominator"] - 1.0) < 1e-9
-    assert "incident_rate" in april["v2_inputs_present"]
-    held = april["v2_if_crime_held_index"]
-    assert held != april["v2_index"]
-    assert PUBLISHED_INCIDENT_RATE == 2723.0
+    assert all(
+        row["incident_status"] == "excluded"
+        for row in rows
+        if row["window"] == "2008"
+    )
+    october = _by_date(rows)["2008-10-01"]
+    assert october["c_index"] < october["v1_111_index"]
+    assert october["c_band"] == "Low Stability"
+    year_2022 = [row for row in rows if row["window"] == "2022"]
+    assert year_2022
+    assert all(row["v1_111_band"] == "Low Stability" for row in year_2022)
+    september = _by_date(rows)["2011-09-01"]
+    assert september["b_index"] == 47.84
+    assert september["rent_burden_30"] == 53.4
+    assert september["housing_delinquency"] == 10.5
 
 
-def test_household_side_columns_stay_off_the_primary_and_the_live_path():
-    rows = _by_date(build_v2_rows())
-    august = rows["2026-08-01"]
-    assert august["v2_housing_status"] == "carried_forward"
-    assert august["v2_consumer_credit_status"] == "carried_forward"
-    assert august["v2_housing_observation_date"] == "2026-04-01"
-    assert august["v2_housing_delinquency"] == 1.86
-    assert august["v2_consumer_credit_delinquency"] == 2.85
-    assert "housing_delinquency" not in august["v2_inputs_present"]
-    assert august["v2_if_housing_index"] != august["v2_index"]
-    october = rows["2009-10-01"]
-    assert october["v2_housing_status"] == "observed"
-    assert october["v2_housing_observation_date"] == "2009-10-01"
-    assert october["v2_if_housing_and_consumer_index"] < october["v2_index"]
-    april = rows["2020-04-01"]
-    assert april["v2_housing_status"] == "observed"
-    assert rows["2008-10-01"]["v2_incident_status"] == "excluded"
-    formula = (ROOT / "runtime" / "processing" / "formula.py").read_text(encoding="utf-8")
-    assert "DRSFRMACBS" not in formula
-    assert "DRCCLACBS" not in formula
-
-
-def test_rent_burden_is_an_annual_side_column_not_the_live_score():
-    rows = _by_date(build_v2_rows())
-    august = rows["2026-08-01"]
-    assert august["v2_rent_burden_status"] == "carried_forward"
-    assert august["v2_rent_burden_observation_date"] == "2024-01-01"
-    assert august["v2_rent_burden_30"] == 51.8
-    assert august["v2_rent_burden_50"] == 26.1
-    assert "rent_burden_30" not in august["v2_inputs_present"]
-    assert august["v2_if_rent_burden_band"] == "High Stability"
-    assert august["v2_if_rent_cpi_proxy_band"] == "High Stability"
-    assert august["v2_if_rent_burden_index"] < august["v2_index"]
-    assert august["v2_rent_cpi_status"] == "observed"
-    october = rows["2009-10-01"]
-    assert october["v2_rent_burden_observation_date"] == "2009-01-01"
-    assert october["v2_rent_burden_30"] == 51.5
-    assert october["v2_if_rent_burden_index"] < october["v2_index"]
-    assert october["v2_if_rent_cpi_proxy_index"] > october["v2_index"]
-    april = rows["2020-04-01"]
-    assert april["v2_rent_burden_observation_date"] == "2019-01-01"
-    assert april["v2_rent_burden_status"] == "carried_forward"
-    assert april["v2_rent_burden_30"] == 48.4
-    assert rows["2008-10-01"]["v2_rent_burden_observation_date"] == "2008-01-01"
-    assert rows["2022-06-01"]["v2_rent_burden_30"] == 51.9
-    assert rows["2025-10-01"]["v2_rent_cpi_status"] == "excluded"
-    assert rows["2025-10-01"]["v2_rent_cpi_yoy"] is None
-    formula = (ROOT / "runtime" / "processing" / "formula.py").read_text(encoding="utf-8")
-    assert "B25070" not in formula
-    assert "CUUR0000SEHA" not in formula
-
-
-def test_yield_side_columns_and_kept_pins_stay_off_the_live_score():
-    rows = _by_date(build_v2_rows())
-    august = rows["2026-08-01"]
-    assert august["v2_treasury_10y_status"] == "observed"
-    assert august["v2_real_yield_status"] == "observed"
-    assert abs(august["v2_treasury_10y"] - 4.684286) < 1e-6
-    assert abs(august["v2_real_yield_10y"] - 2.397143) < 1e-6
-    assert "treasury_10y" not in august["v2_inputs_present"]
-    assert "homelessness_rate" not in august["v2_inputs_present"]
-    assert "trust_in_government" not in august["v2_inputs_present"]
-    assert august["v2_if_dgs10_index"] < august["v2_index"]
-    assert august["v2_if_rates_index"] < august["v2_if_dgs10_index"]
-    assert august["v2_incident_status"] == "excluded"
-    april = rows["2020-04-01"]
-    assert april["v2_if_dgs10_index"] > april["v2_index"]
-    assert april["v2_treasury_10y"] < 1
-    october = rows["2008-10-01"]
-    assert october["v2_if_real_yield_index"] < october["v2_if_dgs10_index"]
-    assert october["v2_incident_status"] == "excluded"
-    june = rows["2022-06-01"]
-    assert june["v1_debt_status"] == "excluded"
-    formula = (ROOT / "runtime" / "processing" / "formula.py").read_text(encoding="utf-8")
-    weekly = (ROOT / "runtime" / "publish" / "weekly_run.py").read_text(encoding="utf-8")
-    assert "DGS10" not in formula
-    assert "DFII10" not in formula
-    assert "DGS10" not in weekly
-    burden = load_v2_bundle()["rent_burden_30"]
-    assert burden["2011-01-01"] == 53.4
-    assert burden["2019-01-01"] == 48.4
-    assert "2020-01-01" not in burden
-    assert "2025-01-01" not in burden
+def test_current_reading_is_the_1_1_1_restatement():
+    current = current_reading()
+    scored = current["scored"]
+    assert current["publication_date"] == "2026-10-09"
+    assert current["published_methodology"] == "1.1.0"
+    assert current["published_file_index"] == 57.66
+    assert current["published_index"] == 57.66
+    assert scored["v1"]["index"] == 57.50
+    assert scored["v1"]["band"] == "Moderate Stability"
+    assert current["values"]["homelessness_rate"] == 0.22
+    assert current["values"]["trust_in_government"] == 39
+    for name in BASKET_ADDONS:
+        basket = scored["baskets"][name]
+        assert basket["band"] == "Moderate Stability"
+        assert basket["index"] > scored["v1"]["index"]
 
 
 def test_october_2025_gap_is_not_filled_in():
     october = _by_date(build_v2_rows())["2025-10-01"]
-    assert october["v2_inflation_rate"] is None
-    assert october["v2_food_cpi_yoy"] is None
-    assert october["v2_labor_utilization"] is None
-    assert october["v1_unemployment_rate"] is None
-    assert october["v2_inputs_present"] == "vix_month_mean|incident_rate"
-    assert october["v1_debt_status"] == "observed"
-    assert october["v1_partial_index"] != october["v2_index"]
+    assert october["inflation_rate"] is None
+    assert october["food_cpi_yoy"] is None
+    assert october["prime_age_epop"] is None
+    assert october["unemployment_rate"] is None
+    assert october["a_index"] == october["v1_111_index"]
+    assert october["v1_partial_index"] == 38.72
+    assert october["v1_partial_band"] == "Critical Instability"
+    assert october["b_band"] == "Moderate Stability"
+    assert october["c_band"] == "Moderate Stability"
 
 
 def test_food_print_matches_the_shadow_fetcher():
@@ -245,6 +215,41 @@ def test_bls_pull_matches_the_locked_fred_fixture_on_the_overlap():
     assert all(abs(fixture.unemployment[day] - bundle_un[day]) < 1e-9 for day in overlap_un)
 
 
+def test_debt_and_credit_fixtures_cover_the_stress_windows():
+    locked = load_fixtures().debt_to_gdp
+    full = parse_series_csv(
+        (PACKAGE_DIR / "fixtures" / "v2" / "GFDEGDQ188S_full.csv").read_text(encoding="utf-8")
+    )
+    extra = parse_series_csv(
+        (PACKAGE_DIR / "fixtures" / "v2" / "GFDEGDQ188S_published_extra.csv").read_text(
+            encoding="utf-8"
+        )
+    )
+    overlap = set(locked) & set(full)
+    assert overlap
+    assert all(abs(locked[day] - full[day]) < 1e-9 for day in overlap)
+    assert extra["2025-10-01"] == 122.56815
+    assert full["2025-10-01"] == 122.56815
+    credit = {}
+    with (PACKAGE_DIR / "fixtures" / "v2" / "NFCICREDIT_weekly.csv").open(encoding="utf-8") as handle:
+        for row in csv.DictReader(handle):
+            credit[row["friday"]] = float(row["credit"])
+    assert credit["1973-03-16"] == -3.159
+    assert credit["2008-12-05"] == 2.808
+
+
+def test_within_month_v1_is_flat():
+    weekly = weekly_volatility()
+    by_key = {(row["basket"], row["sample"]): row for row in weekly}
+    for basket in ("v1_111", "a_labor_food", "b_cost_of_living"):
+        row = by_key[(basket, "within_month")]
+        assert row["share_flat"] == 1.0
+        assert row["mean_abs_change"] == 0.0
+    credit = by_key[("c_financial", "within_month")]
+    assert credit["share_flat"] < 0.05
+    assert credit["mean_abs_change"] > 0
+
+
 def test_backtest_workflow_does_not_publish():
     text = (ROOT / ".github" / "workflows" / "backtest.yml").read_text(encoding="utf-8")
     assert "weekly_run" not in text
@@ -259,47 +264,48 @@ def test_cli_prints_the_lock_and_writes_a_labeled_note(tmp_path, capsys):
     assert code == 0
     printed = capsys.readouterr().out
     assert "2026-09-19 57.11 Moderate Stability methodology 1.0.0" in printed
+    assert "2026-10-09 57.50 Moderate Stability methodology 1.1.1 restatement" in printed
     monthly = list(csv.DictReader((tmp_path / MONTHLY_NAME).open(encoding="utf-8")))
     assert monthly[0]["candidate_label"] == CANDIDATE_LABEL
-    assert monthly[0]["data_pull_date"] == DATA_PULL_DATE
+    assert monthly[0]["methodology_reference"] == "1.1.1"
     note_text = note.read_text(encoding="utf-8")
-    assert "hypothesis h2" in note_text.lower()
-    assert "57.11" in note_text
-    assert (tmp_path / SUMMARY_NAME).exists()
-    # The v1 command is still the crisis replay and does not write the v2 note.
+    assert "Stay on methodology 1.1.1." in note_text
+    assert "not a methodology version" in note_text
+    assert "77.28" in note_text
+    assert "57.66" in note_text
     v1_dir = tmp_path / "v1"
     assert v1_main(["--output", str(v1_dir), "--windows", "2020"]) == 0
     assert (v1_dir / "replay_partial.csv").exists()
     assert not (v1_dir / MONTHLY_NAME).exists()
 
 
-def test_committed_v2_tables_match_the_harness():
+def test_committed_v2_tables_match_the_harness(tmp_path):
     rows = build_v2_rows()
     fresh = [csv_fields(row) for row in rows]
     with (V2_OUTPUT_DIR / MONTHLY_NAME).open(newline="", encoding="utf-8") as handle:
         committed = list(csv.DictReader(handle))
     assert list(committed[0]) == list(COLUMNS)
     assert committed == fresh
-    summary = summarize(rows)
-    note = (PACKAGE_DIR / NOTE_NAME).read_text(encoding="utf-8")
-    assert note == render_markdown(rows, summary)
-    assert "October 2025" in note
-    assert "hypothesis h2" in note.lower()
-    assert "DRSFRMACBS" in note
-    assert "DRCCLACBS" in note
-    assert "B25070" in note
-    assert "CUUR0000SEHA" in note
-    assert "DGS10" in note
-    assert "DFII10" in note
-    assert "v2_if_kept_debt_hud_trust" in note
-    assert "53.4" in note
-    assert "2011-01-01" in note
-    assert "45.62" in note
-    assert "2008-10-01" in note and "2009-10-01" in note
-    assert "2020-03-01" in note and "2020-04-01" in note
-    assert "2022-06-01" in note and "2026-08-01" in note
-    assert "not a methodology version" in note.lower() or "not a methodology version" in note
-    # v1 crisis CSVs are not rewritten by the v2 row builder.
+    note = tmp_path / "note.md"
+    write_outputs(tmp_path, note)
+    for name in (MONTHLY_NAME, SUMMARY_NAME, WEEKLY_NAME, CHART_NAME):
+        assert (tmp_path / name).read_bytes() == (V2_OUTPUT_DIR / name).read_bytes()
+    committed_note = (PACKAGE_DIR / NOTE_NAME).read_text(encoding="utf-8")
+    assert note.read_text(encoding="utf-8") == committed_note
+    assert "Stay on methodology 1.1.1." in committed_note
+    assert "57.50" in committed_note
+    assert "57.11" in committed_note
+    assert "57.66" in committed_note
+    assert "77.28" in committed_note
+    assert "NFCICREDIT" in committed_note
+    assert "B25070" in committed_note
+    assert "38.72" in committed_note
+    assert "2011-09-01" in committed_note
+    assert "2008-10-01" in committed_note
+    assert "2020-04-01" in committed_note
+    assert "2022-06-01" in committed_note
+    assert "so it pulls the basket up, so" not in committed_note
+    assert "so it pulls the basket down, so" not in committed_note
     partial = (OUTPUT_DIR / "replay_partial.csv").read_text(encoding="utf-8")
     assert "2022-06-01" not in partial
     assert "v2_candidate" not in partial

@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "methodology_version": "1.1.1",
-  "generated_at_utc": "2026-10-31T02:34:37+00:00",
-  "publication_date": "2026-10-30",
-  "bugout_index": 57.31,
+  "generated_at_utc": "2026-11-07T02:59:27+00:00",
+  "publication_date": "2026-11-06",
+  "bugout_index": 57.38,
   "interpretation": {
     "band": "Moderate Stability",
     "risk": "Warning Signs",
@@ -52,11 +52,11 @@
       }
     },
     "unemployment_rate": {
-      "raw": 4.2,
-      "normalized": 83.2,
+      "raw": 4.1,
+      "normalized": 83.6,
       "weight": 0.12,
-      "observation_date": "2026-09-01",
-      "source_fetched_at": "2026-09-01",
+      "observation_date": "2026-10-01",
+      "source_fetched_at": "2026-10-01",
       "status": "success"
     },
     "debt_to_gdp_ratio": {
@@ -102,27 +102,27 @@
   },
   "markets": {
     "status": "success",
-    "fetched_at": "2026-10-31",
-    "gold_usd_per_oz": 3876.3999,
-    "silver_usd_per_oz": 49.254,
-    "dxy": 121.3202
+    "fetched_at": "2026-11-07",
+    "gold_usd_per_oz": 4072.1001,
+    "silver_usd_per_oz": 52.071,
+    "dxy": 121.6656
   },
   "pulse": {
     "status": "success",
-    "fetched_at": "2026-10-30",
+    "fetched_at": "2026-11-06",
     "values": {
-      "initial_jobless_claims": 194000.0,
+      "initial_jobless_claims": 189000.0,
       "consumer_sentiment_umich": 48.1,
       "business_confidence": 98.96989,
-      "yield_curve_10y_2y": 0.38,
-      "vix": 17.2
+      "yield_curve_10y_2y": 0.35,
+      "vix": 28.18
     },
     "dates": {
-      "initial_jobless_claims": "2026-10-24",
+      "initial_jobless_claims": "2026-10-31",
       "consumer_sentiment_umich": "2026-09-01",
       "business_confidence": "2024-01-01",
-      "yield_curve_10y_2y": "2026-10-30",
-      "vix": "2026-10-29"
+      "yield_curve_10y_2y": "2026-11-06",
+      "vix": "2026-11-05"
     }
   },
   "labor_shadow": {
@@ -137,15 +137,11 @@
       "prime_age_lfpr": 83.7
     },
     "dates": {
-      "prime_age_epop": "2026-09-01",
-      "prime_age_lfpr": "2026-09-01"
+      "prime_age_epop": "2026-10-01",
+      "prime_age_lfpr": "2026-10-01"
     },
     "observations": {
       "prime_age_epop": [
-        {
-          "date": "2023-09-01",
-          "value": 80.8
-        },
         {
           "date": "2023-10-01",
           "value": 80.7
@@ -285,13 +281,13 @@
         {
           "date": "2026-09-01",
           "value": 80.7
+        },
+        {
+          "date": "2026-10-01",
+          "value": 80.7
         }
       ],
       "prime_age_lfpr": [
-        {
-          "date": "2023-09-01",
-          "value": 83.5
-        },
         {
           "date": "2023-10-01",
           "value": 83.4
@@ -430,6 +426,10 @@
         },
         {
           "date": "2026-09-01",
+          "value": 83.7
+        },
+        {
+          "date": "2026-10-01",
           "value": 83.7
         }
       ]
@@ -615,41 +615,13 @@
     },
     "reading": "total individuals in the NYC DHS shelter system",
     "values": {
-      "nyc_dhs_total_individuals": 83716
+      "nyc_dhs_total_individuals": 83443
     },
     "dates": {
-      "nyc_dhs_total_individuals": "2026-10-29"
+      "nyc_dhs_total_individuals": "2026-11-05"
     },
     "observations": {
       "nyc_dhs_total_individuals": [
-        {
-          "date": "2026-08-01",
-          "value": 82912
-        },
-        {
-          "date": "2026-08-02",
-          "value": 82858
-        },
-        {
-          "date": "2026-08-03",
-          "value": 82908
-        },
-        {
-          "date": "2026-08-04",
-          "value": 83035
-        },
-        {
-          "date": "2026-08-05",
-          "value": 83190
-        },
-        {
-          "date": "2026-08-06",
-          "value": 83197
-        },
-        {
-          "date": "2026-08-07",
-          "value": 83398
-        },
         {
           "date": "2026-08-08",
           "value": 83463
@@ -981,6 +953,34 @@
         {
           "date": "2026-10-29",
           "value": 83716
+        },
+        {
+          "date": "2026-10-30",
+          "value": 83641
+        },
+        {
+          "date": "2026-10-31",
+          "value": 83697
+        },
+        {
+          "date": "2026-11-01",
+          "value": 83700
+        },
+        {
+          "date": "2026-11-02",
+          "value": 83822
+        },
+        {
+          "date": "2026-11-03",
+          "value": 83794
+        },
+        {
+          "date": "2026-11-04",
+          "value": 83684
+        },
+        {
+          "date": "2026-11-05",
+          "value": 83443
         }
       ]
     },
@@ -1457,13 +1457,6 @@
     "status": "success",
     "payems": [
       {
-        "observation_date": "2024-10-01",
-        "vintage_initial": 159005.0,
-        "vintage_first": 159005.0,
-        "vintage_second": 159061.0,
-        "initial_release_date": "2024-11-01"
-      },
-      {
         "observation_date": "2024-11-01",
         "vintage_initial": 159288.0,
         "vintage_first": 159288.0,
@@ -1614,26 +1607,28 @@
         "observation_date": "2026-08-01",
         "vintage_initial": 159075.0,
         "vintage_first": 159015.0,
-        "vintage_second": null,
+        "vintage_second": 159015.0,
         "initial_release_date": "2026-09-04"
       },
       {
         "observation_date": "2026-09-01",
         "vintage_initial": 159044.0,
-        "vintage_first": null,
+        "vintage_first": 159044.0,
         "vintage_second": null,
         "initial_release_date": "2026-10-02"
+      },
+      {
+        "observation_date": "2026-10-01",
+        "vintage_initial": 159293.0,
+        "vintage_first": null,
+        "vintage_second": null,
+        "initial_release_date": "2026-11-06"
       }
     ],
     "unrate": {
       "benchmark_release_date": "2026-02-11",
       "pre_benchmark_snapshot_date": "2026-02-10",
       "rows": [
-        {
-          "observation_date": "2021-10-01",
-          "value_current": 4.5,
-          "value_pre_benchmark": 4.5
-        },
         {
           "observation_date": "2021-11-01",
           "value_current": 4.1,
@@ -1927,6 +1922,11 @@
         {
           "observation_date": "2026-09-01",
           "value_current": 4.2,
+          "value_pre_benchmark": null
+        },
+        {
+          "observation_date": "2026-10-01",
+          "value_current": 4.1,
           "value_pre_benchmark": null
         }
       ]
@@ -2571,6 +2571,28 @@
         "debt_to_gdp_ratio_normalized": "39.41",
         "homelessness_rate_normalized": "56.0",
         "trust_in_government_normalized": "48.75"
+      },
+      {
+        "date": "2026-11-06",
+        "bugout_index": "57.38",
+        "inflation_rate": "3.7172508442689933",
+        "inflation_rate_observation_date": "2026-09-01",
+        "incident_rate": "2443.27",
+        "incident_rate_observation_date": "2026-04-30",
+        "unemployment_rate": "4.1",
+        "unemployment_rate_observation_date": "2026-10-01",
+        "debt_to_gdp_ratio": "121.18773",
+        "debt_to_gdp_ratio_observation_date": "2026-04-01",
+        "homelessness_rate": "0.22",
+        "homelessness_rate_observation_date": "2025-01-01",
+        "trust_in_government": "39.0",
+        "trust_in_government_observation_date": "2026",
+        "inflation_rate_normalized": "45.13",
+        "incident_rate_normalized": "74.09",
+        "unemployment_rate_normalized": "83.6",
+        "debt_to_gdp_ratio_normalized": "39.41",
+        "homelessness_rate_normalized": "56.0",
+        "trust_in_government_normalized": "48.75"
       }
     ],
     "markets": [
@@ -2747,6 +2769,12 @@
         "gold_usd_per_oz": "3876.3999",
         "silver_usd_per_oz": "49.254",
         "dxy": "121.3202"
+      },
+      {
+        "date": "2026-11-06",
+        "gold_usd_per_oz": "4072.1001",
+        "silver_usd_per_oz": "52.071",
+        "dxy": "121.6656"
       }
     ],
     "pulse": [
@@ -2981,6 +3009,14 @@
         "business_confidence": "98.96989",
         "yield_curve_10y_2y": "0.38",
         "vix": "17.2"
+      },
+      {
+        "date": "2026-11-06",
+        "initial_jobless_claims": "189000.0",
+        "consumer_sentiment_umich": "48.1",
+        "business_confidence": "98.96989",
+        "yield_curve_10y_2y": "0.35",
+        "vix": "28.18"
       }
     ],
     "labor_shadow": [
@@ -3032,6 +3068,13 @@
         "prime_age_epop_observation_date": "2026-09-01",
         "prime_age_lfpr": "83.7",
         "prime_age_lfpr_observation_date": "2026-09-01"
+      },
+      {
+        "date": "2026-11-06",
+        "prime_age_epop": "80.7",
+        "prime_age_epop_observation_date": "2026-10-01",
+        "prime_age_lfpr": "83.7",
+        "prime_age_lfpr_observation_date": "2026-10-01"
       }
     ],
     "food_shadow": [
@@ -3069,6 +3112,11 @@
         "date": "2026-10-30",
         "food_cpi_yoy": "2.5",
         "food_cpi_yoy_observation_date": "2026-09-01"
+      },
+      {
+        "date": "2026-11-06",
+        "food_cpi_yoy": "2.5",
+        "food_cpi_yoy_observation_date": "2026-09-01"
       }
     ],
     "nyc_dhs_shadow": [
@@ -3101,6 +3149,11 @@
         "date": "2026-10-30",
         "nyc_dhs_total_individuals": "83716",
         "nyc_dhs_total_individuals_observation_date": "2026-10-29"
+      },
+      {
+        "date": "2026-11-06",
+        "nyc_dhs_total_individuals": "83443",
+        "nyc_dhs_total_individuals_observation_date": "2026-11-05"
       }
     ],
     "pew_trust_shadow": [
@@ -3126,6 +3179,11 @@
       },
       {
         "date": "2026-10-30",
+        "pew_public_trust": "17",
+        "pew_public_trust_observation_date": "2025-09-28"
+      },
+      {
+        "date": "2026-11-06",
         "pew_public_trust": "17",
         "pew_public_trust_observation_date": "2025-09-28"
       }
@@ -3185,6 +3243,17 @@
         "gallup_supreme_court_observation_date": "2026-06-15",
         "gallup_core_institutions": "27",
         "gallup_core_institutions_observation_date": "2026-06-15"
+      },
+      {
+        "date": "2026-11-06",
+        "gallup_congress": "9",
+        "gallup_congress_observation_date": "2026-06-15",
+        "gallup_presidency": "27",
+        "gallup_presidency_observation_date": "2026-06-15",
+        "gallup_supreme_court": "27",
+        "gallup_supreme_court_observation_date": "2026-06-15",
+        "gallup_core_institutions": "27",
+        "gallup_core_institutions_observation_date": "2026-06-15"
       }
     ],
     "ramsey_shelter_shadow": [
@@ -3210,6 +3279,11 @@
       },
       {
         "date": "2026-10-30",
+        "ramsey_shelter_total_people": "514",
+        "ramsey_shelter_total_people_observation_date": "2026-09-01"
+      },
+      {
+        "date": "2026-11-06",
         "ramsey_shelter_total_people": "514",
         "ramsey_shelter_total_people_observation_date": "2026-09-01"
       }
@@ -3259,6 +3333,15 @@
         "austin_sheltered_people_observation_date": "2025-07-01",
         "denver_shelter_occupancy": "93",
         "denver_shelter_occupancy_observation_date": "2026-06-30"
+      },
+      {
+        "date": "2026-11-06",
+        "nashville_hmis_people": "2907",
+        "nashville_hmis_people_observation_date": "2026-07-31",
+        "austin_sheltered_people": "1070",
+        "austin_sheltered_people_observation_date": "2025-07-01",
+        "denver_shelter_occupancy": "93",
+        "denver_shelter_occupancy_observation_date": "2026-06-30"
       }
     ],
     "sf_shelter_shadow": [
@@ -3284,6 +3367,11 @@
       },
       {
         "date": "2026-10-30",
+        "sf_shelter_occupancy_rate": "90.0",
+        "sf_shelter_occupancy_rate_observation_date": "2026-08-31"
+      },
+      {
+        "date": "2026-11-06",
         "sf_shelter_occupancy_rate": "90.0",
         "sf_shelter_occupancy_rate_observation_date": "2026-08-31"
       }

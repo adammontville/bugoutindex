@@ -26,7 +26,7 @@ The formula moves into Low Stability under COVID-scale unemployment. Through a G
 
 | Input | Series | How the row is built |
 | --- | --- | --- |
-| Inflation | `CPIAUCSL` | Year-over-year percent, same construction as `fetch_inflation_rate`: `((current - year_ago) / year_ago) * 100`, where year-ago is the same calendar date one year earlier |
+| Inflation | `CPIAUCSL` | Year-over-year percent, same formula as `fetch_inflation_rate`: `((current - year_ago) / year_ago) * 100`, where year-ago is the same calendar date one year earlier. A replay month whose year-ago print is missing is `excluded`. The live fetcher steps back to the latest month where both prints exist. |
 | Unemployment | `UNRATE` | The monthly level, same as `fetch_unemployment_rate`. A missing month is `excluded`. It is not carried forward |
 | Debt-to-GDP | `GFDEGDQ188S` | The quarterly level, same as `fetch_debt_to_gdp_ratio`. On a quarter-start month the status is `observed`. On other months the latest quarter on or before that month is used and the status is `carried_forward`, with that quarter's observation date. That is the published print, not an interpolation |
 

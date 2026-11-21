@@ -16,6 +16,10 @@ Series pulled from FRED:
 from __future__ import annotations
 from typing import Dict, Optional
 
+from runtime.data.fetch.fred_observations import (
+    DAILY_OBSERVATION_LIMIT,
+    is_missing_fred_value,
+)
 from runtime.util.http_retry import get_with_retry, RetryError
 from runtime.util.secrets_compat import get_secret
 
@@ -38,16 +42,18 @@ def _latest(series_id: str, api_key: str) -> Optional[dict]:
         "api_key": api_key,
         "file_type": "json",
         "sort_order": "desc",
-        "limit": 5,  # get a few in case the newest is '.'
+        # "." is a missing day or month. Skip it and keep the latest real print.
+        "limit": DAILY_OBSERVATION_LIMIT,
     }
     resp = get_with_retry(FRED_URL, params=params, timeout=TIMEOUT)
     obs = resp.json().get("observations", [])
     for o in obs:
-        if o.get("value") not in (".", "", None):
-            try:
-                return {"date": o["date"], "value": float(o["value"])}
-            except (TypeError, ValueError):
-                continue
+        if is_missing_fred_value(o.get("value")):
+            continue
+        try:
+            return {"date": o["date"], "value": float(o["value"])}
+        except (TypeError, ValueError):
+            continue
     return None
 
 

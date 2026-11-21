@@ -161,14 +161,14 @@ that check exits 4 and does not write `docs/`.
 
 | Metric | Module | Source |
 | --- | --- | --- |
-| inflation_rate | `fetch_inflation_rate` | FRED `CPIAUCSL` |
+| inflation_rate | `fetch_inflation_rate` | FRED `CPIAUCSL`. `.` and empty observations are skipped. The rate uses the latest month that has a real index and a real index 12 months earlier, and that month is the observation date. A missing comparison month steps back. No interpolation. |
 | incident_rate | `fetch_incident_rate` | Real-Time Crime Index cleaned file (`AH-Datalytics/rtci` `docs/app_data/final_sample.csv` via raw.githubusercontent.com). Methodology 1.1.0 scores the Nationwide Full Sample rate for the latest calendar month, or the matching population-weighted total when that row is not reliable. A bad download refuses the publish. Weeks through 2026-10-02 stay the 1.0.0 lock of 2723.0. |
-| unemployment_rate | `fetch_unemployment_rate` | FRED `UNRATE` |
-| debt_to_gdp_ratio | `fetch_debt_to_gdp_ratio` | FRED `GFDEGDQ188S` |
+| unemployment_rate | `fetch_unemployment_rate` | FRED `UNRATE`. `.` and empty observations are skipped; the latest real print is used. |
+| debt_to_gdp_ratio | `fetch_debt_to_gdp_ratio` | FRED `GFDEGDQ188S`. `.` and empty observations are skipped; the latest real print is used. |
 | homelessness_rate | `fetch_homelessness_rate` | HUD AHAR row in `runtime/data/annual_inputs.csv`. Methodology 1.1.1 reads 0.22 (2025 AHAR, observation date 2025-01-01). Weeks through 2026-10-09 stay 0.23. |
 | trust_in_government | `fetch_trust_in_government` | Edelman year row in `runtime/data/annual_inputs.csv`. Methodology 1.1.1 reads 39 (survey year 2026). Weeks through 2026-10-09 stay 41. |
-| gold / silver / DXY | `fetch_markets` | gold-api.com + FRED `DTWEXBGS` |
-| pulse indicators | `fetch_pulse` | FRED |
+| gold / silver / DXY | `fetch_markets` | gold-api.com + FRED `DTWEXBGS`. FRED `.` rows are skipped. |
+| pulse indicators | `fetch_pulse` | FRED. `.` and empty observations are skipped. |
 | labor utilization shadow | `fetch_labor_shadow` | FRED `LNS12300060` (prime-age EPOP, 25–54) and `LNS11300060` (prime-age participation). Not in the index. Failure does not abort the publish. |
 | food price shadow | `fetch_food_shadow` | FRED `CPIUFDNS` (BLS `CUUR0000SAF1`), food CPI 12-month percent change, not seasonally adjusted. Not in the index. Failure does not abort the publish. |
 | NYC DHS shelter census shadow | `fetch_nyc_dhs_shadow` | NYC Open Data `k46n-sa2m`, field `total_individuals_in_shelter`. New York City only. Not a U.S. rate and not the HUD AHAR input. Not in the index. Failure does not abort the publish. |

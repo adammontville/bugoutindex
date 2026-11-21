@@ -11,8 +11,11 @@ The score for every row comes from ``runtime.processing.formula.compute_index``
 (endpoints, weights, trust inversion, clamp, and divide-by-sum-of-weights).
 Only three inputs are historical:
 
-* inflation — CPIAUCSL year-over-year percent, built the same way as
-  ``fetch_inflation_rate.fetch`` (same calendar month one year earlier)
+* inflation — CPIAUCSL year-over-year percent, the same formula as
+  ``fetch_inflation_rate`` (same calendar month one year earlier). A
+  replay month whose own comparison month is missing is excluded. The
+  live fetcher instead steps back to the latest month where both
+  prints exist.
 * unemployment — UNRATE level, as ``fetch_unemployment_rate`` stores it
 * debt-to-GDP — GFDEGDQ188S level, as ``fetch_debt_to_gdp_ratio`` stores it
 
@@ -32,6 +35,7 @@ from typing import Mapping, Optional, Sequence
 from runtime.data.fetch.fetch_debt_to_gdp_ratio import SERIES_ID as DEBT_SERIES_ID
 from runtime.data.fetch.fetch_inflation_rate import SERIES_ID as CPI_SERIES_ID
 from runtime.data.fetch.fetch_unemployment_rate import SERIES_ID as UNEMPLOYMENT_SERIES_ID
+from runtime.data.fetch.fred_observations import is_missing_fred_value
 from runtime.processing.formula import CORE_METRICS, WEIGHTS, compute_index, interpret
 from runtime.util.http_retry import RetryError, get_with_retry
 from runtime.util.secrets_compat import get_secret
@@ -239,7 +243,7 @@ def parse_observations(raw_observations: list) -> dict[str, float]:
         if day is None:
             continue
         raw_value = obs.get("value")
-        if raw_value in (".", "", None):
+        if is_missing_fred_value(raw_value):
             continue
         try:
             points[day] = float(raw_value)
@@ -258,10 +262,10 @@ def parse_series_csv(text: str) -> dict[str, float]:
     points: dict[str, float] = {}
     for row in reader:
         day = _valid_day(row.get(date_key))
-        raw_value = (row.get(value_key) or "").strip()
-        if day is None or raw_value in ("", "."):
+        raw_value = row.get(value_key)
+        if day is None or is_missing_fred_value(raw_value):
             continue
-        points[day] = float(raw_value)
+        points[day] = float(str(raw_value).strip())
     return points
 
 
@@ -349,6 +353,11 @@ def fetch_fred_levels(
 
 
 def _inflation_fields(cpi: Mapping[str, float], day: str) -> dict:
+    """This month's own year-ago pair. A missing pair excludes the month.
+
+    The live fetcher steps back to an earlier complete pair. A historical
+    row does not borrow that earlier rate.
+    """
     prior_day = prior_year_date(day)
     current = cpi.get(day)
     previous = cpi.get(prior_day)

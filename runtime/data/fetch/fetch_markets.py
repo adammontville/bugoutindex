@@ -19,6 +19,10 @@ import time
 from datetime import datetime, timezone
 from typing import Dict, Optional
 
+from runtime.data.fetch.fred_observations import (
+    DAILY_OBSERVATION_LIMIT,
+    is_missing_fred_value,
+)
 from runtime.util.http_retry import get_with_retry, RetryError
 from runtime.util.secrets_compat import get_secret
 
@@ -55,15 +59,17 @@ def _fetch_dxy_from_fred() -> Optional[dict]:
         "api_key": api_key,
         "file_type": "json",
         "sort_order": "desc",
-        "limit": 10,  # tolerate '.' placeholder rows for holidays
+        # Weekends and holidays are ".". Skip them; do not invent a close.
+        "limit": DAILY_OBSERVATION_LIMIT,
     }
     resp = get_with_retry(FRED_OBS_URL, params=params, timeout=TIMEOUT)
     for obs in resp.json().get("observations", []):
-        if obs.get("value") not in (".", "", None):
-            try:
-                return {"close": float(obs["value"]), "date": obs["date"]}
-            except (TypeError, ValueError):
-                continue
+        if is_missing_fred_value(obs.get("value")):
+            continue
+        try:
+            return {"close": float(obs["value"]), "date": obs["date"]}
+        except (TypeError, ValueError):
+            continue
     return None
 
 

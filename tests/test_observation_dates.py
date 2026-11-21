@@ -31,6 +31,7 @@ from runtime.publish.weekly_run import (
     core_history_row,
     load_history,
 )
+from tests.snapshot_checks import assert_live_snapshot_matches_formula
 
 ROOT = Path(__file__).resolve().parents[1]
 WEEKLY_CSV = ROOT / "runtime" / "data" / "weekly_bugout_index.csv"
@@ -396,42 +397,56 @@ def test_committed_history_keeps_the_june_revision_and_does_not_invent_crime_dat
 
     for when, row in rows.items():
         assert "2025-01-01T00:00:00Z" not in "".join(row.values())
-        # 2723.0 is the September 2024 unweighted mean. Only the 2026-09-19
-        # publish recorded that month. A later file's value-month end is not
-        # an observation of the same locked rate. Methodology 1.1.0 records
-        # the value-month end on the week that scores the national rate.
-        if float(row["incident_rate"]) == 2723.0:
-            if when != "2026-09-19":
+        # 2723.0 is the September 2024 unweighted mean, scored through
+        # 2026-10-02. Only the 2026-09-19 publish recorded that month.
+        # 2026-10-09 is the 1.1.0 unlock: Nationwide Full Sample 2443.27,
+        # observed 2026-04-30. Later weeks keep a real value-month end and
+        # do not go back to the lock. The invented 2025-09-30 stamp stays out.
+        if when <= "2026-10-02":
+            assert float(row["incident_rate"]) == 2723.0
+            if when == "2026-09-19":
+                assert row["incident_rate_observation_date"] == "2024-09-30"
+            else:
                 assert row["incident_rate_observation_date"] == ""
-        else:
-            assert when == "2026-10-09"
+        elif when == "2026-10-09":
             assert float(row["incident_rate"]) == 2443.27
             assert row["incident_rate_observation_date"] == "2026-04-30"
-        assert row["incident_rate_observation_date"] != "2025-09-30"
-        # 0.23 is the January 2024 HUD count on published weeks. Weeks before
-        # that date was recorded stay blank. Later publishes through
-        # 2026-10-09 repeat it. Methodology 1.1.1 does not rewrite them.
-        if when < "2026-09-19":
-            assert row["homelessness_rate_observation_date"] == ""
+            assert float(row["bugout_index"]) == 57.66
         else:
+            assert when >= "2026-10-16"
+            assert float(row["incident_rate"]) != 2723.0
+            assert row["incident_rate_observation_date"] not in ("", "2025-09-30", "2024-09-30")
+        assert row["incident_rate_observation_date"] != "2025-09-30"
+        # 0.23 is the January 2024 HUD count. Weeks before 2026-09-19 leave
+        # the observation blank. Weeks through 2026-10-09 repeat 2024-01-01
+        # and trust 41 (2025). Methodology 1.1.1 starts 2026-10-16: homelessness
+        # 0.22 observed 2025-01-01, trust 39 observed 2026. It does not
+        # rewrite the earlier rows.
+        if when < "2026-09-19":
+            assert float(row["homelessness_rate"]) == 0.23
+            assert row["homelessness_rate_observation_date"] == ""
+            assert float(row["trust_in_government"]) == 41.0
+            assert row["trust_in_government_observation_date"] == "2025"
+        elif when <= "2026-10-09":
+            assert float(row["homelessness_rate"]) == 0.23
             assert row["homelessness_rate_observation_date"] == "2024-01-01"
+            assert float(row["trust_in_government"]) == 41.0
+            assert row["trust_in_government_observation_date"] == "2025"
+        else:
+            assert float(row["homelessness_rate"]) == 0.22
+            assert row["homelessness_rate_observation_date"] == "2025-01-01"
+            assert float(row["trust_in_government"]) == 39.0
+            assert row["trust_in_government_observation_date"] == "2026"
         for metric in ("inflation_rate", "unemployment_rate", "debt_to_gdp_ratio", "trust_in_government"):
             assert row[observation_column(metric)]
 
     latest = json.loads(LATEST.read_text())
-    assert latest["schema_version"] == 1
-    assert latest["bugout_index"] == 57.66
-    assert latest["methodology_version"] == "1.1.0"
-    assert latest["publication_date"] == "2026-10-09"
+    assert_live_snapshot_matches_formula(latest)
     history = load_history(WEEKLY_CSV, limit=100)
     assert latest["history"]["bugout_index"] == history
-    live = next(row for row in history if row["date"] == "2026-10-09")
+    live = history[-1]
+    assert live["date"] == latest["publication_date"]
+    assert latest["publication_date"] >= "2026-10-16"
     for metric in CORE_METRICS:
         assert latest["metrics"][metric]["observation_date"] == live[observation_column(metric)]
         assert float(latest["metrics"][metric]["raw"]) == float(live[metric])
-    assert latest["metrics"]["incident_rate"]["raw"] == 2443.27
-    assert latest["metrics"]["incident_rate"]["observation_date"] == "2026-04-30"
-    assert live["incident_rate_observation_date"] == "2026-04-30"
-    assert float(live["bugout_index"]) == 57.66
-    assert latest["metrics"]["homelessness_rate"]["raw"] == 0.23
-    assert latest["metrics"]["trust_in_government"]["raw"] == 41.0

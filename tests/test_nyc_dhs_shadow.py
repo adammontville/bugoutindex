@@ -23,6 +23,7 @@ from runtime.publish.render import NYC_DHS_SHADOW_LABELS, render_site
 from runtime.publish.week_note import build_week_note, unexplained_numerals
 from runtime.publish.weekly_run import build_snapshot
 from runtime.util.http_retry import RetryError
+from tests.snapshot_checks import assert_live_snapshot_matches_formula
 
 ROOT = Path(__file__).resolve().parents[1]
 LATEST = ROOT / "docs" / "data" / "latest.json"
@@ -258,10 +259,8 @@ def test_rendered_page_labels_the_census_as_nyc_only(tmp_path, monkeypatch):
     methodology = (tmp_path / "methodology.html").read_text()
     nyc_html = html.split("NYC DHS shelter census")[1].split("About this index")[0]
 
-    assert snapshot["bugout_index"] == before["bugout_index"] == 57.66
-    assert snapshot["methodology_version"] == "1.1.0"
     assert {key: snapshot[key] for key in SCORE_FIELDS} == before
-    assert "57.66" in html
+    assert f"BugOut Index — {before['bugout_index']}" in html
     assert "New York City only" in nyc_html
     assert "not a U.S." in nyc_html
     assert "HUD AHAR" in nyc_html
@@ -402,11 +401,7 @@ def test_markets_refusal_does_not_fetch_the_shadow_series(tmp_path, monkeypatch)
 
 def test_committed_snapshot_keeps_the_score_and_adds_only_the_companion():
     latest = json.loads(LATEST.read_text())
-    assert latest["bugout_index"] == 57.66
-    assert latest["methodology_version"] == "1.1.0"
-    assert latest["metrics"]["incident_rate"]["raw"] == 2443.27
-    assert latest["metrics"]["homelessness_rate"]["raw"] == 0.23
-    assert latest["metrics"]["trust_in_government"]["raw"] == 41.0
+    assert_live_snapshot_matches_formula(latest)
     nyc = latest["nyc_dhs_shadow"]
     assert nyc["in_bugout_index"] is False
     assert nyc["geography"] == "New York City"

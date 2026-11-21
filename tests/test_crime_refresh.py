@@ -416,20 +416,14 @@ def test_duplicate_nationwide_rows_fall_back_to_the_weighted_total():
 
 
 def test_october_2026_basket_projects_to_57_66_without_rewriting_history():
-    """The 2026-10-02 week stays at 57.04. The 2026-10-09 publish is that projection."""
+    """The 2026-10-02 week stays at 57.04. The 2026-10-09 publish is that projection.
+
+    The live snapshot is a later 1.1.1 week. This test reads the weekly history.
+    """
     import csv
-    import json
     from pathlib import Path
 
     root = Path(__file__).resolve().parents[1]
-    latest = json.loads((root / "docs" / "data" / "latest.json").read_text(encoding="utf-8"))
-    assert latest["methodology_version"] == "1.1.0"
-    assert latest["schema_version"] == 1
-    assert latest["bugout_index"] == 57.66
-    assert latest["publication_date"] == "2026-10-09"
-    assert latest["metrics"]["incident_rate"]["raw"] == 2443.27
-    assert latest["metrics"]["incident_rate"]["observation_date"] == "2026-04-30"
-
     weekly = root / "runtime" / "data" / "weekly_bugout_index.csv"
     with weekly.open(newline="", encoding="utf-8") as handle:
         rows = list(csv.DictReader(handle))
@@ -460,3 +454,35 @@ def test_october_2026_basket_projects_to_57_66_without_rewriting_history():
     assert scored["metrics"]["incident_rate"]["weight"] == 0.12
     assert interpret(scored["index"])["band"] == "Moderate Stability"
     assert METRIC_RANGES["incident_rate"] == (500, 8000)
+
+    # The published 2026-10-09 row is that projection. 1.1.1 does not rewrite
+    # it: homelessness stays 0.23 and trust stays 41. The 2026-10-16 row is
+    # the first 1.1.1 publish. Crime is still the April 2026 nationwide rate
+    # because RTCI had not moved. The index is 57.19 because that week's CPI
+    # print and the new annual cells (0.22, 39) are what compute_index scores.
+    unlock = next(row for row in rows if row["date"] == "2026-10-09")
+    assert float(unlock["incident_rate"]) == weighted == 2443.27
+    assert unlock["incident_rate_observation_date"] == "2026-04-30"
+    assert float(unlock["homelessness_rate"]) == 0.23
+    assert float(unlock["trust_in_government"]) == 41.0
+    assert float(unlock["bugout_index"]) == 57.66
+    refreshed = next(row for row in rows if row["date"] == "2026-10-16")
+    assert float(refreshed["incident_rate"]) == 2443.27
+    assert float(refreshed["homelessness_rate"]) == 0.22
+    assert refreshed["homelessness_rate_observation_date"] == "2025-01-01"
+    assert float(refreshed["trust_in_government"]) == 39.0
+    assert refreshed["trust_in_government_observation_date"] == "2026"
+    refreshed_raws = {
+        metric: float(refreshed[metric])
+        for metric in (
+            "inflation_rate",
+            "incident_rate",
+            "unemployment_rate",
+            "debt_to_gdp_ratio",
+            "homelessness_rate",
+            "trust_in_government",
+        )
+    }
+    assert compute_index(
+        {metric: {"data": {metric: value}} for metric, value in refreshed_raws.items()}
+    )["index"] == float(refreshed["bugout_index"]) == 57.19

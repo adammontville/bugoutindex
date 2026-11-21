@@ -28,6 +28,7 @@ from runtime.publish.render import (
 )
 from runtime.publish.week_note import build_week_note, unexplained_numerals
 from runtime.publish.weekly_run import build_snapshot
+from tests.snapshot_checks import assert_live_snapshot_matches_formula
 
 ROOT = Path(__file__).resolve().parents[1]
 LATEST = ROOT / "docs" / "data" / "latest.json"
@@ -492,12 +493,7 @@ def test_markets_refusal_does_not_fetch_the_trust_companions(tmp_path, monkeypat
 
 def test_committed_snapshot_keeps_the_score_and_adds_the_companions():
     latest = json.loads(LATEST.read_text())
-    assert latest["bugout_index"] == 57.66
-    assert latest["methodology_version"] == "1.1.0"
-    assert latest["publication_date"] == "2026-10-09"
-    assert latest["metrics"]["incident_rate"]["raw"] == 2443.27
-    assert latest["metrics"]["trust_in_government"]["raw"] == 41.0
-    assert latest["metrics"]["trust_in_government"]["observation_date"] == "2025"
+    assert_live_snapshot_matches_formula(latest)
     pew = latest["pew_trust_shadow"]
     gallup = latest["gallup_confidence_shadow"]
     assert pew["in_bugout_index"] is False

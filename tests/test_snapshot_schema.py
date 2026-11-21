@@ -17,14 +17,12 @@ from runtime.publish.failure_notice import (
 from runtime.publish.snapshot_schema import (
     COMPANION_BLOCKS,
     HISTORY_SERIES,
-    ACCEPTED_METHODOLOGY_VERSIONS,
-    METHODOLOGY_VERSION,
     REQUIRED_TOP_LEVEL,
-    SCHEMA_VERSION,
     SHADOW_BLOCKS,
     validate_published_snapshot,
 )
 from runtime.util.secrets_compat import get_secret
+from tests.snapshot_checks import assert_live_snapshot_matches_formula
 
 ROOT = Path(__file__).resolve().parents[1]
 LATEST = ROOT / "docs" / "data" / "latest.json"
@@ -35,16 +33,13 @@ def _imports_streamlit(text: str) -> bool:
 
 
 def test_live_snapshot_matches_schema_1_and_the_score_is_unchanged():
+    """The live file matches schema 1 and its headline is still the formula.
+
+    The Friday number is not pinned. Methodology 1.1.1's annual cells and
+    the 1.1.0 crime rule are.
+    """
     raw = json.loads(LATEST.read_text(encoding="utf-8"))
-    assert raw["schema_version"] == 1
-    assert raw["methodology_version"] == "1.1.0"
-    assert raw["bugout_index"] == 57.66
-    assert raw["metrics"]["incident_rate"]["raw"] == 2443.27
-    assert SCHEMA_VERSION == 1
-    assert METHODOLOGY_VERSION == "1.1.1"
-    assert ACCEPTED_METHODOLOGY_VERSIONS == ("1.0.0", "1.1.0", "1.1.1")
-    assert raw["metrics"]["homelessness_rate"]["raw"] == 0.23
-    assert raw["metrics"]["trust_in_government"]["raw"] == 41.0
+    assert_live_snapshot_matches_formula(raw)
     assert list(CORE_METRICS) == [
         "inflation_rate",
         "incident_rate",

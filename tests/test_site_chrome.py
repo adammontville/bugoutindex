@@ -8,6 +8,7 @@ import json
 from pathlib import Path
 
 from runtime.publish.render import render_site
+from tests.snapshot_checks import assert_live_snapshot_matches_formula
 
 ROOT = Path(__file__).resolve().parents[1]
 LATEST = ROOT / "docs" / "data" / "latest.json"
@@ -28,14 +29,15 @@ def test_render_puts_the_fred_line_and_icon_on_every_page(tmp_path, monkeypatch)
     render_site(snapshot)
 
     assert LATEST.read_bytes() == before
-    assert snapshot["bugout_index"] == 57.66
-    assert snapshot["methodology_version"] == "1.1.0"
+    assert_live_snapshot_matches_formula(snapshot)
     icon = tmp_path / "favicon.ico"
     assert icon.read_bytes() == FAVICON.read_bytes()
     for name in PAGES:
         html = (tmp_path / name).read_text(encoding="utf-8")
         assert FRED_LINE in html
         assert '<link rel="icon" href="./favicon.ico" sizes="any">' in html
+        if name == "index.html":
+            assert f"BugOut Index — {snapshot['bugout_index']}" in html
 
 
 def test_committed_site_ships_the_footer_and_favicon():

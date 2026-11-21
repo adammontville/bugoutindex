@@ -2,9 +2,9 @@
 
 **Status:** Frozen contract for the published weekly snapshot.  
 **Machine check:** `runtime/publish/snapshot_schema.py` (`validate_published_snapshot`).  
-**Example:** [`docs/data/latest.json`](../data/latest.json) — `schema_version` 1, `methodology_version` 1.1.0, `bugout_index` 57.66, `publication_date` 2026-10-09. That file is the published 1.1.0 week. It is not rewritten by methodology 1.1.1.
+**Example:** [`docs/data/latest.json`](../data/latest.json) is the last weekly publish. It is schema 1, stamped with the methodology that wrote it. The 2026-10-09 row in `runtime/data/weekly_bugout_index.csv` stays the 1.1.0 week: crime 2443.27, homelessness 0.23, trust 41, index 57.66. Methodology 1.1.1 does not rewrite that row. From 2026-10-16 the published weeks use homelessness 0.22 and trust 39.
 
-`schema_version` names this JSON shape. `methodology_version` names the formula and the inputs. Methodology 1.1.0 keeps `CORE_METRICS`, the endpoints, the weights, and the bands, and changes the crime series. Methodology 1.1.1 keeps those same constants and changes the annual homelessness and trust cells. A new top-level field is a shape change and needs `schema_version` 2. Neither revision added one, so `schema_version` stays 1. Old files stay readable under the version they were written with. New publishes stamp `methodology_version` `"1.1.1"`. Weeks through 2026-10-09 stay as published.
+`schema_version` names this JSON shape. `methodology_version` names the formula and the inputs. Methodology 1.1.0 keeps `CORE_METRICS`, the endpoints, the weights, and the bands, and changes the crime series. Methodology 1.1.1 keeps those same constants and changes the annual homelessness and trust cells. A new top-level field is a shape change and needs `schema_version` 2. Neither revision added one, so `schema_version` stays 1. Old files stay readable under the version they were written with. New publishes stamp `methodology_version` `"1.1.1"`. Weeks through 2026-10-09 stay as published. Later weeks are new publishes.
 
 ## Envelope
 

@@ -12,9 +12,9 @@ homelessness and trust checklist cells. It does not change endpoints,
 weights, or the crime series rule from 1.1.0.
 
 The human-readable copy is ``docs/architecture/snapshot-schema.md``.
-``docs/data/latest.json`` is the 2026-10-09 publication: methodology 1.1.0,
-headline number 57.66. This module does not rewrite it. Weeks already
-published stay under the version that produced them.
+``docs/data/latest.json`` is the last weekly publish. This module does not
+rewrite it. The 2026-10-09 week stays methodology 1.1.0 (index 57.66).
+Weeks already published stay under the version that produced them.
 """
 from __future__ import annotations
 

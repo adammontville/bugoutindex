@@ -29,6 +29,7 @@ from datetime import datetime
 from decimal import Decimal, ROUND_HALF_UP, InvalidOperation
 from typing import Dict, List, Optional
 
+from runtime.data.fetch.fred_observations import is_missing_fred_value
 from runtime.util.http_retry import RetryError, get_with_retry
 from runtime.util.redact import redact_secrets
 from runtime.util.secrets_compat import get_secret
@@ -99,7 +100,9 @@ def parse_index(raw_observations: list) -> List[dict]:
         if day is None:
             continue
         raw_value = obs.get("value")
-        if raw_value in (".", "", None):
+        # FRED "." and empty rows are missing. A year-over-year point is
+        # kept only when both months are real prints (see year_over_year).
+        if is_missing_fred_value(raw_value):
             continue
         text = str(raw_value).strip()
         try:

@@ -25,6 +25,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Dict, List, Optional
 
+from runtime.data.fetch.fred_observations import is_missing_fred_value
 from runtime.util.http_retry import RetryError, get_with_retry
 from runtime.util.redact import redact_secrets
 from runtime.util.secrets_compat import get_secret
@@ -70,7 +71,8 @@ def parse_observations(raw_observations: list) -> List[dict]:
         if day is None:
             continue
         raw_value = obs.get("value")
-        if raw_value in (".", "", None):
+        # FRED "." and empty rows are missing. They are not carried forward.
+        if is_missing_fred_value(raw_value):
             continue
         try:
             value = float(raw_value)

@@ -23,9 +23,9 @@ On a perfect week (every core metric at its most stable endpoint), the index sco
 The BugOutIndex incorporates six core metrics:
 
 ### Economic Metrics
-- **Inflation Rate**: Year-over-year percentage change in consumer prices (CPI-U via FRED).
-- **Unemployment Rate**: Percentage of the labor force that is unemployed (FRED UNRATE).
-- **Debt-to-GDP Ratio**: Federal debt as a percentage of GDP (FRED).
+- **Inflation Rate**: Year-over-year percentage change in consumer prices (CPI-U via FRED `CPIAUCSL`). The rate is `((current − CPI 12 months earlier) / CPI 12 months earlier) × 100`. FRED marks a missing month with `.` or an empty value. Those months are skipped. The observation date is the latest month that has a real index and a real index twelve months earlier. If the comparison month is missing, the fetcher steps back to the newest month where both exist. It does not interpolate and it does not invent a month. This is data handling: the endpoints, the weight, and `methodology_version` are unchanged.
+- **Unemployment Rate**: Percentage of the labor force that is unemployed (FRED UNRATE). A `.` or empty observation is skipped. The reading is the latest real print, dated to that month.
+- **Debt-to-GDP Ratio**: Federal debt as a percentage of GDP (FRED `GFDEGDQ188S`). A `.` or empty observation is skipped. The reading is the latest real quarterly print.
 
 ### Social Health Metrics
 - **Crime Rate** (`incident_rate`): Violent **plus** property crime incidents per 100,000 people. Methodology 1.1.0 uses RTCI’s population-weighted national rate for the latest calendar month in the cleaned file: the Nationwide Full Sample row when that row is reliable, otherwise the weighted total of the other usable rows that matches it. The observation date is that month’s last day. Methodology 1.0.0 scored a locked 2723.0. Weeks through 2026-10-02 keep that lock.

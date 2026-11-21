@@ -33,6 +33,7 @@ from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Dict, List, Optional
 
+from runtime.data.fetch.fred_observations import is_missing_fred_value
 from runtime.util.http_retry import get_with_retry, RetryError
 from runtime.util.redact import redact_secrets
 from runtime.util.secrets_compat import get_secret
@@ -94,7 +95,7 @@ def _fetch_observation(
         return None
     o = obs[0]
     val = o.get("value")
-    if val in (".", "", None):
+    if is_missing_fred_value(val):
         return None
     try:
         return {
@@ -124,7 +125,7 @@ def _initial_release_date(series_id: str, obs_date: str, api_key: str) -> Option
         headers={"User-Agent": "BugOutIndex/1.0"},
     )
     rows = resp.json().get("observations") or []
-    valid = [r for r in rows if r.get("value") not in (".", "", None)]
+    valid = [r for r in rows if not is_missing_fred_value(r.get("value"))]
     if not valid:
         return None
     return valid[0].get("realtime_start")

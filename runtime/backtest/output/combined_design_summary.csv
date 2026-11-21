@@ -1,0 +1,37 @@
+scenario,scenario_label,window,window_title,months,min_index,min_date,max_index,max_date,mean_index,stdev_index,high,moderate,low,critical
+v1,1.1.1,in_sample,"1990–2006, in-sample",204,56.25,1990-12-01,62.11,1998-11-01,59.83,1.41,0,204,0,0
+w1,"W1, four-quarter debt, VIX, live bands",in_sample,"1990–2006, in-sample",204,41.01,1990-10-01,81.95,2000-08-01,68.42,9.19,113,69,22,0
+w2,"W2, four-quarter debt, VIX, live bands",in_sample,"1990–2006, in-sample",204,43.15,1990-10-01,80.44,2000-08-01,67.21,9.02,95,86,23,0
+w2_qoq,"W2, one-quarter debt, VIX, live bands",in_sample,"1990–2006, in-sample",204,43.02,1990-10-01,81.88,1998-07-01,66.53,7.94,73,115,16,0
+w2_nfci,"W2, four-quarter debt, NFCI, live bands",in_sample,"1990–2006, in-sample",204,42.91,1990-12-01,81.09,1999-03-01,65.76,9.60,65,111,28,0
+w2_episode,"W2, four-quarter debt, VIX, episode bands",in_sample,"1990–2006, in-sample",204,43.15,1990-10-01,80.44,2000-08-01,67.21,9.02,73,99,32,0
+v1,1.1.1,out_of_sample,Jan 2007–Aug 2026,236,50.98,2020-04-01,61.39,2007-08-01,56.74,2.10,0,182,54,0
+w1,"W1, four-quarter debt, VIX, live bands",out_of_sample,Jan 2007–Aug 2026,236,32.39,2011-09-01,88.61,2017-12-01,64.71,13.21,109,72,45,10
+w2,"W2, four-quarter debt, VIX, live bands",out_of_sample,Jan 2007–Aug 2026,236,36.23,2011-09-01,84.95,2017-12-01,63.63,11.95,89,86,57,4
+w2_qoq,"W2, one-quarter debt, VIX, live bands",out_of_sample,Jan 2007–Aug 2026,236,36.23,2011-09-01,84.06,2017-03-01,63.87,12.13,84,97,50,5
+w2_nfci,"W2, four-quarter debt, NFCI, live bands",out_of_sample,Jan 2007–Aug 2026,236,40.56,2009-12-01,80.37,2017-12-01,62.20,10.75,65,108,63,0
+w2_episode,"W2, four-quarter debt, VIX, episode bands",out_of_sample,Jan 2007–Aug 2026,236,36.23,2011-09-01,84.95,2017-12-01,63.63,11.95,69,99,52,16
+v1,1.1.1,2008,Dec 2007–Dec 2009,25,54.01,2009-12-01,60.01,2008-12-01,57.99,1.46,0,23,2,0
+w1,"W1, four-quarter debt, VIX, live bands",2008,Dec 2007–Dec 2009,25,37.68,2009-04-01,64.91,2007-12-01,47.26,8.79,0,7,14,4
+w2,"W2, four-quarter debt, VIX, live bands",2008,Dec 2007–Dec 2009,25,41.27,2009-12-01,64.53,2007-12-01,48.74,7.81,0,7,18,0
+w2_qoq,"W2, one-quarter debt, VIX, live bands",2008,Dec 2007–Dec 2009,25,41.27,2009-12-01,68.29,2008-04-01,48.60,8.24,0,4,21,0
+w2_nfci,"W2, four-quarter debt, NFCI, live bands",2008,Dec 2007–Dec 2009,25,40.56,2009-12-01,63.11,2007-12-01,48.95,6.96,0,7,18,0
+w2_episode,"W2, four-quarter debt, VIX, episode bands",2008,Dec 2007–Dec 2009,25,41.27,2009-12-01,64.53,2007-12-01,48.74,7.81,0,6,12,7
+v1,1.1.1,2020,2020,12,50.98,2020-04-01,59.03,2020-03-01,55.64,2.59,0,8,4,0
+w1,"W1, four-quarter debt, VIX, live bands",2020,2020,12,39.61,2020-04-01,72.06,2020-01-01,53.05,10.35,1,4,6,1
+w2,"W2, four-quarter debt, VIX, live bands",2020,2020,12,42.80,2020-04-01,69.70,2020-01-01,54.04,9.20,0,5,7,0
+w2_qoq,"W2, one-quarter debt, VIX, live bands",2020,2020,12,42.80,2020-04-01,68.57,2020-09-01,57.99,9.81,0,8,4,0
+w2_nfci,"W2, four-quarter debt, NFCI, live bands",2020,2020,12,46.33,2020-04-01,67.09,2020-02-01,55.32,8.07,0,6,6,0
+w2_episode,"W2, four-quarter debt, VIX, episode bands",2020,2020,12,42.80,2020-04-01,69.70,2020-01-01,54.04,9.20,0,3,8,1
+v1,1.1.1,2022,2022,12,52.28,2022-06-01,54.47,2022-12-01,53.08,0.58,0,0,12,0
+w1,"W1, four-quarter debt, VIX, live bands",2022,2022,12,61.24,2022-09-01,69.94,2022-12-01,65.15,2.87,0,12,0,0
+w2,"W2, four-quarter debt, VIX, live bands",2022,2022,12,62.42,2022-09-01,69.65,2022-12-01,65.88,2.39,0,12,0,0
+w2_qoq,"W2, one-quarter debt, VIX, live bands",2022,2022,12,52.45,2022-03-01,67.32,2022-04-01,61.45,4.87,0,10,2,0
+w2_nfci,"W2, four-quarter debt, NFCI, live bands",2022,2022,12,63.43,2022-07-01,69.53,2022-01-01,66.80,2.10,0,12,0,0
+w2_episode,"W2, four-quarter debt, VIX, episode bands",2022,2022,12,62.42,2022-09-01,69.65,2022-12-01,65.88,2.39,0,12,0,0
+v1,1.1.1,2015_2019,2015–2019,60,56.37,2017-02-01,59.75,2019-06-01,58.34,0.87,0,60,0,0
+w1,"W1, four-quarter debt, VIX, live bands",2015_2019,2015–2019,60,63.01,2016-01-01,88.61,2017-12-01,76.16,6.51,48,12,0,0
+w2,"W2, four-quarter debt, VIX, live bands",2015_2019,2015–2019,60,63.08,2016-09-01,84.95,2017-12-01,73.90,5.87,48,12,0,0
+w2_qoq,"W2, one-quarter debt, VIX, live bands",2015_2019,2015–2019,60,61.77,2018-12-01,84.06,2017-03-01,73.47,7.36,39,21,0,0
+w2_nfci,"W2, four-quarter debt, NFCI, live bands",2015_2019,2015–2019,60,59.32,2016-09-01,80.37,2017-12-01,71.03,5.38,40,20,0,0
+w2_episode,"W2, four-quarter debt, VIX, episode bands",2015_2019,2015–2019,60,63.08,2016-09-01,84.95,2017-12-01,73.90,5.87,41,19,0,0

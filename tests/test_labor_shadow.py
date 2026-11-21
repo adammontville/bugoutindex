@@ -20,6 +20,7 @@ from runtime.publish.render import LABOR_SHADOW_LABELS, render_site
 from runtime.publish.week_note import build_week_note, unexplained_numerals
 from runtime.publish.weekly_run import build_snapshot
 from runtime.util.http_retry import RetryError
+from tests.snapshot_checks import assert_live_snapshot_matches_formula
 
 ROOT = Path(__file__).resolve().parents[1]
 LATEST = ROOT / "docs" / "data" / "latest.json"
@@ -232,6 +233,8 @@ def test_rendered_page_labels_the_shadow_series_outside_the_index(tmp_path, monk
         "prime_age_lfpr": "83.4",
         "prime_age_lfpr_observation_date": "2026-08-01",
     }]
+    index_before = snapshot["bugout_index"]
+    methodology_before = snapshot["methodology_version"]
     monkeypatch.setattr(render, "DOCS", tmp_path)
     render_site(snapshot)
     html = (tmp_path / "index.html").read_text()
@@ -239,8 +242,9 @@ def test_rendered_page_labels_the_shadow_series_outside_the_index(tmp_path, monk
     methodology = (tmp_path / "methodology.html").read_text()
     labor_html = html.split("Labor utilization")[1].split("About this index")[0]
 
-    assert snapshot["bugout_index"] == 57.66
-    assert "57.66" in html
+    assert snapshot["bugout_index"] == index_before
+    assert snapshot["methodology_version"] == methodology_before
+    assert f"BugOut Index — {index_before}" in html
     assert "not in the BugOut Index" in labor_html
     assert "No weight" in labor_html or "no weight" in labor_html
     assert "https://fred.stlouisfed.org/series/LNS12300060" in labor_html
@@ -371,11 +375,7 @@ def test_markets_refusal_does_not_fetch_the_shadow_series(tmp_path, monkeypatch)
 
 def test_committed_snapshot_keeps_the_score_and_fred_dates():
     latest = json.loads(LATEST.read_text())
-    assert latest["bugout_index"] == 57.66
-    assert latest["methodology_version"] == "1.1.0"
-    assert latest["metrics"]["incident_rate"]["raw"] == 2443.27
-    assert latest["metrics"]["homelessness_rate"]["raw"] == 0.23
-    assert latest["metrics"]["trust_in_government"]["raw"] == 41.0
+    assert_live_snapshot_matches_formula(latest)
     labor = latest["labor_shadow"]
     assert labor["in_bugout_index"] is False
     assert labor["series_ids"]["prime_age_epop"] == "LNS12300060"

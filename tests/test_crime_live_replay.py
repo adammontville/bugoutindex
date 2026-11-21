@@ -27,6 +27,7 @@ from runtime.backtest.crime_live_replay import (
 from runtime.backtest.harness import WEEKLY_CSV, load_published_raws, score_published_inputs
 from runtime.processing.formula import METRIC_RANGES, WEIGHTS
 from runtime.processing.formula import compute_index as formula_compute_index
+from tests.snapshot_checks import assert_live_snapshot_matches_formula
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -43,23 +44,12 @@ def test_live_publisher_files_stay_on_the_locked_score():
     assert METRIC_RANGES["incident_rate"] == (500, 8000)
     assert WEIGHTS["incident_rate"] == 0.12
     assert sum(WEIGHTS.values()) == 0.72
+    # The live file is a later 1.1.1 publish. Its headline moves with FRED.
+    # What stays is the methodology: schema 1, stamp 1.1.1, nationwide crime
+    # rather than this replay's unweighted mean or the 2723 lock, and the
+    # annual cells 0.22 and 39.
     latest = json.loads((ROOT / "docs" / "data" / "latest.json").read_text(encoding="utf-8"))
-    assert latest["schema_version"] == 1
-    assert latest["methodology_version"] == "1.1.0"
-    assert latest["bugout_index"] == 57.66
-    assert latest["publication_date"] == "2026-10-09"
-    crime = latest["metrics"]["incident_rate"]
-    assert crime["raw"] == 2443.27
-    assert crime["observation_date"] == "2026-04-30"
-    assert crime["provenance"]["value_month"] == "April 2026"
-    assert crime["provenance"]["value_month_end"] == "2026-04-30"
-    assert crime["provenance"]["file_through"] == "April 2026"
-    assert crime["diagnostics"]["candidate_incident_rate"] == 2074.97
-    assert crime["diagnostics"]["candidate_month"] == "April 2026"
-    assert crime["diagnostics"]["population_weighted_incident_rate"] == 2443.27
-    assert crime["diagnostics"]["latest_month_incident_rate"] == 2074.97
-    assert crime["diagnostics"]["latest_month"] == "April 2026"
-    assert crime["diagnostics"]["index_input"] is True
+    assert_live_snapshot_matches_formula(latest)
     formula = (ROOT / "runtime" / "processing" / "formula.py").read_text(encoding="utf-8")
     weekly = (ROOT / "runtime" / "publish" / "weekly_run.py").read_text(encoding="utf-8")
     assert "crime_live_replay" not in formula
@@ -71,11 +61,44 @@ def test_each_publication_keeps_its_locked_score_and_moves_only_crime():
     publications = list(csv.DictReader(WEEKLY_CSV.open(newline="", encoding="utf-8")))
     locked_weeks = [row for row in publications if row["date"] <= LATEST_PUBLICATION]
     rows = build_publication_rows()
-    assert len(publications) == 26
-    assert publications[-1]["date"] == "2026-10-09"
-    assert float(publications[-1]["incident_rate"]) == 2443.27
-    assert len(rows) == len(locked_weeks) == 25
+    # The replay stops at the last 1.0.0 week. Later publishes are 1.1.x and
+    # stay in the weekly file. Counting every row pinned the test to one Friday.
+    assert LATEST_PUBLICATION == "2026-10-02"
+    assert len(locked_weeks) == 25
+    assert len(rows) == len(locked_weeks)
+    assert locked_weeks[-1]["date"] == "2026-10-02"
+    assert float(locked_weeks[-1]["incident_rate"]) == 2723.0
+    assert float(locked_weeks[-1]["bugout_index"]) == 57.04
     assert [row["date"] for row in rows] == [row["date"] for row in locked_weeks]
+    assert all(row["date"] <= LATEST_PUBLICATION for row in rows)
+
+    # 2026-10-09 is the 1.1.0 unlock. Crime is the Nationwide Full Sample
+    # 2443.27 (the population-weighted April 2026 rate on the checked-in RTCI
+    # file), not the 1.0.0 lock 2723 and not this replay's unweighted 2074.97.
+    # Homelessness and trust are still 0.23 and 41, so the published index
+    # stays 57.66. 1.1.1 does not rewrite the row, and the replay does not
+    # include it.
+    unlock = next(row for row in publications if row["date"] == "2026-10-09")
+    assert float(unlock["incident_rate"]) == 2443.27
+    assert unlock["incident_rate_observation_date"] == "2026-04-30"
+    assert float(unlock["homelessness_rate"]) == 0.23
+    assert float(unlock["trust_in_government"]) == 41.0
+    assert float(unlock["bugout_index"]) == 57.66
+    assert "2026-10-09" not in {row["date"] for row in rows}
+
+    # 2026-10-16 is the first 1.1.1 week: homelessness 0.22 (2025 AHAR) and
+    # trust 39 (2026 Edelman). Crime stays off the 2723 lock. The exact
+    # national rate can move when RTCI does, so later weeks are not pinned
+    # to 2443.27.
+    refreshed = [row for row in publications if row["date"] >= "2026-10-16"]
+    assert refreshed
+    for published in refreshed:
+        assert float(published["homelessness_rate"]) == 0.22
+        assert published["homelessness_rate_observation_date"] == "2025-01-01"
+        assert float(published["trust_in_government"]) == 39.0
+        assert published["trust_in_government_observation_date"] == "2026"
+        assert float(published["incident_rate"]) != 2723.0
+        assert published["date"] not in {row["date"] for row in rows}
     for published, row in zip(locked_weeks, rows):
         assert float(published["incident_rate"]) == 2723.0
         assert row["locked_index"] == float(published["bugout_index"])
@@ -95,6 +118,9 @@ def test_each_publication_keeps_its_locked_score_and_moves_only_crime():
     assert by_date["2026-06-12"]["rtci_month"] == "March 2026"
     assert by_date["2026-06-19"]["crime_value"] == 2074.97
     assert by_date["2026-06-19"]["rtci_month"] == "April 2026"
+    # These figures are the unweighted counterfactual on the 1.0.0 basket.
+    # 1.1.0 scores the nationwide rate instead, and this replay does not.
+    # 2074.97 -> 58.48 and 2234.66 -> 58.13 stay the right expectations.
     latest = by_date["2026-10-02"]
     assert latest["locked_index"] == 57.04
     assert latest["live_index"] == 58.48

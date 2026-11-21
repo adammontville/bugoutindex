@@ -4,7 +4,7 @@
 """A release can be overdue. The check cannot change the score."""
 from __future__ import annotations
 
-import json
+import csv
 from datetime import date
 from pathlib import Path
 
@@ -18,22 +18,23 @@ from runtime.data.fetch.fetch_trust_in_government import fetch as fetch_trust
 from runtime.processing.formula import compute_index, interpret
 
 ROOT = Path(__file__).resolve().parents[1]
-LATEST = ROOT / "docs" / "data" / "latest.json"
 FORMULA = ROOT / "runtime" / "processing" / "formula.py"
 WEEKLY = ROOT / "runtime" / "publish" / "weekly_run.py"
+WEEKLY_CSV = ROOT / "runtime" / "data" / "weekly_bugout_index.csv"
 
-# Other four inputs from the published 2026-10-09 basket. Homelessness and
-# trust on that file stay the prior cells; this test substitutes the checklist.
+# The 2026-10-09 week is the frozen 1.1.0 publish. Crime on that row is
+# already the nationwide rate. Homelessness and trust are still the prior
+# cells; this test substitutes the 1.1.1 checklist. The live snapshot is a
+# later week, so the basket is this history row.
 BASKET_DATE = "2026-10-09"
 AS_OF = date(2026, 10, 10)
 
 
 def _basket_with_checklist() -> dict:
-    latest = json.loads(LATEST.read_text(encoding="utf-8"))
-    assert latest["publication_date"] == BASKET_DATE
-    assert latest["methodology_version"] == "1.1.0"
+    with WEEKLY_CSV.open(newline="", encoding="utf-8") as handle:
+        row = next(item for item in csv.DictReader(handle) if item["date"] == BASKET_DATE)
     raws = {
-        metric: latest["metrics"][metric]["raw"]
+        metric: float(row[metric])
         for metric in (
             "inflation_rate",
             "incident_rate",
@@ -43,6 +44,8 @@ def _basket_with_checklist() -> dict:
             "trust_in_government",
         )
     }
+    assert float(row["bugout_index"]) == 57.66
+    assert raws["incident_rate"] == 2443.27
     assert raws["homelessness_rate"] == 0.23
     assert raws["trust_in_government"] == 41.0
     homelessness = fetch_homelessness()
@@ -185,6 +188,9 @@ def test_warning_does_not_change_the_2026_10_09_score():
     assert trust is None
     after = _score(raws)
     assert after == before
+    # Nationwide crime 2443.27 with the 1.1.1 cells (0.22 and 39) on the
+    # frozen 2026-10-09 FRED basket is 57.50. The warning never enters the
+    # formula. 1.1.1 did not rewrite the published 57.66 row.
     assert before["index"] == 57.50
     assert interpret(before["index"])["band"] == "Moderate Stability"
     formula = FORMULA.read_text(encoding="utf-8")

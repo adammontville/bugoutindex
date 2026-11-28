@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "methodology_version": "1.1.1",
-  "generated_at_utc": "2026-11-21T05:55:23+00:00",
-  "publication_date": "2026-11-20",
+  "generated_at_utc": "2026-11-28T04:49:51+00:00",
+  "publication_date": "2026-11-27",
   "bugout_index": 57.38,
   "interpretation": {
     "band": "Moderate Stability",
@@ -102,27 +102,27 @@
   },
   "markets": {
     "status": "success",
-    "fetched_at": "2026-11-21",
-    "gold_usd_per_oz": 3539.0,
-    "silver_usd_per_oz": 41.08,
-    "dxy": 122.6503
+    "fetched_at": "2026-11-28",
+    "gold_usd_per_oz": 3650.0,
+    "silver_usd_per_oz": 43.23,
+    "dxy": 123.5978
   },
   "pulse": {
     "status": "success",
-    "fetched_at": "2026-11-20",
+    "fetched_at": "2026-11-27",
     "values": {
-      "initial_jobless_claims": 203000.0,
+      "initial_jobless_claims": 189000.0,
       "consumer_sentiment_umich": 48.0,
       "business_confidence": 98.96989,
-      "yield_curve_10y_2y": 0.29,
-      "vix": 28.44
+      "yield_curve_10y_2y": 0.25,
+      "vix": 26.8
     },
     "dates": {
-      "initial_jobless_claims": "2026-11-14",
+      "initial_jobless_claims": "2026-11-21",
       "consumer_sentiment_umich": "2026-10-01",
       "business_confidence": "2024-01-01",
-      "yield_curve_10y_2y": "2026-11-20",
-      "vix": "2026-11-19"
+      "yield_curve_10y_2y": "2026-11-27",
+      "vix": "2026-11-26"
     }
   },
   "labor_shadow": {
@@ -615,41 +615,13 @@
     },
     "reading": "total individuals in the NYC DHS shelter system",
     "values": {
-      "nyc_dhs_total_individuals": 83363
+      "nyc_dhs_total_individuals": 83049
     },
     "dates": {
-      "nyc_dhs_total_individuals": "2026-11-19"
+      "nyc_dhs_total_individuals": "2026-11-26"
     },
     "observations": {
       "nyc_dhs_total_individuals": [
-        {
-          "date": "2026-08-22",
-          "value": 83435
-        },
-        {
-          "date": "2026-08-23",
-          "value": 83340
-        },
-        {
-          "date": "2026-08-24",
-          "value": 83526
-        },
-        {
-          "date": "2026-08-25",
-          "value": 83640
-        },
-        {
-          "date": "2026-08-26",
-          "value": 83368
-        },
-        {
-          "date": "2026-08-27",
-          "value": 83336
-        },
-        {
-          "date": "2026-08-28",
-          "value": 83369
-        },
         {
           "date": "2026-08-29",
           "value": 83380
@@ -981,6 +953,34 @@
         {
           "date": "2026-11-19",
           "value": 83363
+        },
+        {
+          "date": "2026-11-20",
+          "value": 83369
+        },
+        {
+          "date": "2026-11-21",
+          "value": 83312
+        },
+        {
+          "date": "2026-11-22",
+          "value": 83299
+        },
+        {
+          "date": "2026-11-23",
+          "value": 83426
+        },
+        {
+          "date": "2026-11-24",
+          "value": 83209
+        },
+        {
+          "date": "2026-11-25",
+          "value": 82995
+        },
+        {
+          "date": "2026-11-26",
+          "value": 83049
         }
       ]
     },
@@ -2619,6 +2619,28 @@
         "debt_to_gdp_ratio_normalized": "39.41",
         "homelessness_rate_normalized": "56.0",
         "trust_in_government_normalized": "48.75"
+      },
+      {
+        "date": "2026-11-27",
+        "bugout_index": "57.38",
+        "inflation_rate": "3.7172508442689933",
+        "inflation_rate_observation_date": "2026-09-01",
+        "incident_rate": "2443.27",
+        "incident_rate_observation_date": "2026-04-30",
+        "unemployment_rate": "4.1",
+        "unemployment_rate_observation_date": "2026-10-01",
+        "debt_to_gdp_ratio": "121.18773",
+        "debt_to_gdp_ratio_observation_date": "2026-04-01",
+        "homelessness_rate": "0.22",
+        "homelessness_rate_observation_date": "2025-01-01",
+        "trust_in_government": "39.0",
+        "trust_in_government_observation_date": "2026",
+        "inflation_rate_normalized": "45.13",
+        "incident_rate_normalized": "74.09",
+        "unemployment_rate_normalized": "83.6",
+        "debt_to_gdp_ratio_normalized": "39.41",
+        "homelessness_rate_normalized": "56.0",
+        "trust_in_government_normalized": "48.75"
       }
     ],
     "markets": [
@@ -2807,6 +2829,12 @@
         "gold_usd_per_oz": "3539.0",
         "silver_usd_per_oz": "41.08",
         "dxy": "122.6503"
+      },
+      {
+        "date": "2026-11-27",
+        "gold_usd_per_oz": "3650.0",
+        "silver_usd_per_oz": "43.23",
+        "dxy": "123.5978"
       }
     ],
     "pulse": [
@@ -3057,6 +3085,14 @@
         "business_confidence": "98.96989",
         "yield_curve_10y_2y": "0.29",
         "vix": "28.44"
+      },
+      {
+        "date": "2026-11-27",
+        "initial_jobless_claims": "189000.0",
+        "consumer_sentiment_umich": "48.0",
+        "business_confidence": "98.96989",
+        "yield_curve_10y_2y": "0.25",
+        "vix": "26.8"
       }
     ],
     "labor_shadow": [
@@ -3122,6 +3158,13 @@
         "prime_age_epop_observation_date": "2026-10-01",
         "prime_age_lfpr": "83.7",
         "prime_age_lfpr_observation_date": "2026-10-01"
+      },
+      {
+        "date": "2026-11-27",
+        "prime_age_epop": "80.7",
+        "prime_age_epop_observation_date": "2026-10-01",
+        "prime_age_lfpr": "83.7",
+        "prime_age_lfpr_observation_date": "2026-10-01"
       }
     ],
     "food_shadow": [
@@ -3169,6 +3212,11 @@
         "date": "2026-11-20",
         "food_cpi_yoy": "2.5",
         "food_cpi_yoy_observation_date": "2026-09-01"
+      },
+      {
+        "date": "2026-11-27",
+        "food_cpi_yoy": "2.5",
+        "food_cpi_yoy_observation_date": "2026-09-01"
       }
     ],
     "nyc_dhs_shadow": [
@@ -3211,6 +3259,11 @@
         "date": "2026-11-20",
         "nyc_dhs_total_individuals": "83363",
         "nyc_dhs_total_individuals_observation_date": "2026-11-19"
+      },
+      {
+        "date": "2026-11-27",
+        "nyc_dhs_total_individuals": "83049",
+        "nyc_dhs_total_individuals_observation_date": "2026-11-26"
       }
     ],
     "pew_trust_shadow": [
@@ -3246,6 +3299,11 @@
       },
       {
         "date": "2026-11-20",
+        "pew_public_trust": "17",
+        "pew_public_trust_observation_date": "2025-09-28"
+      },
+      {
+        "date": "2026-11-27",
         "pew_public_trust": "17",
         "pew_public_trust_observation_date": "2025-09-28"
       }
@@ -3327,6 +3385,17 @@
         "gallup_supreme_court_observation_date": "2026-06-15",
         "gallup_core_institutions": "27",
         "gallup_core_institutions_observation_date": "2026-06-15"
+      },
+      {
+        "date": "2026-11-27",
+        "gallup_congress": "9",
+        "gallup_congress_observation_date": "2026-06-15",
+        "gallup_presidency": "27",
+        "gallup_presidency_observation_date": "2026-06-15",
+        "gallup_supreme_court": "27",
+        "gallup_supreme_court_observation_date": "2026-06-15",
+        "gallup_core_institutions": "27",
+        "gallup_core_institutions_observation_date": "2026-06-15"
       }
     ],
     "ramsey_shelter_shadow": [
@@ -3362,6 +3431,11 @@
       },
       {
         "date": "2026-11-20",
+        "ramsey_shelter_total_people": "562",
+        "ramsey_shelter_total_people_observation_date": "2026-10-01"
+      },
+      {
+        "date": "2026-11-27",
         "ramsey_shelter_total_people": "562",
         "ramsey_shelter_total_people_observation_date": "2026-10-01"
       }
@@ -3429,6 +3503,15 @@
         "austin_sheltered_people_observation_date": "2025-07-01",
         "denver_shelter_occupancy": "93",
         "denver_shelter_occupancy_observation_date": "2026-06-30"
+      },
+      {
+        "date": "2026-11-27",
+        "nashville_hmis_people": "2907",
+        "nashville_hmis_people_observation_date": "2026-07-31",
+        "austin_sheltered_people": "1070",
+        "austin_sheltered_people_observation_date": "2025-07-01",
+        "denver_shelter_occupancy": "93",
+        "denver_shelter_occupancy_observation_date": "2026-06-30"
       }
     ],
     "sf_shelter_shadow": [
@@ -3464,6 +3547,11 @@
       },
       {
         "date": "2026-11-20",
+        "sf_shelter_occupancy_rate": "90.0",
+        "sf_shelter_occupancy_rate_observation_date": "2026-09-30"
+      },
+      {
+        "date": "2026-11-27",
         "sf_shelter_occupancy_rate": "90.0",
         "sf_shelter_occupancy_rate_observation_date": "2026-09-30"
       }
